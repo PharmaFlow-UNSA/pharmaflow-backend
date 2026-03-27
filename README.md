@@ -1,5 +1,3 @@
-<h1 align="center">PharmaFlow Backend</h1>
-
 Welcome to the official backend repository for PharmaFlow, an intelligent e-commerce platform for online pharmacies. This project is developed within the PharmaFlow UNSA organization at the University of Sarajevo, Faculty of Electrical Engineering.
 
 _**Project Overview**_
