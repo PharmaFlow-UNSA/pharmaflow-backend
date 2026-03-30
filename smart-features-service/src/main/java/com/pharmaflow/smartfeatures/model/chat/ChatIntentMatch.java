@@ -1,0 +1,53 @@
+package com.pharmaflow.smartfeatures.model.chat;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * Represents the interpretation of a chat message against FAQ knowledge.
+ */
+@Entity
+@Table(name = "chat_intent_match")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ChatIntentMatch {
+
+    /** Primary key of the intent match record. */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "intent_match_id", nullable = false, updatable = false)
+    private Long intentMatchId;
+
+    /** Source message that was analyzed. */
+    @OneToOne
+    @JoinColumn(name = "message_id", nullable = false, unique = true)
+    private ChatMessage message;
+
+    /** FAQ entry that best matched the detected intent. */
+    @ManyToOne
+    @JoinColumn(name = "faq_id", nullable = false)
+    private FaqEntry faqEntry;
+
+    /** Name of the intent detected from the message. */
+    @Column(name = "detected_intent", nullable = false)
+    private String detectedIntent;
+
+    /** Confidence score for the detected intent. */
+    @Column(name = "confidence_score")
+    private Double confidenceScore;
+}
