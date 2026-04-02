@@ -42,14 +42,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void resetDatabase() {
-        orderRepository.deleteAll();
-        prescriptionRepository.deleteAll();
-        autoRefillSubscriptionRepository.deleteAll();
-        entityManager.createNativeQuery("TRUNCATE TABLE orders RESTART IDENTITY CASCADE").executeUpdate();
-        entityManager.createNativeQuery("TRUNCATE TABLE order_items RESTART IDENTITY CASCADE").executeUpdate();
-        entityManager.createNativeQuery("TRUNCATE TABLE payments RESTART IDENTITY CASCADE").executeUpdate();
-        entityManager.createNativeQuery("TRUNCATE TABLE prescriptions RESTART IDENTITY CASCADE").executeUpdate();
-        entityManager.createNativeQuery("TRUNCATE TABLE auto_refill_subscriptions RESTART IDENTITY CASCADE").executeUpdate();
+        entityManager.createNativeQuery("TRUNCATE TABLE order_items, orders, payments, auto_refill_subscriptions, prescriptions RESTART IDENTITY CASCADE").executeUpdate();
         System.out.println(">>> Baza ociscena i ID-ovi resetovani na 1.");
     }
 
@@ -115,6 +108,11 @@ public class DataSeeder implements CommandLineRunner {
             }
             order.setPayment(payment);
 
+            // Link approved prescriptions to orders
+            if (i <= prescriptions.size() && prescriptions.get(i - 1).getStatus().equals("APPROVED")) {
+                order.setPrescription(prescriptions.get(i - 1));
+            }
+
             orders.add(order);
         }
         orderRepository.saveAll(orders);
@@ -132,6 +130,12 @@ public class DataSeeder implements CommandLineRunner {
             sub.setNextOrderDate(LocalDate.now().plusDays(sub.getIntervalDays() - 5));
             sub.setStatus(subStatuses[i - 1]);
             sub.setShippingAddress("Ulica_" + i + " bb, " + cities[i - 1]);
+
+            // Link approved prescriptions to subscriptions
+            if (i <= prescriptions.size() && prescriptions.get(i - 1).getStatus().equals("APPROVED")) {
+                sub.setPrescription(prescriptions.get(i - 1));
+            }
+
             subscriptions.add(sub);
         }
         autoRefillSubscriptionRepository.saveAll(subscriptions);

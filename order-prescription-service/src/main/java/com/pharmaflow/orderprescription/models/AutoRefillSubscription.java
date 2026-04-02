@@ -41,4 +41,8 @@ public class AutoRefillSubscription {
 
     @Column(nullable = false)
     private String shippingAddress;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "prescription_id")
+    private Prescription prescription;
 }
