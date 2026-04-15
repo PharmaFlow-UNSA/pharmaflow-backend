@@ -146,9 +146,6 @@ public class ChatService {
         FaqEntry bestMatch = matches.stream()
                 .max(Comparator.comparingDouble(faqEntry -> scoreFaqMatch(faqEntry, sanitizedMessageText)))
                 .orElse(null);
-        if (bestMatch == null) {
-            return;
-        }
 
         double confidence = scoreFaqMatch(bestMatch, sanitizedMessageText);
         ChatIntentMatch intentMatch = ChatIntentMatch.builder()
