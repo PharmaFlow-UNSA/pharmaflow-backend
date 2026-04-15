@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,25 +39,30 @@ public class FraudLog {
     private Long fraudLogId;
 
     /** Parent fraud check that produced the log. */
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "fraud_check_id", nullable = false)
     private FraudCheck fraudCheck;
 
     /** Fraud rule referenced by the log entry. */
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "rule_id", nullable = false)
     private FraudRule fraudRule;
 
     /** Type of fraud event that was recorded. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
     private FraudEventType eventType;
 
     /** Additional details explaining the logged event. */
-    @Column(name = "details")
+    @Size(max = 1000)
+    @Column(name = "details", length = 1000)
     private String details;
 
     /** Timestamp when the fraud log was created. */
+    @NotNull
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 }

@@ -8,6 +8,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,18 +41,24 @@ public class SymptomSearch {
     private Long searchId;
 
     /** External reference to the user who performed the search. */
+    @NotNull
+    @Positive
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     /** Optional external reference to the patient profile. */
+    @Positive
     @Column(name = "patient_profile_id")
     private Long patientProfileId;
 
     /** Raw search input entered by the user. */
-    @Column(name = "search_query", nullable = false)
+    @NotBlank
+    @Size(max = 255)
+    @Column(name = "search_query", nullable = false, length = 255)
     private String searchQuery;
 
     /** Timestamp when the search was performed. */
+    @NotNull
     @Column(name = "searched_at", nullable = false)
     private LocalDateTime searchedAt;
 

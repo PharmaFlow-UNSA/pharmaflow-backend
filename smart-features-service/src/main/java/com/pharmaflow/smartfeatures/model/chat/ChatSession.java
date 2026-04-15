@@ -12,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,24 +43,30 @@ public class ChatSession {
     private Long sessionId;
 
     /** External reference to the user. */
+    @NotNull
+    @Positive
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     /** Optional external reference to the patient profile. */
+    @Positive
     @Column(name = "patient_profile_id")
     private Long patientProfileId;
 
     /** Type of chat flow used for the session. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "session_type", nullable = false)
     private ChatSessionType sessionType;
 
     /** Current state of the session. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private ChatSessionStatus status;
 
     /** Timestamp when the session started. */
+    @NotNull
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt;
 

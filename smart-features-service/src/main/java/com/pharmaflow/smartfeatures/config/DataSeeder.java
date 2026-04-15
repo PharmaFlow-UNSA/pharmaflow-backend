@@ -10,6 +10,7 @@ import com.pharmaflow.smartfeatures.enums.notification.NotificationChannel;
 import com.pharmaflow.smartfeatures.enums.notification.NotificationStatus;
 import com.pharmaflow.smartfeatures.enums.notification.NotificationTriggerSource;
 import com.pharmaflow.smartfeatures.enums.notification.NotificationType;
+import com.pharmaflow.smartfeatures.enums.notification.TherapyReminderStatus;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationEventType;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationStatus;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationType;
@@ -189,7 +190,7 @@ public class DataSeeder implements CommandLineRunner {
                     .startDate(LocalDate.now().minusDays(i))
                     .endDate(LocalDate.now().plusDays(10 + i))
                     .nextReminderAt(LocalDateTime.now().plusHours(i))
-                    .status(i % 2 == 0 ? "PAUSED" : "ACTIVE")
+                    .status(i % 2 == 0 ? TherapyReminderStatus.PAUSED : TherapyReminderStatus.ACTIVE)
                     .build();
             persist(reminder);
             reminders.add(reminder);

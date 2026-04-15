@@ -15,6 +15,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,37 +53,48 @@ public class Notification {
     private TherapyReminder therapyReminder;
 
     /** External reference to the user. */
+    @NotNull
+    @Positive
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     /** Optional external reference to the patient profile. */
+    @Positive
     @Column(name = "patient_profile_id")
     private Long patientProfileId;
 
     /** Functional type of the notification. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private NotificationType type;
 
     /** Short title shown to the user. */
-    @Column(name = "title", nullable = false)
+    @NotBlank
+    @Size(max = 120)
+    @Column(name = "title", nullable = false, length = 120)
     private String title;
 
     /** Main notification content. */
-    @Column(name = "message", nullable = false)
+    @NotBlank
+    @Size(max = 1000)
+    @Column(name = "message", nullable = false, length = 1000)
     private String message;
 
     /** Delivery channel used for the notification. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "channel", nullable = false)
     private NotificationChannel channel;
 
     /** Delivery lifecycle state. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private NotificationStatus status;
 
     /** Timestamp when the notification record was created. */
+    @NotNull
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

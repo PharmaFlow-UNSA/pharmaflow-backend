@@ -13,6 +13,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,28 +42,34 @@ public class ChatMessage {
     private Long messageId;
 
     /** Parent chat session that contains this message. */
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
     private ChatSession session;
 
     /** Role of the sender. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "sender_type", nullable = false)
     private ChatSenderType senderType;
 
     /** Optional external reference to the sender. */
+    @Positive
     @Column(name = "sender_id")
     private Long senderId;
 
     /** Main text content of the message. */
-    @Column(name = "message_text", nullable = false)
+    @Size(max = 2000)
+    @Column(name = "message_text", length = 2000)
     private String messageText;
 
     /** Optional URL for an attachment linked to the message. */
-    @Column(name = "attachment_url")
+    @Size(max = 1000)
+    @Column(name = "attachment_url", length = 1000)
     private String attachmentUrl;
 
     /** Timestamp when the message was created. */
+    @NotNull
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

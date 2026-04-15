@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,20 +39,24 @@ public class NotificationTrigger {
     private Long triggerId;
 
     /** Notification associated with this trigger. */
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "notification_id", nullable = false)
     private Notification notification;
 
     /** Source type that caused the notification. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "trigger_source", nullable = false)
     private NotificationTriggerSource triggerSource;
 
     /** External reference to the source record when available. */
+    @Positive
     @Column(name = "source_entity_id")
     private Long sourceEntityId;
 
     /** Timestamp when the notification was triggered. */
+    @NotNull
     @Column(name = "triggered_at", nullable = false)
     private LocalDateTime triggeredAt;
 }

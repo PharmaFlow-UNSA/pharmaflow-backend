@@ -9,6 +9,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,20 +39,26 @@ public class ChatIntentMatch {
     private Long intentMatchId;
 
     /** Source message that was analyzed. */
+    @NotNull
     @OneToOne
     @JoinColumn(name = "message_id", nullable = false, unique = true)
     private ChatMessage message;
 
     /** FAQ entry that best matched the detected intent. */
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "faq_id", nullable = false)
     private FaqEntry faqEntry;
 
     /** Name of the intent detected from the message. */
-    @Column(name = "detected_intent", nullable = false)
+    @NotBlank
+    @Size(max = 100)
+    @Column(name = "detected_intent", nullable = false, length = 100)
     private String detectedIntent;
 
     /** Confidence score for the detected intent. */
+    @DecimalMin("0.0")
+    @DecimalMax("1.0")
     @Column(name = "confidence_score")
     private Double confidenceScore;
 }
