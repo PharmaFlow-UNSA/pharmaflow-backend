@@ -7,6 +7,7 @@ import com.pharmaflow.smartfeatures.dto.symptom.SymptomSearchRequestDto;
 import com.pharmaflow.smartfeatures.dto.symptom.SymptomSearchResponseDto;
 import com.pharmaflow.smartfeatures.service.symptom.SymptomSearchService;
 import com.pharmaflow.smartfeatures.validation.NullablePositive;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/symptom-searches")
+@Tag(name = "Symptoms")
 public class SymptomSearchController {
 
     private final SymptomSearchService symptomSearchService;

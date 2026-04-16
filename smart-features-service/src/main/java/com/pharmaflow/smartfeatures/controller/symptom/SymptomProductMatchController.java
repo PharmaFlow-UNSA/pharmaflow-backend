@@ -3,6 +3,7 @@ package com.pharmaflow.smartfeatures.controller.symptom;
 import com.pharmaflow.smartfeatures.dto.symptom.SymptomProductMatchRequestDto;
 import com.pharmaflow.smartfeatures.dto.symptom.SymptomProductMatchResponseDto;
 import com.pharmaflow.smartfeatures.service.symptom.SymptomProductMatchService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/symptoms/{symptomId}/matches")
+@Tag(name = "Symptoms")
 public class SymptomProductMatchController {
 
     private final SymptomProductMatchService symptomProductMatchService;

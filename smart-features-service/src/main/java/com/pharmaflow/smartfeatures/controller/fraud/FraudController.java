@@ -7,6 +7,7 @@ import com.pharmaflow.smartfeatures.dto.fraud.FraudRuleRequestDto;
 import com.pharmaflow.smartfeatures.dto.fraud.FraudRuleResponseDto;
 import com.pharmaflow.smartfeatures.service.fraud.FraudService;
 import com.pharmaflow.smartfeatures.validation.NullablePositive;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Validated
+@Tag(name = "Fraud")
 public class FraudController {
 
     private final FraudService fraudService;

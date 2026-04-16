@@ -3,6 +3,7 @@ package com.pharmaflow.smartfeatures.controller.symptom;
 import com.pharmaflow.smartfeatures.dto.symptom.SymptomRequestDto;
 import com.pharmaflow.smartfeatures.dto.symptom.SymptomResponseDto;
 import com.pharmaflow.smartfeatures.service.symptom.SymptomService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/symptoms")
+@Tag(name = "Symptoms")
 public class SymptomController {
 
     private final SymptomService symptomService;
