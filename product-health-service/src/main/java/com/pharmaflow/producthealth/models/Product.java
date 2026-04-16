@@ -77,7 +77,7 @@ public class Product {
     private List<Substance> substances;
 
     // Zamjenski lijekovi (self-referencing)
-    @OneToMany(mappedBy = "originalProduct", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "originalProduct", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductSubstitute> substitutes;
 
     public enum ProductType {

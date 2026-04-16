@@ -26,6 +26,12 @@ public class DataLoader implements CommandLineRunner {
     public void run(String... args) {
         System.out.println("=== PharmaFlow: Učitavanje inicijalnih podataka ===");
 
+        // Ako već ima podataka, preskoci seed
+        if (categoryRepository.count() > 0) {
+            System.out.println("=== Podaci već postoje, preskačem seed ===");
+            return;
+        }
+
         // ─── 1. KATEGORIJE ───────────────────────────────────────────────
         Category analgetici = new Category();
         analgetici.setName("Analgetici i antipiretici");

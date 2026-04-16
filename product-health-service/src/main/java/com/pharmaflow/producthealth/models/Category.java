@@ -30,6 +30,6 @@ public class Category {
     @Column(name = "parent_category_id")
     private Long parentCategoryId;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
 }

@@ -34,6 +34,6 @@ public class Substance {
     @Column(name = "atc_code")
     private String atcCode;
 
-    @ManyToMany(mappedBy = "substances")
+    @ManyToMany(mappedBy = "substances", fetch = FetchType.LAZY)
     private List<Product> products;
 }
