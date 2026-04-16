@@ -3,6 +3,7 @@ package com.pharmaflow.smartfeatures.controller.chat;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryRequestDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryResponseDto;
 import com.pharmaflow.smartfeatures.service.chat.FaqService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/faqs")
+@Tag(name = "FAQ")
 public class FaqController {
 
     private final FaqService faqService;

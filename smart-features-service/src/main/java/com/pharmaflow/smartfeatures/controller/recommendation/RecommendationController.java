@@ -6,6 +6,7 @@ import com.pharmaflow.smartfeatures.dto.recommendation.RecommendationRequestDto;
 import com.pharmaflow.smartfeatures.dto.recommendation.RecommendationResponseDto;
 import com.pharmaflow.smartfeatures.service.recommendation.RecommendationService;
 import com.pharmaflow.smartfeatures.validation.NullablePositive;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/recommendations")
+@Tag(name = "Recommendations")
 public class RecommendationController {
 
     private final RecommendationService recommendationService;

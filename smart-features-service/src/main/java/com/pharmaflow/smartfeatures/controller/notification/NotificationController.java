@@ -6,6 +6,7 @@ import com.pharmaflow.smartfeatures.dto.notification.NotificationResponseDto;
 import com.pharmaflow.smartfeatures.dto.notification.NotificationTriggerResponseDto;
 import com.pharmaflow.smartfeatures.service.notification.NotificationService;
 import com.pharmaflow.smartfeatures.validation.NullablePositive;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/notifications")
+@Tag(name = "Notifications")
 public class NotificationController {
 
     private final NotificationService notificationService;

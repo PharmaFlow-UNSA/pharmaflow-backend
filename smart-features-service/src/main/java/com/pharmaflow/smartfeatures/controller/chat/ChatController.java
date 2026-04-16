@@ -6,6 +6,7 @@ import com.pharmaflow.smartfeatures.dto.chat.ChatMessageResponseDto;
 import com.pharmaflow.smartfeatures.dto.chat.ChatSessionRequestDto;
 import com.pharmaflow.smartfeatures.dto.chat.ChatSessionResponseDto;
 import com.pharmaflow.smartfeatures.service.chat.ChatService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Validated
+@Tag(name = "Chat")
 public class ChatController {
 
     private final ChatService chatService;

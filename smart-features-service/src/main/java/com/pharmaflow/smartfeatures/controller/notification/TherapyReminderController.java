@@ -4,6 +4,7 @@ import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderRequestDto;
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderResponseDto;
 import com.pharmaflow.smartfeatures.service.notification.TherapyReminderService;
 import com.pharmaflow.smartfeatures.validation.NullablePositive;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Validated
 @RequestMapping("/api/reminders")
+@Tag(name = "Reminders")
 public class TherapyReminderController {
 
     private final TherapyReminderService therapyReminderService;
