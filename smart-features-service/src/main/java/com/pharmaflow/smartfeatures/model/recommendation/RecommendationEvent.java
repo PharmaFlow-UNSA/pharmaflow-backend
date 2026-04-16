@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,16 +38,19 @@ public class RecommendationEvent {
     private Long eventId;
 
     /** Parent recommendation that this event belongs to. */
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "recommendation_id", nullable = false)
     private Recommendation recommendation;
 
     /** Type of recorded interaction. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
     private RecommendationEventType eventType;
 
     /** Timestamp when the event occurred. */
+    @NotNull
     @Column(name = "event_time", nullable = false)
     private LocalDateTime eventTime;
 }

@@ -11,6 +11,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,23 +44,31 @@ public class FraudCheck {
     private Long fraudCheckId;
 
     /** External reference to the user being evaluated. */
+    @NotNull
+    @Positive
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
     /** External reference to the related order. */
+    @NotNull
+    @Positive
     @Column(name = "order_id", nullable = false)
     private Long orderId;
 
     /** Numeric risk value calculated by the fraud process. */
+    @DecimalMin("0.0")
+    @DecimalMax("100.0")
     @Column(name = "risk_score")
     private Double riskScore;
 
     /** Final decision produced by the fraud check. */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "decision", nullable = false)
     private FraudDecision decision;
 
     /** Timestamp when the fraud check was completed. */
+    @NotNull
     @Column(name = "checked_at", nullable = false)
     private LocalDateTime checkedAt;
 

@@ -1,0 +1,108 @@
+package com.pharmaflow.smartfeatures.service.notification;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.pharmaflow.smartfeatures.config.ModelMapperConfig;
+import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderRequestDto;
+import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderResponseDto;
+import com.pharmaflow.smartfeatures.enums.notification.TherapyReminderStatus;
+import com.pharmaflow.smartfeatures.exception.BadRequestException;
+import com.pharmaflow.smartfeatures.mapper.notification.TherapyReminderMapper;
+import com.pharmaflow.smartfeatures.model.notification.TherapyReminder;
+import com.pharmaflow.smartfeatures.repositories.notification.TherapyReminderRepository;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+class TherapyReminderServiceTest {
+
+    private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2030-01-10T09:00:00Z"), ZoneOffset.UTC);
+
+    @Mock
+    private TherapyReminderRepository therapyReminderRepository;
+
+    private TherapyReminderService therapyReminderService;
+
+    @BeforeEach
+    void setUp() {
+        therapyReminderService = new TherapyReminderService(
+                therapyReminderRepository,
+                new TherapyReminderMapper(new ModelMapperConfig().modelMapper()),
+                FIXED_CLOCK);
+    }
+
+    @Test
+    void createReminderShouldSetActiveStatusAndNextReminder() {
+        TherapyReminderRequestDto requestDto = new TherapyReminderRequestDto(
+                10L, 20L, " Take once daily ", 2, LocalDate.of(2030, 1, 12), LocalDate.of(2030, 1, 17));
+        when(therapyReminderRepository.save(any(TherapyReminder.class))).thenAnswer(invocation -> {
+            TherapyReminder reminder = invocation.getArgument(0);
+            reminder.setReminderId(4L);
+            return reminder;
+        });
+
+        TherapyReminderResponseDto response = therapyReminderService.createReminder(requestDto);
+
+        ArgumentCaptor<TherapyReminder> captor = ArgumentCaptor.forClass(TherapyReminder.class);
+        verify(therapyReminderRepository).save(captor.capture());
+        assertThat(captor.getValue().getDosageInstruction()).isEqualTo("Take once daily");
+        assertThat(captor.getValue().getStatus()).isEqualTo(TherapyReminderStatus.ACTIVE);
+        assertThat(captor.getValue().getNextReminderAt())
+                .isEqualTo(requestDto.getStartDate().atTime(LocalTime.of(8, 0)));
+        assertThat(response.getId()).isEqualTo(4L);
+    }
+
+    @Test
+    void updateReminderShouldMarkPastReminderCompleted() {
+        TherapyReminder reminder = TherapyReminder.builder()
+                .reminderId(9L)
+                .patientProfileId(10L)
+                .productId(20L)
+                .status(TherapyReminderStatus.ACTIVE)
+                .startDate(LocalDate.of(2030, 1, 1))
+                .endDate(LocalDate.of(2030, 1, 5))
+                .build();
+        TherapyReminderRequestDto requestDto = new TherapyReminderRequestDto(
+                10L, 20L, " Updated ", 1, LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 9));
+
+        when(therapyReminderRepository.findById(9L)).thenReturn(Optional.of(reminder));
+        when(therapyReminderRepository.save(reminder)).thenReturn(reminder);
+
+        TherapyReminderResponseDto response = therapyReminderService.updateReminder(9L, requestDto);
+
+        assertThat(reminder.getStatus()).isEqualTo(TherapyReminderStatus.COMPLETED);
+        assertThat(reminder.getNextReminderAt()).isNull();
+        assertThat(response.getStatus()).isEqualTo(TherapyReminderStatus.COMPLETED);
+    }
+
+    @Test
+    void updateReminderShouldRejectCompletedReminder() {
+        TherapyReminder reminder = TherapyReminder.builder()
+                .reminderId(10L)
+                .status(TherapyReminderStatus.COMPLETED)
+                .build();
+        when(therapyReminderRepository.findById(10L)).thenReturn(Optional.of(reminder));
+
+        assertThatThrownBy(() -> therapyReminderService.updateReminder(
+                        10L, new TherapyReminderRequestDto(1L, 2L, null, 1, LocalDate.of(2030, 1, 10), null)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Completed or canceled reminders cannot be updated.");
+
+        verify(therapyReminderRepository, never()).save(any(TherapyReminder.class));
+    }
+}

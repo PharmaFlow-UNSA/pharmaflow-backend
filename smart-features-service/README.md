@@ -1,27 +1,13 @@
 # Smart Features Service
 
-Ovaj servis je zaseban Spring Boot mikroservis za feature flagove i pametne funkcionalnosti.
+`smart-features-service` is a Spring Boot microservice focused on standalone smart pharmacy features. It manages feature-specific workflows and stores external IDs such as `userId`, `patientProfileId`, `productId`, and `orderId` as references.
 
-## Ukljuceno
+## Features
 
-- Spring Web
-- Spring Data JPA
-- PostgreSQL Driver
-- Validation
-- Lombok
-
-## Kako pokrenuti
-
-1. Provjerite da PostgreSQL radi na portu `4444`.
-2. Po potrebi podesite `DB_URL`, `DB_USERNAME` i `DB_PASSWORD`.
-3. Pokrenite servis iz IntelliJ-a ili komandom `./mvnw spring-boot:run`.
-
-Default lokalna konekcija:
-
-```text
-DB_URL=jdbc:postgresql://localhost:4444/pharmaflow
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-```
-
-Servis se podize na portu `8082`.
+- Symptom management, search, and symptom-product matching
+- Personalized recommendations and recommendation interaction tracking
+- Therapy reminders and notification management
+- FAQ management and chat session handling
+- Fraud rules, fraud checks, and audit logs
+- Request validation and domain-level validation rules
+- Flyway migrations for data normalization and constraint updates
