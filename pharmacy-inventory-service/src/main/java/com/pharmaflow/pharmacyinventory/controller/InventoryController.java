@@ -1,0 +1,68 @@
+package com.pharmaflow.pharmacyinventory.controller;
+
+import com.pharmaflow.pharmacyinventory.dto.InventoryDTO;
+import com.pharmaflow.pharmacyinventory.service.InventoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/inventory")
+@Tag(name = "Inventory Management", description = "APIs for managing pharmacy inventory")
+public class InventoryController {
+
+    private final InventoryService inventoryService;
+
+    public InventoryController(InventoryService inventoryService) {
+        this.inventoryService = inventoryService;
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all inventory items", description = "Retrieves a list of all inventory items")
+    public ResponseEntity<List<InventoryDTO>> getAllInventoryItems() {
+        return ResponseEntity.ok(inventoryService.getAllInventoryItems());
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get inventory by ID", description = "Retrieves a specific inventory item by its ID")
+    public ResponseEntity<InventoryDTO> getInventoryById(@PathVariable Long id) {
+        return ResponseEntity.ok(inventoryService.getInventoryById(id));
+    }
+
+    @GetMapping("/pharmacy/{pharmacyId}")
+    @Operation(summary = "Get inventory by pharmacy ID", description = "Retrieves all inventory items for a specific pharmacy")
+    public ResponseEntity<List<InventoryDTO>> getInventoryByPharmacyId(@PathVariable Long pharmacyId) {
+        return ResponseEntity.ok(inventoryService.getInventoryByPharmacyId(pharmacyId));
+    }
+
+    @GetMapping("/product/{productId}")
+    @Operation(summary = "Get inventory by product ID", description = "Retrieves inventory across all pharmacies for a specific product")
+    public ResponseEntity<List<InventoryDTO>> getInventoryByProductId(@PathVariable Long productId) {
+        return ResponseEntity.ok(inventoryService.getInventoryByProductId(productId));
+    }
+
+    @PostMapping
+    @Operation(summary = "Create inventory item", description = "Creates a new inventory item for a pharmacy")
+    public ResponseEntity<InventoryDTO> createInventory(@Valid @RequestBody InventoryDTO inventoryDTO) {
+        return new ResponseEntity<>(inventoryService.createInventory(inventoryDTO), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update inventory item", description = "Updates an existing inventory item")
+    public ResponseEntity<InventoryDTO> updateInventory(@PathVariable Long id,
+                                                        @Valid @RequestBody InventoryDTO inventoryDTO) {
+        return ResponseEntity.ok(inventoryService.updateInventory(id, inventoryDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete inventory item", description = "Deletes an inventory item by ID")
+    public ResponseEntity<Void> deleteInventory(@PathVariable Long id) {
+        inventoryService.deleteInventory(id);
+        return ResponseEntity.noContent().build();
+    }
+}
