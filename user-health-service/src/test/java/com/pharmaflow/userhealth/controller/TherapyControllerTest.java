@@ -61,6 +61,22 @@ class TherapyControllerTest {
     }
 
     @Test
+    void getTherapies_WithMedicationNameFilter_ShouldReturn200AndFilteredTherapies() throws Exception {
+        List<TherapyDTO> therapies = Arrays.asList(testTherapyDTO);
+        when(therapyService.findByMedicationNameContaining("Aspirin")).thenReturn(therapies);
+
+        mockMvc.perform(get("/api/therapies")
+                        .param("medicationName", "Aspirin")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].medicationName").value("Aspirin"));
+
+        verify(therapyService, times(1)).findByMedicationNameContaining("Aspirin");
+        verify(therapyService, never()).getAllTherapies();
+    }
+
+    @Test
     void getTherapyById_WhenTherapyExists_ShouldReturn200AndTherapy() throws Exception {
         when(therapyService.getTherapyById(1L)).thenReturn(testTherapyDTO);
 
@@ -101,6 +117,29 @@ class TherapyControllerTest {
     }
 
     @Test
+    void createTherapies_WithBulkParameter_ShouldReturn201AndCreatedTherapies() throws Exception {
+        TherapyDTO therapy2 = new TherapyDTO();
+        therapy2.setId(2L);
+        therapy2.setMedicationName("Ibuprofen");
+        therapy2.setDosage("400mg");
+        therapy2.setFrequency("3 times daily");
+
+        List<TherapyDTO> therapies = Arrays.asList(testTherapyDTO, therapy2);
+        when(therapyService.createTherapiesBatch(anyList())).thenReturn(therapies);
+
+        mockMvc.perform(post("/api/therapies")
+                        .param("bulk", "true")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(therapies)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].medicationName").value("Aspirin"))
+                .andExpect(jsonPath("$[1].medicationName").value("Ibuprofen"));
+
+        verify(therapyService, times(1)).createTherapiesBatch(anyList());
+    }
+
+    @Test
     void createTherapy_WithInvalidData_ShouldReturn400() throws Exception {
         TherapyDTO invalidDTO = new TherapyDTO();
         invalidDTO.setMedicationName("A"); // Too short
@@ -114,6 +153,7 @@ class TherapyControllerTest {
                 .andExpect(jsonPath("$.error").value("Validation Error"));
 
         verify(therapyService, never()).createTherapy(any(TherapyDTO.class));
+        verify(therapyService, never()).createTherapiesBatch(anyList());
     }
 
     @Test

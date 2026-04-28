@@ -71,6 +71,24 @@ class UserControllerTest {
     }
 
     @Test
+    void getUsers_WithEmailDomainFilter_ShouldReturn200AndFilteredUsers() throws Exception {
+        // Arrange
+        List<UserDTO> users = Arrays.asList(testUserDTO);
+        when(userService.findUsersByEmailDomain("pharmaflow.ba")).thenReturn(users);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/users")
+                        .param("emailDomain", "pharmaflow.ba")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].email").value("john.doe@pharmaflow.ba"));
+
+        verify(userService, times(1)).findUsersByEmailDomain("pharmaflow.ba");
+        verify(userService, never()).getAllUsers();
+    }
+
+    @Test
     void getUserById_WhenUserExists_ShouldReturn200AndUser() throws Exception {
         // Arrange
         when(userService.getUserById(1L)).thenReturn(testUserDTO);
@@ -118,6 +136,38 @@ class UserControllerTest {
     }
 
     @Test
+    void createUsers_WithBulkParameter_ShouldReturn201AndCreatedUsers() throws Exception {
+        // Arrange
+        UserCreateDTO user2 = new UserCreateDTO();
+        user2.setFirstName("Jane");
+        user2.setLastName("Smith");
+        user2.setEmail("jane.smith@pharmaflow.ba");
+        user2.setPassword("Password123!");
+
+        List<UserCreateDTO> users = Arrays.asList(testUserCreateDTO, user2);
+
+        UserDTO userDTO2 = new UserDTO();
+        userDTO2.setId(2L);
+        userDTO2.setFirstName("Jane");
+        userDTO2.setLastName("Smith");
+        userDTO2.setEmail("jane.smith@pharmaflow.ba");
+
+        when(userService.createUsersBatch(anyList())).thenReturn(Arrays.asList(testUserDTO, userDTO2));
+
+        // Act & Assert
+        mockMvc.perform(post("/api/users")
+                        .param("bulk", "true")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(users)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].firstName").value("John"))
+                .andExpect(jsonPath("$[1].firstName").value("Jane"));
+
+        verify(userService, times(1)).createUsersBatch(anyList());
+    }
+
+    @Test
     void createUser_WithInvalidData_ShouldReturn400() throws Exception {
         // Arrange - Invalid email and short first name
         UserCreateDTO invalidDTO = new UserCreateDTO();
@@ -134,6 +184,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.error").value("Validation Error"));
 
         verify(userService, never()).createUser(any(UserCreateDTO.class));
+        verify(userService, never()).createUsersBatch(anyList());
     }
 
     @Test

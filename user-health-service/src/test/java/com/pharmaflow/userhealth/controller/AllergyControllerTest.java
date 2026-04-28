@@ -65,6 +65,42 @@ class AllergyControllerTest {
     }
 
     @Test
+    void getAllergies_WithSeverityFilter_ShouldReturn200AndFilteredAllergies() throws Exception {
+        // Arrange
+        List<AllergyDTO> allergies = Arrays.asList(testAllergyDTO);
+        when(allergyService.findBySeverity("High")).thenReturn(allergies);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/allergies")
+                        .param("severity", "High")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].severity").value("High"));
+
+        verify(allergyService, times(1)).findBySeverity("High");
+        verify(allergyService, never()).getAllAllergies();
+    }
+
+    @Test
+    void getAllergies_WithAllergenFilter_ShouldReturn200AndFilteredAllergies() throws Exception {
+        // Arrange
+        List<AllergyDTO> allergies = Arrays.asList(testAllergyDTO);
+        when(allergyService.findByAllergenContaining("Penicillin")).thenReturn(allergies);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/allergies")
+                        .param("allergen", "Penicillin")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].allergen").value("Penicillin"));
+
+        verify(allergyService, times(1)).findByAllergenContaining("Penicillin");
+        verify(allergyService, never()).getAllAllergies();
+    }
+
+    @Test
     void getAllergyById_WhenAllergyExists_ShouldReturn200AndAllergy() throws Exception {
         // Arrange
         when(allergyService.getAllergyById(1L)).thenReturn(testAllergyDTO);
@@ -111,6 +147,28 @@ class AllergyControllerTest {
     }
 
     @Test
+    void createAllergies_WithBulkParameter_ShouldReturn201AndCreatedAllergies() throws Exception {
+        AllergyDTO allergy2 = new AllergyDTO();
+        allergy2.setId(2L);
+        allergy2.setAllergen("Peanuts");
+        allergy2.setSeverity("Medium");
+
+        List<AllergyDTO> allergies = Arrays.asList(testAllergyDTO, allergy2);
+        when(allergyService.createAllergiesBatch(anyList())).thenReturn(allergies);
+
+        mockMvc.perform(post("/api/allergies")
+                        .param("bulk", "true")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(allergies)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].allergen").value("Penicillin"))
+                .andExpect(jsonPath("$[1].allergen").value("Peanuts"));
+
+        verify(allergyService, times(1)).createAllergiesBatch(anyList());
+    }
+
+    @Test
     void createAllergy_WithInvalidData_ShouldReturn400() throws Exception {
         // Arrange - Empty allergen
         AllergyDTO invalidDTO = new AllergyDTO();
@@ -125,6 +183,7 @@ class AllergyControllerTest {
                 .andExpect(jsonPath("$.error").value("Validation Error"));
 
         verify(allergyService, never()).createAllergy(any(AllergyDTO.class));
+        verify(allergyService, never()).createAllergiesBatch(anyList());
     }
 
     @Test

@@ -64,6 +64,38 @@ class PatientProfileControllerTest {
     }
 
     @Test
+    void getPatientProfiles_WithBloodTypeFilter_ShouldReturn200AndFilteredProfiles() throws Exception {
+        List<PatientProfileDTO> profiles = Arrays.asList(testProfileDTO);
+        when(patientProfileService.findByBloodType("A+")).thenReturn(profiles);
+
+        mockMvc.perform(get("/api/patient-profiles")
+                        .param("bloodType", "A+")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].bloodType").value("A+"));
+
+        verify(patientProfileService, times(1)).findByBloodType("A+");
+        verify(patientProfileService, never()).getAllPatientProfiles();
+    }
+
+    @Test
+    void getPatientProfiles_WithBMIRangeFilter_ShouldReturn200AndFilteredProfiles() throws Exception {
+        List<PatientProfileDTO> profiles = Arrays.asList(testProfileDTO);
+        when(patientProfileService.findByBMIRange(18.0, 25.0)).thenReturn(profiles);
+
+        mockMvc.perform(get("/api/patient-profiles")
+                        .param("minBMI", "18.0")
+                        .param("maxBMI", "25.0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+
+        verify(patientProfileService, times(1)).findByBMIRange(18.0, 25.0);
+        verify(patientProfileService, never()).getAllPatientProfiles();
+    }
+
+    @Test
     void getPatientProfileById_WhenProfileExists_ShouldReturn200AndProfile() throws Exception {
         when(patientProfileService.getPatientProfileById(1L)).thenReturn(testProfileDTO);
 
@@ -104,6 +136,31 @@ class PatientProfileControllerTest {
     }
 
     @Test
+    void createPatientProfiles_WithBulkParameter_ShouldReturn201AndCreatedProfiles() throws Exception {
+        PatientProfileDTO profile2 = new PatientProfileDTO();
+        profile2.setId(2L);
+        profile2.setWeight(80.0);
+        profile2.setHeight(175.0);
+        profile2.setBloodType("B+");
+        profile2.setAllergies(new ArrayList<>());
+        profile2.setTherapies(new ArrayList<>());
+
+        List<PatientProfileDTO> profiles = Arrays.asList(testProfileDTO, profile2);
+        when(patientProfileService.createPatientProfilesBatch(anyList())).thenReturn(profiles);
+
+        mockMvc.perform(post("/api/patient-profiles")
+                        .param("bulk", "true")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(profiles)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].weight").value(75.0))
+                .andExpect(jsonPath("$[1].weight").value(80.0));
+
+        verify(patientProfileService, times(1)).createPatientProfilesBatch(anyList());
+    }
+
+    @Test
     void createPatientProfile_WithInvalidData_ShouldReturn400() throws Exception {
         PatientProfileDTO invalidDTO = new PatientProfileDTO();
         invalidDTO.setWeight(600.0); // Too heavy
@@ -117,6 +174,7 @@ class PatientProfileControllerTest {
                 .andExpect(jsonPath("$.error").value("Validation Error"));
 
         verify(patientProfileService, never()).createPatientProfile(any(PatientProfileDTO.class));
+        verify(patientProfileService, never()).createPatientProfilesBatch(anyList());
     }
 
     @Test

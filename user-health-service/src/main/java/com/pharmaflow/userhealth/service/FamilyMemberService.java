@@ -1,5 +1,9 @@
 package com.pharmaflow.userhealth.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.userhealth.dto.FamilyMemberCreateDTO;
 import com.pharmaflow.userhealth.dto.FamilyMemberDTO;
 import com.pharmaflow.userhealth.dto.PatientProfileDTO;
@@ -10,31 +14,54 @@ import com.pharmaflow.userhealth.models.User;
 import com.pharmaflow.userhealth.repositories.FamilyMemberRepository;
 import com.pharmaflow.userhealth.repositories.UserRepository;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class FamilyMemberService {
 
+    private static final Logger log = LoggerFactory.getLogger(FamilyMemberService.class);
+
     private final FamilyMemberRepository familyMemberRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
 
     public FamilyMemberService(FamilyMemberRepository familyMemberRepository,
                               UserRepository userRepository,
-                              ModelMapper modelMapper) {
+                              ModelMapper modelMapper,
+                              ObjectMapper objectMapper) {
         this.familyMemberRepository = familyMemberRepository;
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
     public List<FamilyMemberDTO> getAllFamilyMembers() {
-        return familyMemberRepository.findAll().stream()
+        long startTime = System.currentTimeMillis();
+        List<FamilyMemberDTO> members = familyMemberRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .toList();
+        log.info("getAllFamilyMembers executed in {} ms", System.currentTimeMillis() - startTime);
+        return members;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FamilyMemberDTO> getFamilyMembersPaginated(Pageable pageable) {
+        long startTime = System.currentTimeMillis();
+        Page<FamilyMemberDTO> members = familyMemberRepository.findAll(pageable)
+                .map(this::convertToDTO);
+        log.info("getFamilyMembersPaginated executed in {} ms, returned {} of {} total members",
+                System.currentTimeMillis() - startTime, members.getNumberOfElements(), members.getTotalElements());
+        return members;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +76,17 @@ public class FamilyMemberService {
         return familyMemberRepository.findByUserId(userId).stream()
                 .map(this::convertToDTO)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<FamilyMemberDTO> findByRelationship(String relationship) {
+        long startTime = System.currentTimeMillis();
+        List<FamilyMemberDTO> members = familyMemberRepository.findByRelationshipIgnoreCase(relationship).stream()
+                .map(this::convertToDTO)
+                .toList();
+        log.info("findByRelationship executed in {} ms, found {} members",
+                System.currentTimeMillis() - startTime, members.size());
+        return members;
     }
 
     @Transactional
@@ -67,7 +105,38 @@ public class FamilyMemberService {
         }
 
         FamilyMember savedMember = familyMemberRepository.save(familyMember);
+        log.info("FamilyMember created with id: {}", savedMember.getId());
         return convertToDTO(savedMember);
+    }
+
+    @Transactional
+    public List<FamilyMemberDTO> createFamilyMembersBatch(List<FamilyMemberCreateDTO> createDTOs) {
+        long startTime = System.currentTimeMillis();
+        List<FamilyMember> members = new ArrayList<>();
+
+        for (FamilyMemberCreateDTO dto : createDTOs) {
+            User user = userRepository.findById(dto.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getUserId()));
+
+            FamilyMember familyMember = new FamilyMember();
+            familyMember.setFirstName(dto.getFirstName());
+            familyMember.setRelationship(dto.getRelationship());
+            familyMember.setUser(user);
+
+            if (dto.getPatientProfile() != null) {
+                PatientProfile profile = modelMapper.map(dto.getPatientProfile(), PatientProfile.class);
+                familyMember.setPatientProfile(profile);
+            }
+
+            members.add(familyMember);
+        }
+
+        List<FamilyMember> savedMembers = familyMemberRepository.saveAll(members);
+        log.info("Batch created {} family members in {} ms", savedMembers.size(), System.currentTimeMillis() - startTime);
+
+        return savedMembers.stream()
+                .map(this::convertToDTO)
+                .toList();
     }
 
     @Transactional
@@ -88,6 +157,26 @@ public class FamilyMemberService {
 
         FamilyMember updatedMember = familyMemberRepository.save(familyMember);
         return convertToDTO(updatedMember);
+    }
+
+    @Transactional
+    public FamilyMemberDTO patchFamilyMember(Long id, String patchDocument) {
+        try {
+            FamilyMember familyMember = familyMemberRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Family member not found with id: " + id));
+
+            JsonNode memberJson = objectMapper.valueToTree(familyMember);
+            JsonPatch patch = JsonPatch.fromJson(objectMapper.readTree(patchDocument));
+            JsonNode patchedMemberJson = patch.apply(memberJson);
+            FamilyMember patchedMember = objectMapper.treeToValue(patchedMemberJson, FamilyMember.class);
+
+            FamilyMember savedMember = familyMemberRepository.save(patchedMember);
+            log.info("FamilyMember patched with id: {}", savedMember.getId());
+            return convertToDTO(savedMember);
+
+        } catch (JsonPatchException | java.io.IOException e) {
+            throw new RuntimeException("Error applying patch: " + e.getMessage(), e);
+        }
     }
 
     @Transactional

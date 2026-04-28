@@ -74,6 +74,22 @@ class FamilyMemberControllerTest {
     }
 
     @Test
+    void getFamilyMembers_WithRelationshipFilter_ShouldReturn200AndFilteredMembers() throws Exception {
+        List<FamilyMemberDTO> members = Arrays.asList(testMemberDTO);
+        when(familyMemberService.findByRelationship("Child")).thenReturn(members);
+
+        mockMvc.perform(get("/api/family-members")
+                        .param("relationship", "Child")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].relationship").value("Child"));
+
+        verify(familyMemberService, times(1)).findByRelationship("Child");
+        verify(familyMemberService, never()).getAllFamilyMembers();
+    }
+
+    @Test
     void getFamilyMemberById_WhenMemberExists_ShouldReturn200AndMember() throws Exception {
         when(familyMemberService.getFamilyMemberById(1L)).thenReturn(testMemberDTO);
 
@@ -129,6 +145,34 @@ class FamilyMemberControllerTest {
     }
 
     @Test
+    void createFamilyMembers_WithBulkParameter_ShouldReturn201AndCreatedMembers() throws Exception {
+        FamilyMemberCreateDTO member2DTO = new FamilyMemberCreateDTO();
+        member2DTO.setFirstName("Sarah");
+        member2DTO.setRelationship("Spouse");
+        member2DTO.setUserId(1L);
+
+        FamilyMemberDTO memberDTO2 = new FamilyMemberDTO();
+        memberDTO2.setId(2L);
+        memberDTO2.setFirstName("Sarah");
+        memberDTO2.setRelationship("Spouse");
+
+        List<FamilyMemberCreateDTO> members = Arrays.asList(testCreateDTO, member2DTO);
+        when(familyMemberService.createFamilyMembersBatch(anyList()))
+                .thenReturn(Arrays.asList(testMemberDTO, memberDTO2));
+
+        mockMvc.perform(post("/api/family-members")
+                        .param("bulk", "true")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(members)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].firstName").value("John"))
+                .andExpect(jsonPath("$[1].firstName").value("Sarah"));
+
+        verify(familyMemberService, times(1)).createFamilyMembersBatch(anyList());
+    }
+
+    @Test
     void createFamilyMember_WithInvalidData_ShouldReturn400() throws Exception {
         FamilyMemberCreateDTO invalidDTO = new FamilyMemberCreateDTO();
         invalidDTO.setFirstName("J"); // Too short
@@ -142,6 +186,7 @@ class FamilyMemberControllerTest {
                 .andExpect(jsonPath("$.error").value("Validation Error"));
 
         verify(familyMemberService, never()).createFamilyMember(any(FamilyMemberCreateDTO.class));
+        verify(familyMemberService, never()).createFamilyMembersBatch(anyList());
     }
 
     @Test

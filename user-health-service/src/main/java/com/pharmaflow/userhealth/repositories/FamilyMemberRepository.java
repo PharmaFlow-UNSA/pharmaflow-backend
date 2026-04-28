@@ -13,5 +13,8 @@ public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Long
     
     @Query("SELECT fm FROM FamilyMember fm LEFT JOIN FETCH fm.patientProfile WHERE fm.user.id = :userId")
     List<FamilyMember> findByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT fm FROM FamilyMember fm WHERE LOWER(fm.relationship) = LOWER(:relationship)")
+    List<FamilyMember> findByRelationshipIgnoreCase(@Param("relationship") String relationship);
 }
 
