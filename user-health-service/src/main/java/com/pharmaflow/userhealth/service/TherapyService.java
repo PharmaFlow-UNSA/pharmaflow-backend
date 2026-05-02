@@ -5,14 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.userhealth.dto.TherapyDTO;
+import com.pharmaflow.userhealth.exception.PatchOperationException;
 import com.pharmaflow.userhealth.exception.ResourceNotFoundException;
 import com.pharmaflow.userhealth.models.Therapy;
 import com.pharmaflow.userhealth.repositories.TherapyRepository;
+import com.pharmaflow.userhealth.specifications.TherapySpecs;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,16 +64,6 @@ public class TherapyService {
         return modelMapper.map(therapy, TherapyDTO.class);
     }
 
-    @Transactional(readOnly = true)
-    public List<TherapyDTO> findByMedicationNameContaining(String name) {
-        long startTime = System.currentTimeMillis();
-        List<TherapyDTO> therapies = therapyRepository.findByMedicationNameContainingIgnoreCase(name).stream()
-                .map(therapy -> modelMapper.map(therapy, TherapyDTO.class))
-                .toList();
-        log.info("findByMedicationNameContaining executed in {} ms, found {} therapies",
-                System.currentTimeMillis() - startTime, therapies.size());
-        return therapies;
-    }
 
     @Transactional
     public TherapyDTO createTherapy(TherapyDTO therapyDTO) {
@@ -128,7 +121,7 @@ public class TherapyService {
             return modelMapper.map(savedTherapy, TherapyDTO.class);
 
         } catch (JsonPatchException | java.io.IOException e) {
-            throw new RuntimeException("Error applying patch: " + e.getMessage(), e);
+            throw new PatchOperationException("Error applying patch: " + e.getMessage(), e);
         }
     }
 
@@ -140,5 +133,22 @@ public class TherapyService {
         therapyRepository.deleteById(id);
         log.info("Therapy deleted with id: {}", id);
     }
-}
 
+    @Transactional(readOnly = true)
+    public Page<TherapyDTO> findAll(String medicationName, Pageable pageable) {
+        long startTime = System.currentTimeMillis();
+
+        Specification<Therapy> spec = Specification
+                .where(TherapySpecs.medicationNameContains(medicationName));
+
+        Page<TherapyDTO> result = therapyRepository.findAll(spec, pageable)
+                .map(therapy -> modelMapper.map(therapy, TherapyDTO.class));
+
+        log.info("findAll executed in {} ms, returned {} of {} total therapies",
+                System.currentTimeMillis() - startTime,
+                result.getNumberOfElements(),
+                result.getTotalElements());
+
+        return result;
+    }
+}

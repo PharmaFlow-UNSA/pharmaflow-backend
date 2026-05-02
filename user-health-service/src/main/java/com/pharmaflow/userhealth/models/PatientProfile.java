@@ -1,5 +1,6 @@
 package com.pharmaflow.userhealth.models;
 
+import com.pharmaflow.userhealth.models.enums.BloodType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,7 +21,10 @@ public class PatientProfile {
 
     private Double weight;
     private Double height;
-    private String bloodType;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private BloodType bloodType;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "patient_profile_id")

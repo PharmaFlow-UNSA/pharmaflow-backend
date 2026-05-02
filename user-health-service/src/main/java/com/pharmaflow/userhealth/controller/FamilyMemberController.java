@@ -2,10 +2,12 @@ package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.dto.FamilyMemberCreateDTO;
 import com.pharmaflow.userhealth.dto.FamilyMemberDTO;
+import com.pharmaflow.userhealth.models.enums.Relationship;
 import com.pharmaflow.userhealth.service.FamilyMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -26,24 +28,14 @@ public class FamilyMemberController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all family members", description = "Retrieves family members with optional pagination, sorting, and filtering. Use ?page=0&size=20&sort=lastName,asc for pagination. Use ?relationship=SPOUSE for filtering.")
-    public ResponseEntity<List<FamilyMemberDTO>> getFamilyMembers(
-            @PageableDefault(size = 20, sort = "lastName") Pageable pageable,
-            @RequestParam(required = false) String relationship,
-            @RequestParam(required = false) Integer page) {
-
-        // If filtering by relationship type
-        if (relationship != null && !relationship.isEmpty()) {
-            return ResponseEntity.ok(familyMemberService.findByRelationship(relationship));
-        }
-
-        // If pagination is explicitly requested
-        if (page != null) {
-            return ResponseEntity.ok(familyMemberService.getFamilyMembersPaginated(pageable).getContent());
-        }
-
-        // Default: return all family members
-        return ResponseEntity.ok(familyMemberService.getAllFamilyMembers());
+    @Operation(
+        summary = "Get all family members",
+        description = "Supports pagination (?page=0&size=20&sort=firstName,asc) and optional filtering by relationship type (SPOUSE, CHILD, PARENT, SIBLING, GRANDPARENT, GRANDCHILD, OTHER)."
+    )
+    public ResponseEntity<Page<FamilyMemberDTO>> getFamilyMembers(
+            @PageableDefault(size = 20, sort = "firstName") Pageable pageable,
+            @RequestParam(required = false) Relationship relationship) {
+        return ResponseEntity.ok(familyMemberService.findAll(relationship, pageable));
     }
 
     @GetMapping("/{id}")
@@ -65,9 +57,9 @@ public class FamilyMemberController {
         return new ResponseEntity<>(createdMember, HttpStatus.CREATED);
     }
 
-    @PostMapping(params = "bulk")
-    @Operation(summary = "Create multiple family members (bulk)", description = "Bulk creation of family members. Use ?bulk=true")
-    public ResponseEntity<List<FamilyMemberDTO>> createFamilyMembersBulk(
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create family members", description = "Creates multiple family members in a single transaction")
+    public ResponseEntity<List<FamilyMemberDTO>> createFamilyMembersBatch(
             @RequestBody @Valid List<@Valid FamilyMemberCreateDTO> createDTOs) {
         List<FamilyMemberDTO> createdMembers = familyMemberService.createFamilyMembersBatch(createDTOs);
         return new ResponseEntity<>(createdMembers, HttpStatus.CREATED);

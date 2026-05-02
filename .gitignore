@@ -1,5 +1,56 @@
+# Claude AI artifacts
 .claude/
 CLAUDE.md
+
+# IDE files
 .idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.eclipse/
+.settings/
+.project
+.classpath
+
+# OS specific
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Documentation (if needed, remove this line to include docs)
 documentation/
+
+# Maven build artifacts
+**/target/
+**/build/
+*.class
+
+# Log files
+*.log
+logs/
+
+# Local configuration
+**/application-local.properties
+**/application-local.yml
+**/*.env
+.env
+
+# Test reports
+**/surefire-reports/
+**/test-classes/
+
+# Package files
+*.jar
+*.war
+*.ear
+!.mvn/wrapper/maven-wrapper.jar
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Performance test results
+jmeter.log

@@ -1,5 +1,6 @@
 package com.pharmaflow.userhealth.dto;
 
+import com.pharmaflow.userhealth.models.enums.Relationship;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,11 +21,8 @@ public class FamilyMemberCreateDTO {
              message = "First name can only contain letters, spaces, hyphens and apostrophes")
     private String firstName;
 
-    @NotBlank(message = "Relationship is required")
-    @Size(min = 2, max = 50, message = "Relationship must be between 2 and 50 characters")
-    @Pattern(regexp = "^(Parent|Child|Sibling|Spouse|Partner|Grandparent|Grandchild|Other)$",
-             message = "Relationship must be one of: Parent, Child, Sibling, Spouse, Partner, Grandparent, Grandchild, Other")
-    private String relationship;
+    @NotNull(message = "Relationship is required")
+    private Relationship relationship;
 
     @Valid
     private PatientProfileDTO patientProfile;

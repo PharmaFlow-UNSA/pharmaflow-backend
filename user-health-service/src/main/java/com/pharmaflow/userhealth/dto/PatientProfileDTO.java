@@ -1,9 +1,9 @@
 package com.pharmaflow.userhealth.dto;
 
+import com.pharmaflow.userhealth.models.enums.BloodType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,9 +26,7 @@ public class PatientProfileDTO {
     @DecimalMax(value = "300.0", message = "Height must not exceed 300 cm")
     private Double height;
 
-    @Pattern(regexp = "^(A|B|AB|O)[+-]?$",
-             message = "Blood type must be one of: A+, A-, B+, B-, AB+, AB-, O+, O-")
-    private String bloodType;
+    private BloodType bloodType;
 
     @Valid
     private List<AllergyDTO> allergies = new ArrayList<>();

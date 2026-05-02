@@ -5,14 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.userhealth.dto.AllergyDTO;
+import com.pharmaflow.userhealth.exception.PatchOperationException;
 import com.pharmaflow.userhealth.exception.ResourceNotFoundException;
 import com.pharmaflow.userhealth.models.Allergy;
+import com.pharmaflow.userhealth.models.enums.Severity;
 import com.pharmaflow.userhealth.repositories.AllergyRepository;
+import com.pharmaflow.userhealth.specifications.AllergySpecs;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,23 +39,22 @@ public class AllergyService {
     }
 
     @Transactional(readOnly = true)
-    public List<AllergyDTO> getAllAllergies() {
+    public Page<AllergyDTO> findAll(Severity severity, String allergen, Pageable pageable) {
         long startTime = System.currentTimeMillis();
-        List<AllergyDTO> allergies = allergyRepository.findAll().stream()
-                .map(allergy -> modelMapper.map(allergy, AllergyDTO.class))
-                .toList();
-        log.info("getAllAllergies executed in {} ms", System.currentTimeMillis() - startTime);
-        return allergies;
-    }
 
-    @Transactional(readOnly = true)
-    public Page<AllergyDTO> getAllergiesPaginated(Pageable pageable) {
-        long startTime = System.currentTimeMillis();
-        Page<AllergyDTO> allergies = allergyRepository.findAll(pageable)
-                .map(allergy -> modelMapper.map(allergy, AllergyDTO.class));
-        log.info("getAllergiesPaginated executed in {} ms, returned {} of {} total allergies",
-                System.currentTimeMillis() - startTime, allergies.getNumberOfElements(), allergies.getTotalElements());
-        return allergies;
+        Specification<Allergy> spec = Specification
+            .where(AllergySpecs.hasSeverity(severity))
+            .and(AllergySpecs.allergenContains(allergen));
+
+        Page<AllergyDTO> result = allergyRepository.findAll(spec, pageable)
+            .map(allergy -> modelMapper.map(allergy, AllergyDTO.class));
+
+        log.info("findAll executed in {} ms, returned {} of {} total allergies",
+                System.currentTimeMillis() - startTime,
+                result.getNumberOfElements(),
+                result.getTotalElements());
+
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -89,27 +92,6 @@ public class AllergyService {
         allergyRepository.deleteById(id);
     }
 
-    @Transactional(readOnly = true)
-    public List<AllergyDTO> findBySeverity(String severity) {
-        long startTime = System.currentTimeMillis();
-        List<AllergyDTO> allergies = allergyRepository.findBySeverity(severity).stream()
-                .map(allergy -> modelMapper.map(allergy, AllergyDTO.class))
-                .toList();
-        log.info("findBySeverity executed in {} ms, found {} allergies",
-                System.currentTimeMillis() - startTime, allergies.size());
-        return allergies;
-    }
-
-    @Transactional(readOnly = true)
-    public List<AllergyDTO> findByAllergenContaining(String name) {
-        long startTime = System.currentTimeMillis();
-        List<AllergyDTO> allergies = allergyRepository.findByAllergenContainingIgnoreCase(name).stream()
-                .map(allergy -> modelMapper.map(allergy, AllergyDTO.class))
-                .toList();
-        log.info("findByAllergenContaining executed in {} ms, found {} allergies",
-                System.currentTimeMillis() - startTime, allergies.size());
-        return allergies;
-    }
 
     @Transactional
     public List<AllergyDTO> createAllergiesBatch(List<AllergyDTO> allergyDTOs) {
@@ -145,7 +127,7 @@ public class AllergyService {
             return modelMapper.map(savedAllergy, AllergyDTO.class);
 
         } catch (JsonPatchException | java.io.IOException e) {
-            throw new RuntimeException("Error applying patch: " + e.getMessage(), e);
+            throw new PatchOperationException("Error applying patch: " + e.getMessage(), e);
         }
     }
 }

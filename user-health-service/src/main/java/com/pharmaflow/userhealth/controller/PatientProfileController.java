@@ -1,10 +1,12 @@
 package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.dto.PatientProfileDTO;
+import com.pharmaflow.userhealth.models.enums.BloodType;
 import com.pharmaflow.userhealth.service.PatientProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -25,31 +27,16 @@ public class PatientProfileController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all patient profiles", description = "Retrieves patient profiles with optional pagination, sorting, and filtering. Use ?page=0&size=20&sort=id,asc for pagination. Use ?bloodType=A+ or ?minBMI=18&maxBMI=25 for filtering.")
-    public ResponseEntity<List<PatientProfileDTO>> getPatientProfiles(
+    @Operation(
+        summary = "Get all patient profiles",
+        description = "Supports pagination (?page=0&size=20&sort=id,asc) and optional filtering by blood type (A_POSITIVE, A_NEGATIVE, B_POSITIVE, B_NEGATIVE, AB_POSITIVE, AB_NEGATIVE, O_POSITIVE, O_NEGATIVE) or BMI range (?minBMI=18&maxBMI=25)."
+    )
+    public ResponseEntity<Page<PatientProfileDTO>> getPatientProfiles(
             @PageableDefault(size = 20, sort = "id") Pageable pageable,
-            @RequestParam(required = false) String bloodType,
+            @RequestParam(required = false) BloodType bloodType,
             @RequestParam(required = false) Double minBMI,
-            @RequestParam(required = false) Double maxBMI,
-            @RequestParam(required = false) Integer page) {
-
-        // If filtering by blood type
-        if (bloodType != null && !bloodType.isEmpty()) {
-            return ResponseEntity.ok(patientProfileService.findByBloodType(bloodType));
-        }
-
-        // If filtering by BMI range
-        if (minBMI != null && maxBMI != null) {
-            return ResponseEntity.ok(patientProfileService.findByBMIRange(minBMI, maxBMI));
-        }
-
-        // If pagination is explicitly requested
-        if (page != null) {
-            return ResponseEntity.ok(patientProfileService.getPatientProfilesPaginated(pageable).getContent());
-        }
-
-        // Default: return all profiles
-        return ResponseEntity.ok(patientProfileService.getAllPatientProfiles());
+            @RequestParam(required = false) Double maxBMI) {
+        return ResponseEntity.ok(patientProfileService.findAll(bloodType, minBMI, maxBMI, pageable));
     }
 
     @GetMapping("/{id}")
@@ -65,9 +52,9 @@ public class PatientProfileController {
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
     }
 
-    @PostMapping(params = "bulk")
-    @Operation(summary = "Create multiple patient profiles (bulk)", description = "Bulk creation of patient profiles. Use ?bulk=true")
-    public ResponseEntity<List<PatientProfileDTO>> createPatientProfilesBulk(
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create patient profiles", description = "Creates multiple patient profiles in a single transaction")
+    public ResponseEntity<List<PatientProfileDTO>> createPatientProfilesBatch(
             @RequestBody @Valid List<@Valid PatientProfileDTO> profileDTOs) {
         List<PatientProfileDTO> createdProfiles = patientProfileService.createPatientProfilesBatch(profileDTOs);
         return new ResponseEntity<>(createdProfiles, HttpStatus.CREATED);

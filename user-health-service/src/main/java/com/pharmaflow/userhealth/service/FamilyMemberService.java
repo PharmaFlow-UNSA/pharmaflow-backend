@@ -7,17 +7,21 @@ import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.userhealth.dto.FamilyMemberCreateDTO;
 import com.pharmaflow.userhealth.dto.FamilyMemberDTO;
 import com.pharmaflow.userhealth.dto.PatientProfileDTO;
+import com.pharmaflow.userhealth.exception.PatchOperationException;
 import com.pharmaflow.userhealth.exception.ResourceNotFoundException;
 import com.pharmaflow.userhealth.models.FamilyMember;
 import com.pharmaflow.userhealth.models.PatientProfile;
 import com.pharmaflow.userhealth.models.User;
+import com.pharmaflow.userhealth.models.enums.Relationship;
 import com.pharmaflow.userhealth.repositories.FamilyMemberRepository;
 import com.pharmaflow.userhealth.repositories.UserRepository;
+import com.pharmaflow.userhealth.specifications.FamilyMemberSpecs;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,23 +49,21 @@ public class FamilyMemberService {
     }
 
     @Transactional(readOnly = true)
-    public List<FamilyMemberDTO> getAllFamilyMembers() {
+    public Page<FamilyMemberDTO> findAll(Relationship relationship, Pageable pageable) {
         long startTime = System.currentTimeMillis();
-        List<FamilyMemberDTO> members = familyMemberRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .toList();
-        log.info("getAllFamilyMembers executed in {} ms", System.currentTimeMillis() - startTime);
-        return members;
-    }
 
-    @Transactional(readOnly = true)
-    public Page<FamilyMemberDTO> getFamilyMembersPaginated(Pageable pageable) {
-        long startTime = System.currentTimeMillis();
-        Page<FamilyMemberDTO> members = familyMemberRepository.findAll(pageable)
-                .map(this::convertToDTO);
-        log.info("getFamilyMembersPaginated executed in {} ms, returned {} of {} total members",
-                System.currentTimeMillis() - startTime, members.getNumberOfElements(), members.getTotalElements());
-        return members;
+        Specification<FamilyMember> spec = Specification
+            .where(FamilyMemberSpecs.hasRelationship(relationship));
+
+        Page<FamilyMemberDTO> result = familyMemberRepository.findAll(spec, pageable)
+            .map(this::convertToDTO);
+
+        log.info("findAll executed in {} ms, returned {} of {} total family members",
+                System.currentTimeMillis() - startTime,
+                result.getNumberOfElements(),
+                result.getTotalElements());
+
+        return result;
     }
 
     @Transactional(readOnly = true)
@@ -76,17 +78,6 @@ public class FamilyMemberService {
         return familyMemberRepository.findByUserId(userId).stream()
                 .map(this::convertToDTO)
                 .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<FamilyMemberDTO> findByRelationship(String relationship) {
-        long startTime = System.currentTimeMillis();
-        List<FamilyMemberDTO> members = familyMemberRepository.findByRelationshipIgnoreCase(relationship).stream()
-                .map(this::convertToDTO)
-                .toList();
-        log.info("findByRelationship executed in {} ms, found {} members",
-                System.currentTimeMillis() - startTime, members.size());
-        return members;
     }
 
     @Transactional
@@ -175,7 +166,7 @@ public class FamilyMemberService {
             return convertToDTO(savedMember);
 
         } catch (JsonPatchException | java.io.IOException e) {
-            throw new RuntimeException("Error applying patch: " + e.getMessage(), e);
+            throw new PatchOperationException("Error applying patch: " + e.getMessage(), e);
         }
     }
 

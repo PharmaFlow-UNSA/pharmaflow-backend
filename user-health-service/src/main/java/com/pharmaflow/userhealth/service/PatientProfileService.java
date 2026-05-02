@@ -5,14 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.userhealth.dto.PatientProfileDTO;
+import com.pharmaflow.userhealth.exception.PatchOperationException;
 import com.pharmaflow.userhealth.exception.ResourceNotFoundException;
 import com.pharmaflow.userhealth.models.PatientProfile;
+import com.pharmaflow.userhealth.models.enums.BloodType;
 import com.pharmaflow.userhealth.repositories.PatientProfileRepository;
+import com.pharmaflow.userhealth.specifications.PatientProfileSpecs;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,27 +66,6 @@ public class PatientProfileService {
         return modelMapper.map(profile, PatientProfileDTO.class);
     }
 
-    @Transactional(readOnly = true)
-    public List<PatientProfileDTO> findByBloodType(String bloodType) {
-        long startTime = System.currentTimeMillis();
-        List<PatientProfileDTO> profiles = patientProfileRepository.findByBloodType(bloodType).stream()
-                .map(profile -> modelMapper.map(profile, PatientProfileDTO.class))
-                .toList();
-        log.info("findByBloodType executed in {} ms, found {} profiles",
-                System.currentTimeMillis() - startTime, profiles.size());
-        return profiles;
-    }
-
-    @Transactional(readOnly = true)
-    public List<PatientProfileDTO> findByBMIRange(Double minBMI, Double maxBMI) {
-        long startTime = System.currentTimeMillis();
-        List<PatientProfileDTO> profiles = patientProfileRepository.findByBMIRange(minBMI, maxBMI).stream()
-                .map(profile -> modelMapper.map(profile, PatientProfileDTO.class))
-                .toList();
-        log.info("findByBMIRange executed in {} ms, found {} profiles",
-                System.currentTimeMillis() - startTime, profiles.size());
-        return profiles;
-    }
 
     @Transactional
     public PatientProfileDTO createPatientProfile(PatientProfileDTO profileDTO) {
@@ -139,7 +122,7 @@ public class PatientProfileService {
             return modelMapper.map(savedProfile, PatientProfileDTO.class);
 
         } catch (JsonPatchException | java.io.IOException e) {
-            throw new RuntimeException("Error applying patch: " + e.getMessage(), e);
+            throw new PatchOperationException("Error applying patch: " + e.getMessage(), e);
         }
     }
 
@@ -151,5 +134,23 @@ public class PatientProfileService {
         patientProfileRepository.deleteById(id);
         log.info("PatientProfile deleted with id: {}", id);
     }
-}
 
+    @Transactional(readOnly = true)
+    public Page<PatientProfileDTO> findAll(BloodType bloodType, Double minBMI, Double maxBMI, Pageable pageable) {
+        long startTime = System.currentTimeMillis();
+
+        Specification<PatientProfile> spec = Specification
+            .where(PatientProfileSpecs.hasBloodType(bloodType))
+            .and(PatientProfileSpecs.bmiBetween(minBMI, maxBMI));
+
+        Page<PatientProfileDTO> result = patientProfileRepository.findAll(spec, pageable)
+            .map(profile -> modelMapper.map(profile, PatientProfileDTO.class));
+
+        log.info("findAll executed in {} ms, returned {} of {} total profiles",
+                System.currentTimeMillis() - startTime,
+                result.getNumberOfElements(),
+                result.getTotalElements());
+
+        return result;
+    }
+}

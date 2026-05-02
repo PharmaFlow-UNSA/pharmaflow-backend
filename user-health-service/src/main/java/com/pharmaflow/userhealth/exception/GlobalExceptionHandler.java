@@ -128,6 +128,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles custom PatchOperationException
+     */
+    @ExceptionHandler(PatchOperationException.class)
+    public ResponseEntity<Map<String, Object>> handlePatchOperation(
+            PatchOperationException ex,
+            HttpServletRequest request) {
+
+        logger.warn("Patch operation error on {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "Patch Operation Failed",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    /**
      * Handles database integrity violations (e.g., unique constraint)
      */
     @ExceptionHandler(DataIntegrityViolationException.class)

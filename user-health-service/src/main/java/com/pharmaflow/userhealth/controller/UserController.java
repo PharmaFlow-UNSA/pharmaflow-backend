@@ -6,6 +6,7 @@ import com.pharmaflow.userhealth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -27,24 +28,14 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all users", description = "Retrieves users with optional pagination, sorting, and filtering. Use ?page=0&size=10&sort=id,asc for pagination. Use ?emailDomain=example.com for filtering.")
-    public ResponseEntity<List<UserDTO>> getUsers(
+    @Operation(
+        summary = "Get all users",
+        description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by email domain (e.g., ?emailDomain=example.com)."
+    )
+    public ResponseEntity<Page<UserDTO>> getUsers(
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) String emailDomain,
-            @RequestParam(required = false) Integer page) {
-
-        // If filtering by email domain
-        if (emailDomain != null && !emailDomain.isEmpty()) {
-            return ResponseEntity.ok(userService.findUsersByEmailDomain(emailDomain));
-        }
-
-        // If pagination is explicitly requested (page parameter present)
-        if (page != null) {
-            return ResponseEntity.ok(userService.getUsersPaginated(pageable).getContent());
-        }
-
-        // Default: return all users
-        return ResponseEntity.ok(userService.getAllUsers());
+            @RequestParam(required = false) String emailDomain) {
+        return ResponseEntity.ok(userService.findAll(emailDomain, pageable));
     }
 
     @GetMapping("/{id}")
@@ -60,9 +51,9 @@ public class UserController {
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
-    @PostMapping(params = "bulk")
-    @Operation(summary = "Create multiple users (bulk)", description = "Bulk creation of users. Use ?bulk=true")
-    public ResponseEntity<List<UserDTO>> createUsersBulk(
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create users", description = "Creates multiple users in a single transaction")
+    public ResponseEntity<List<UserDTO>> createUsersBatch(
             @RequestBody @Valid List<@Valid UserCreateDTO> userCreateDTOs) {
         List<UserDTO> createdUsers = userService.createUsersBatch(userCreateDTOs);
         return new ResponseEntity<>(createdUsers, HttpStatus.CREATED);

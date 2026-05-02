@@ -1,10 +1,12 @@
 package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.dto.AllergyDTO;
+import com.pharmaflow.userhealth.models.enums.Severity;
 import com.pharmaflow.userhealth.service.AllergyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -25,30 +27,15 @@ public class AllergyController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all allergies", description = "Retrieves allergies with optional pagination, sorting, and filtering. Use ?page=0&size=20&sort=allergen,asc for pagination. Use ?severity=HIGH or ?allergen=peanut for filtering.")
-    public ResponseEntity<List<AllergyDTO>> getAllergies(
+    @Operation(
+        summary = "Get all allergies",
+        description = "Supports pagination (?page=0&size=20&sort=allergen,asc) and optional filtering by severity (LOW, MODERATE, HIGH, SEVERE, LIFE_THREATENING) or allergen name."
+    )
+    public ResponseEntity<Page<AllergyDTO>> getAllergies(
             @PageableDefault(size = 20, sort = "allergen") Pageable pageable,
-            @RequestParam(required = false) String severity,
-            @RequestParam(required = false) String allergen,
-            @RequestParam(required = false) Integer page) {
-
-        // If filtering by severity
-        if (severity != null && !severity.isEmpty()) {
-            return ResponseEntity.ok(allergyService.findBySeverity(severity));
-        }
-
-        // If filtering by allergen name
-        if (allergen != null && !allergen.isEmpty()) {
-            return ResponseEntity.ok(allergyService.findByAllergenContaining(allergen));
-        }
-
-        // If pagination is explicitly requested
-        if (page != null) {
-            return ResponseEntity.ok(allergyService.getAllergiesPaginated(pageable).getContent());
-        }
-
-        // Default: return all allergies
-        return ResponseEntity.ok(allergyService.getAllAllergies());
+            @RequestParam(required = false) Severity severity,
+            @RequestParam(required = false) String allergen) {
+        return ResponseEntity.ok(allergyService.findAll(severity, allergen, pageable));
     }
 
     @GetMapping("/{id}")
@@ -64,9 +51,9 @@ public class AllergyController {
         return new ResponseEntity<>(createdAllergy, HttpStatus.CREATED);
     }
 
-    @PostMapping(params = "bulk")
-    @Operation(summary = "Create multiple allergies (bulk)", description = "Bulk creation of allergy records. Use ?bulk=true")
-    public ResponseEntity<List<AllergyDTO>> createAllergiesBulk(
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create allergies", description = "Creates multiple allergy records in a single transaction")
+    public ResponseEntity<List<AllergyDTO>> createAllergiesBatch(
             @RequestBody @Valid List<@Valid AllergyDTO> allergyDTOs) {
         List<AllergyDTO> createdAllergies = allergyService.createAllergiesBatch(allergyDTOs);
         return new ResponseEntity<>(createdAllergies, HttpStatus.CREATED);

@@ -6,15 +6,18 @@ import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.userhealth.dto.*;
 import com.pharmaflow.userhealth.exception.DuplicateResourceException;
+import com.pharmaflow.userhealth.exception.PatchOperationException;
 import com.pharmaflow.userhealth.exception.ResourceNotFoundException;
 import com.pharmaflow.userhealth.models.PatientProfile;
 import com.pharmaflow.userhealth.models.User;
 import com.pharmaflow.userhealth.repositories.UserRepository;
+import com.pharmaflow.userhealth.specifications.UserSpecs;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -183,7 +186,7 @@ public class UserService {
             return convertToDTO(savedUser);
 
         } catch (JsonPatchException | java.io.IOException e) {
-            throw new RuntimeException("Error applying patch: " + e.getMessage(), e);
+            throw new PatchOperationException("Error applying patch: " + e.getMessage(), e);
         }
     }
 
@@ -197,14 +200,21 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserDTO> findUsersByEmailDomain(String domain) {
+    public Page<UserDTO> findAll(String emailDomain, Pageable pageable) {
         long startTime = System.currentTimeMillis();
-        List<UserDTO> users = userRepository.findByEmailDomain(domain).stream()
-                .map(this::convertToDTO)
-                .toList();
-        log.info("findUsersByEmailDomain executed in {} ms, found {} users",
-                System.currentTimeMillis() - startTime, users.size());
-        return users;
+
+        Specification<User> spec = Specification
+                .where(UserSpecs.emailDomainEquals(emailDomain));
+
+        Page<UserDTO> result = userRepository.findAll(spec, pageable)
+                .map(this::convertToDTO);
+
+        log.info("findAll executed in {} ms, returned {} of {} total users",
+                System.currentTimeMillis() - startTime,
+                result.getNumberOfElements(),
+                result.getTotalElements());
+
+        return result;
     }
 
     private UserDTO convertToDTO(User user) {

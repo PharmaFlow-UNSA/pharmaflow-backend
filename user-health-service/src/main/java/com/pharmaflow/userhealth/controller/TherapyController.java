@@ -5,8 +5,8 @@ import com.pharmaflow.userhealth.service.TherapyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,24 +26,14 @@ public class TherapyController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all therapies", description = "Retrieves therapies with optional pagination, sorting, and filtering. Use ?page=0&size=20&sort=medicationName,asc for pagination. Use ?medicationName=aspirin for filtering.")
-    public ResponseEntity<List<TherapyDTO>> getTherapies(
-            @PageableDefault(size = 20, sort = "medicationName", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) String medicationName,
-            @RequestParam(required = false) Integer page) {
-
-        // If filtering by medication name
-        if (medicationName != null && !medicationName.isEmpty()) {
-            return ResponseEntity.ok(therapyService.findByMedicationNameContaining(medicationName));
-        }
-
-        // If pagination is explicitly requested
-        if (page != null) {
-            return ResponseEntity.ok(therapyService.getTherapiesPaginated(pageable).getContent());
-        }
-
-        // Default: return all therapies
-        return ResponseEntity.ok(therapyService.getAllTherapies());
+    @Operation(
+        summary = "Get all therapies",
+        description = "Supports pagination (?page=0&size=20&sort=medicationName,asc) and optional filtering by medication name."
+    )
+    public ResponseEntity<Page<TherapyDTO>> getTherapies(
+            @PageableDefault(size = 20, sort = "medicationName") Pageable pageable,
+            @RequestParam(required = false) String medicationName) {
+        return ResponseEntity.ok(therapyService.findAll(medicationName, pageable));
     }
 
     @GetMapping("/{id}")
@@ -59,9 +49,9 @@ public class TherapyController {
         return new ResponseEntity<>(createdTherapy, HttpStatus.CREATED);
     }
 
-    @PostMapping(params = "bulk")
-    @Operation(summary = "Create multiple therapies (bulk)", description = "Bulk creation of therapy records. Use ?bulk=true")
-    public ResponseEntity<List<TherapyDTO>> createTherapiesBulk(
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create therapies", description = "Creates multiple therapy records in a single transaction")
+    public ResponseEntity<List<TherapyDTO>> createTherapiesBatch(
             @RequestBody @Valid List<@Valid TherapyDTO> therapyDTOs) {
         List<TherapyDTO> createdTherapies = therapyService.createTherapiesBatch(therapyDTOs);
         return new ResponseEntity<>(createdTherapies, HttpStatus.CREATED);

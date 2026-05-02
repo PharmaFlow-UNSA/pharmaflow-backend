@@ -12,6 +12,6 @@ Write-Host "Press Ctrl+C to stop the service" -ForegroundColor Gray
 Write-Host ""
 
 # Start Maven with proper Spring Boot arguments
-mvn spring-boot:run "-Dspring-boot.run.arguments=--server.port=8082"
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--server.port=8082 --eureka.instance.instance-id=user-health-service:8082"
 
 
