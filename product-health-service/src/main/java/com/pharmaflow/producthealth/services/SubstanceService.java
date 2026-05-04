@@ -27,14 +27,14 @@ public class SubstanceService {
     @Transactional(readOnly = true)
     public SubstanceDTO getSubstanceById(Long id) {
         Substance substance = substanceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Supstanca sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substance with ID " + id + " not found."));
         return modelMapper.map(substance, SubstanceDTO.class);
     }
 
     @Transactional
     public SubstanceDTO createSubstance(SubstanceDTO dto) {
         if (substanceRepository.existsByInn(dto.getInn()))
-            throw new DuplicateResourceException("Supstanca sa INN '" + dto.getInn() + "' već postoji.");
+            throw new DuplicateResourceException("Substance with INN '" + dto.getInn() + "' already exists.");
         Substance substance = modelMapper.map(dto, Substance.class);
         substance.setId(null);
         return modelMapper.map(substanceRepository.save(substance), SubstanceDTO.class);
@@ -43,9 +43,9 @@ public class SubstanceService {
     @Transactional
     public SubstanceDTO updateSubstance(Long id, SubstanceDTO dto) {
         Substance substance = substanceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Supstanca sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substance with ID " + id + " not found."));
         if (!substance.getInn().equals(dto.getInn()) && substanceRepository.existsByInn(dto.getInn()))
-            throw new DuplicateResourceException("Supstanca sa INN '" + dto.getInn() + "' već postoji.");
+            throw new DuplicateResourceException("Substance with INN '" + dto.getInn() + "' already exists.");
         substance.setInn(dto.getInn());
         substance.setCommonName(dto.getCommonName());
         substance.setDescription(dto.getDescription());
@@ -56,7 +56,7 @@ public class SubstanceService {
     @Transactional
     public void deleteSubstance(Long id) {
         if (!substanceRepository.existsById(id))
-            throw new ResourceNotFoundException("Supstanca sa ID " + id + " nije pronađena.");
+            throw new ResourceNotFoundException("Substance with ID " + id + " not found.");
         substanceRepository.deleteById(id);
     }
 }

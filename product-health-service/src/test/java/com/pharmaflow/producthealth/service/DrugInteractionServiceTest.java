@@ -51,14 +51,14 @@ class DrugInteractionServiceTest {
         testInteraction.setSubstanceA(substanceA);
         testInteraction.setSubstanceB(substanceB);
         testInteraction.setSeverity(DrugInteraction.SeverityLevel.MAJOR);
-        testInteraction.setDescription("Pojačano krvarenje");
+        testInteraction.setDescription("Increased bleeding risk");
         testInteraction.setClinicalRecommendation("Izbjegavati kombinaciju");
 
         validCreateDTO = new DrugInteractionDTO();
         validCreateDTO.setSubstanceAId(1L);
         validCreateDTO.setSubstanceBId(2L);
         validCreateDTO.setSeverity("MAJOR");
-        validCreateDTO.setDescription("Opis interakcije koji je dovoljno dugačak");
+        validCreateDTO.setDescription("Drug interaction description that is long enough");
     }
 
     @Test

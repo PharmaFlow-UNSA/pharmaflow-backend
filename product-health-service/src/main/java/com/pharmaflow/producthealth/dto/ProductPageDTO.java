@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO za paginiran odgovor — sadrži podatke i metapodatke o stranici.
+ * DTO for paginated response — contains data and page metadata.
  */
 @Data
 @NoArgsConstructor

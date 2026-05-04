@@ -27,14 +27,14 @@ public class CategoryService {
     @Transactional(readOnly = true)
     public CategoryDTO getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kategorija sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Category with ID " + id + " not found."));
         return modelMapper.map(category, CategoryDTO.class);
     }
 
     @Transactional
     public CategoryDTO createCategory(CategoryDTO dto) {
         if (categoryRepository.existsByName(dto.getName()))
-            throw new DuplicateResourceException("Kategorija sa nazivom '" + dto.getName() + "' već postoji.");
+            throw new DuplicateResourceException("Category with name '" + dto.getName() + "' already exists.");
         Category category = modelMapper.map(dto, Category.class);
         category.setId(null);
         return modelMapper.map(categoryRepository.save(category), CategoryDTO.class);
@@ -43,9 +43,9 @@ public class CategoryService {
     @Transactional
     public CategoryDTO updateCategory(Long id, CategoryDTO dto) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kategorija sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Category with ID " + id + " not found."));
         if (!category.getName().equals(dto.getName()) && categoryRepository.existsByName(dto.getName()))
-            throw new DuplicateResourceException("Kategorija sa nazivom '" + dto.getName() + "' već postoji.");
+            throw new DuplicateResourceException("Category with name '" + dto.getName() + "' already exists.");
         category.setName(dto.getName());
         category.setDescription(dto.getDescription());
         category.setParentCategoryId(dto.getParentCategoryId());
@@ -55,7 +55,7 @@ public class CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         if (!categoryRepository.existsById(id))
-            throw new ResourceNotFoundException("Kategorija sa ID " + id + " nije pronađena.");
+            throw new ResourceNotFoundException("Category with ID " + id + " not found.");
         categoryRepository.deleteById(id);
     }
 }

@@ -142,6 +142,15 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(), null);
     }
 
+
+    @ExceptionHandler(PatchOperationException.class)
+    public ResponseEntity<Map<String, Object>> handlePatchOperation(
+            PatchOperationException ex, HttpServletRequest request) {
+        logger.warn("Patch operation error on {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, "Patch Operation Error",
+                ex.getMessage(), request.getRequestURI(), null);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {

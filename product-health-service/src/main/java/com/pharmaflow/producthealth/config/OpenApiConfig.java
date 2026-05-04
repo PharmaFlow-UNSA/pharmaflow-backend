@@ -14,8 +14,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Product & Medical Microservice API")
-                        .description("REST API za upravljanje farmaceutskim proizvodima, supstancama, " +
-                                "interakcijama lijekova, kontraindikacijama i zamjenama — PharmaFlow sistem")
+                        .description("REST API for managing pharmaceutical products, substances, drug interactions, contraindications and substitutions — PharmaFlow system")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("PharmaFlow Team")

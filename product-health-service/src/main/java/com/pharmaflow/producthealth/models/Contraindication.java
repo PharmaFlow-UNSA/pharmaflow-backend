@@ -29,12 +29,12 @@ public class Contraindication {
     @Column(name = "contraindication_type", nullable = false)
     private ContraindicationType type;
 
-    // Naziv kontraindikacije (npr. "Insuficijencija bubrega", "Trudnoća")
+    // Condition name (e.g. "Renal insufficiency", "Pregnancy")
     @NotBlank
     @Column(nullable = false)
     private String conditionName;
 
-    // Detaljan opis zašto je kontraindikovano
+    // Detailed description of why it is contraindicated
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -44,10 +44,10 @@ public class Contraindication {
     private SeverityType severityType;
 
     public enum ContraindicationType {
-        DISEASE,        // Hronična bolest (npr. insuficijencija jetre)
+        DISEASE,        // Chronic disease (e.g. liver insufficiency)
         ALLERGY,        // Alergija na supstancu
         AGE,            // Dob (npr. djeca ispod 12 godina)
-        PREGNANCY,      // Trudnoća
+        PREGNANCY,      // Pregnancy
         BREASTFEEDING,  // Dojenje
         CONDITION       // Ostala stanja (npr. G6PD deficit)
     }

@@ -3,7 +3,9 @@ package com.pharmaflow.producthealth.repositories;
 import com.pharmaflow.producthealth.models.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,7 +16,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
+
+    @EntityGraph(attributePaths = {"category", "substances"})
+    Optional<Product> findById(Long id);
 
     Optional<Product> findByBarcode(String barcode);
     boolean existsByBarcode(String barcode);
@@ -76,7 +81,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("UPDATE Product p SET p.category.id = :newCategoryId WHERE p.id IN :productIds")
     int bulkUpdateCategory(@Param("productIds") List<Long> productIds, @Param("newCategoryId") Long newCategoryId);
 
-    // Stare metode zadržane za kompatibilnost
+    // Legacy methods kept for compatibility
     List<Product> findByIsActiveTrue();
     List<Product> findByCategoryId(Long categoryId);
 

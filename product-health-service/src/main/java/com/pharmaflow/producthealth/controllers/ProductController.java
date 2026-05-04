@@ -6,8 +6,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -21,118 +24,109 @@ import java.util.Map;
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
 @Validated
-@Tag(name = "Products", description = "API za upravljanje farmaceutskim proizvodima")
+@Tag(name = "Products", description = "API for managing pharmaceutical products")
 public class ProductController {
 
     private final ProductService productService;
 
-    // ── Osnovni CRUD ──────────────────────────────────────────────────────
+    // ── Basic CRUD ────────────────────────────────────────────────────────
 
     @GetMapping
-    @Operation(summary = "Dohvati sve aktivne proizvode")
+    @Operation(summary = "Get all active products")
     public ResponseEntity<List<ProductDTO>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllActiveProducts());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Dohvati proizvod po ID-u")
+    @Operation(summary = "Get product by ID")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Pretrazi proizvode po nazivu")
+    @Operation(summary = "Search products by name")
     public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String keyword) {
         return ResponseEntity.ok(productService.searchProducts(keyword));
     }
 
     @GetMapping("/category/{categoryId}")
-    @Operation(summary = "Dohvati proizvode po kategoriji")
+    @Operation(summary = "Get products by category")
     public ResponseEntity<List<ProductDTO>> getByCategory(@PathVariable Long categoryId) {
         return ResponseEntity.ok(productService.getProductsByCategory(categoryId));
     }
 
     @GetMapping("/substance/{substanceId}")
-    @Operation(summary = "Dohvati proizvode koji sadrze datu supstancu")
+    @Operation(summary = "Get products containing a specific substance")
     public ResponseEntity<List<ProductDTO>> getBySubstance(@PathVariable Long substanceId) {
         return ResponseEntity.ok(productService.getProductsBySubstance(substanceId));
     }
 
     @PostMapping
-    @Operation(summary = "Kreiraj novi proizvod")
+    @Operation(summary = "Create a new product")
     public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductCreateDTO dto) {
         return new ResponseEntity<>(productService.createProduct(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Azuriraj postojeci proizvod (potpuna zamjena)")
+    @Operation(summary = "Update an existing product (full replacement)")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id,
-                                                     @Valid @RequestBody ProductCreateDTO dto) {
+                                                    @Valid @RequestBody ProductCreateDTO dto) {
         return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
     @PatchMapping("/{id}/deactivate")
-    @Operation(summary = "Deaktiviraj proizvod (soft delete)")
+    @Operation(summary = "Deactivate product (soft delete)")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         productService.deactivateProduct(id);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Trajno obrisi proizvod")
+    @Operation(summary = "Permanently delete product")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
-    // ── PATCH: parcijalno azuriranje ──────────────────────────────────────
+    // ── PATCH - JSON Patch RFC 6902 ───────────────────────────────────────
 
-    @PatchMapping("/{id}")
-    @Operation(summary = "Parcijalno azuriraj proizvod - samo proslijedjena polja se mijenjaju")
+    @PatchMapping(value = "/{id}", consumes = "application/json-patch+json")
+    @Operation(summary = "Partial update - JSON Patch (RFC 6902)",
+            description = "Example: [{\"op\":\"replace\",\"path\":\"/price\",\"value\":9.99}]")
     public ResponseEntity<ProductDTO> patchProduct(@PathVariable Long id,
-                                                    @Valid @RequestBody ProductPatchDTO dto) {
-        return ResponseEntity.ok(productService.patchProduct(id, dto));
+                                                   @RequestBody String patchDocument) {
+        return ResponseEntity.ok(productService.patchProduct(id, patchDocument));
     }
 
-    // ── Paginacija i sortiranje ───────────────────────────────────────────
+    // ── Pagination and Sorting with Specifications ────────────────────────
 
     @GetMapping("/page")
-    @Operation(summary = "Dohvati aktivne proizvode sa paginacijom i sortiranjem",
-               description = "Parametri: page (0-based), size, sortBy (name/price/manufacturer), direction (asc/desc)")
-    public ResponseEntity<ProductPageDTO> getProductsPageable(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
-        return ResponseEntity.ok(productService.getProductsPageable(page, size, sortBy, direction));
+    @Operation(summary = "Pagination with dynamic filtering",
+            description = "All query parameters are optional. Example: /page?page=0&size=5&sort=price,asc&name=brufen&requiresPrescription=false")
+    public ResponseEntity<Page<ProductDTO>> getProductsPageable(
+            @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String manufacturer,
+            @RequestParam(required = false) String productType,
+            @RequestParam(required = false) Boolean requiresPrescription,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+        return ResponseEntity.ok(productService.getProductsPageable(
+                name, manufacturer, productType, requiresPrescription, minPrice, maxPrice, pageable));
     }
 
-    @GetMapping("/category/{categoryId}/page")
-    @Operation(summary = "Dohvati proizvode kategorije sa paginacijom i sortiranjem")
-    public ResponseEntity<ProductPageDTO> getProductsByCategoryPageable(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "name") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
-        return ResponseEntity.ok(
-                productService.getProductsByCategoryPageable(categoryId, page, size, sortBy, direction));
-    }
-
-    // ── Custom upiti ──────────────────────────────────────────────────────
+    // ── Custom Queries ────────────────────────────────────────────────────
 
     @GetMapping("/price-range")
-    @Operation(summary = "Pretrazi proizvode po opsegu cijena",
-               description = "Primjer: /api/products/price-range?minPrice=2.00&maxPrice=10.00")
+    @Operation(summary = "Search by price range")
     public ResponseEntity<List<ProductDTO>> getByPriceRange(
-            @RequestParam @DecimalMin(value = "0.0", message = "Minimalna cijena mora biti >= 0") BigDecimal minPrice,
-            @RequestParam @DecimalMin(value = "0.0", message = "Maksimalna cijena mora biti >= 0") BigDecimal maxPrice) {
+            @RequestParam @DecimalMin(value = "0.0", message = "Minimum price must be >= 0") BigDecimal minPrice,
+            @RequestParam @DecimalMin(value = "0.0", message = "Maximum price must be >= 0") BigDecimal maxPrice) {
         return ResponseEntity.ok(productService.getProductsByPriceRange(minPrice, maxPrice));
     }
 
     @GetMapping("/filter")
-    @Operation(summary = "Filtriraj proizvode po tipu i potrebi za receptom",
-               description = "Primjer: /api/products/filter?type=MEDICATION&requiresPrescription=false")
+    @Operation(summary = "Filter by type and prescription requirement")
     public ResponseEntity<List<ProductDTO>> getByTypeAndPrescription(
             @RequestParam String type,
             @RequestParam Boolean requiresPrescription) {
@@ -140,31 +134,31 @@ public class ProductController {
     }
 
     @GetMapping("/otc")
-    @Operation(summary = "Dohvati sve OTC proizvode sortirane po cijeni uzlazno")
+    @Operation(summary = "All OTC products sorted by price ascending")
     public ResponseEntity<List<ProductDTO>> getOtcProducts() {
         return ResponseEntity.ok(productService.getOtcProductsSortedByPrice());
     }
 
     @GetMapping("/stats/count-by-type")
-    @Operation(summary = "Statistika - broj aktivnih proizvoda po tipu")
+    @Operation(summary = "Statistics - count of active products by type")
     public ResponseEntity<Map<String, Long>> getCountByType() {
         return ResponseEntity.ok(productService.getProductCountByType());
     }
 
-    // ── Batch unos ────────────────────────────────────────────────────────
+    // ── Batch Import ──────────────────────────────────────────────────────
 
     @PostMapping("/batch")
-    @Operation(summary = "Batch unos vise proizvoda u jednoj transakciji",
-               description = "Ako bilo koji proizvod ne prode validaciju, cijeli batch se rollback-uje. Max 50 proizvoda.")
+    @Operation(summary = "Batch import of multiple products in a single transaction",
+            description = "Rollback on any error. Max 50 products.")
     public ResponseEntity<List<ProductDTO>> createProductsBatch(@Valid @RequestBody ProductBatchDTO batchDTO) {
         return new ResponseEntity<>(productService.createProductsBatch(batchDTO), HttpStatus.CREATED);
     }
 
-    // ── Transakcija sa vise repozitorija ──────────────────────────────────
+    // ── Transaction with multiple repositories ────────────────────────────
 
     @PatchMapping("/reassign-category")
-    @Operation(summary = "Premjesti vise proizvoda u drugu kategoriju",
-               description = "Transakcijska operacija: validira kategoriju i sve proizvode, zatim radi bulk update. Rollback na bilo kojoj gresci.")
+    @Operation(summary = "Reassign multiple products to another category",
+            description = "Transactional operation with rollback on error.")
     public ResponseEntity<Map<String, Object>> reassignProductsToCategory(
             @Valid @RequestBody CategoryReassignDTO dto) {
         return ResponseEntity.ok(productService.reassignProductsToCategory(dto));

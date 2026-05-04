@@ -15,44 +15,44 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/substitutes")
 @RequiredArgsConstructor
-@Tag(name = "Product Substitutes", description = "API za upravljanje zamjenskim lijekovima")
+@Tag(name = "Product Substitutes", description = "API for managing product substitutes")
 public class ProductSubstituteController {
 
     private final ProductSubstituteService productSubstituteService;
 
     @GetMapping
-    @Operation(summary = "Dohvati sve zamjene")
+    @Operation(summary = "Get all substitutes")
     public ResponseEntity<List<ProductSubstituteDTO>> getAllSubstitutes() {
         return ResponseEntity.ok(productSubstituteService.getAllSubstitutes());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Dohvati zamjenu po ID-u")
+    @Operation(summary = "Get substitute by ID")
     public ResponseEntity<ProductSubstituteDTO> getSubstituteById(@PathVariable Long id) {
         return ResponseEntity.ok(productSubstituteService.getSubstituteById(id));
     }
 
     @GetMapping("/product/{productId}")
-    @Operation(summary = "Dohvati sve zamjene za dati proizvod")
+    @Operation(summary = "Get all substitutes for a given product")
     public ResponseEntity<List<ProductSubstituteDTO>> getByProduct(@PathVariable Long productId) {
         return ResponseEntity.ok(productSubstituteService.getSubstitutesByProduct(productId));
     }
 
     @PostMapping
-    @Operation(summary = "Kreiraj novu zamjenu")
+    @Operation(summary = "Create a new substitute")
     public ResponseEntity<ProductSubstituteDTO> createSubstitute(@Valid @RequestBody ProductSubstituteDTO dto) {
         return new ResponseEntity<>(productSubstituteService.createSubstitute(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Ažuriraj zamjenu")
+    @Operation(summary = "Update substitute")
     public ResponseEntity<ProductSubstituteDTO> updateSubstitute(@PathVariable Long id,
-                                                                   @Valid @RequestBody ProductSubstituteDTO dto) {
+                                                                 @Valid @RequestBody ProductSubstituteDTO dto) {
         return ResponseEntity.ok(productSubstituteService.updateSubstitute(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Obriši zamjenu")
+    @Operation(summary = "Delete substitute")
     public ResponseEntity<Void> deleteSubstitute(@PathVariable Long id) {
         productSubstituteService.deleteSubstitute(id);
         return ResponseEntity.noContent().build();

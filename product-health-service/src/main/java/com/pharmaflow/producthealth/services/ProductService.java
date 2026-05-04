@@ -1,7 +1,12 @@
 package com.pharmaflow.producthealth.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatch;
+import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.producthealth.dto.*;
 import com.pharmaflow.producthealth.exception.DuplicateResourceException;
+import com.pharmaflow.producthealth.exception.PatchOperationException;
 import com.pharmaflow.producthealth.exception.ResourceNotFoundException;
 import com.pharmaflow.producthealth.models.Category;
 import com.pharmaflow.producthealth.models.Product;
@@ -9,12 +14,14 @@ import com.pharmaflow.producthealth.models.Substance;
 import com.pharmaflow.producthealth.repositories.CategoryRepository;
 import com.pharmaflow.producthealth.repositories.ProductRepository;
 import com.pharmaflow.producthealth.repositories.SubstanceRepository;
+import com.pharmaflow.producthealth.specifications.ProductSpecs;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,22 +32,29 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
+
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final SubstanceRepository substanceRepository;
     private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
 
-    // ── Osnovne CRUD metode ────────────────────────────────────────────────
+    // ── Osnovni CRUD ──────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getAllActiveProducts() {
-        return productRepository.findAllActiveWithDetails().stream().map(this::toDTO).toList();
+        long start = System.currentTimeMillis();
+        List<ProductDTO> result = productRepository.findAllActiveWithDetails().stream().map(this::toDTO).toList();
+        log.info("getAllActiveProducts executed in {} ms, returned {} products",
+                System.currentTimeMillis() - start, result.size());
+        return result;
     }
 
     @Transactional(readOnly = true)
     public ProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proizvod sa ID " + id + " nije pronadjen."));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found."));
         return toDTO(product);
     }
 
@@ -52,14 +66,14 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByCategory(Long categoryId) {
         if (!categoryRepository.existsById(categoryId))
-            throw new ResourceNotFoundException("Kategorija sa ID " + categoryId + " nije pronadjena.");
+            throw new ResourceNotFoundException("Category with ID " + categoryId + " not found.");
         return productRepository.findByCategoryIdWithDetails(categoryId).stream().map(this::toDTO).toList();
     }
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsBySubstance(Long substanceId) {
         if (!substanceRepository.existsById(substanceId))
-            throw new ResourceNotFoundException("Supstanca sa ID " + substanceId + " nije pronadjena.");
+            throw new ResourceNotFoundException("Substance with ID " + substanceId + " not found.");
         return productRepository.findBySubstanceIdWithDetails(substanceId).stream().map(this::toDTO).toList();
     }
 
@@ -67,107 +81,124 @@ public class ProductService {
     public ProductDTO createProduct(ProductCreateDTO dto) {
         if (dto.getBarcode() != null && !dto.getBarcode().isBlank()
                 && productRepository.existsByBarcode(dto.getBarcode()))
-            throw new DuplicateResourceException("Proizvod sa barkodom '" + dto.getBarcode() + "' vec postoji.");
+            throw new DuplicateResourceException("Product with barcode '" + dto.getBarcode() + "' already exists.");
 
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Kategorija sa ID " + dto.getCategoryId() + " nije pronadjena."));
+                        "Category with ID " + dto.getCategoryId() + " not found."));
 
         Product product = new Product();
         mapDtoToProduct(dto, product, category);
         product.setIsActive(true);
         product.setSubstances(resolveSubstances(dto.getSubstanceIds()));
-        return toDTO(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        log.info("Product created with id: {}", saved.getId());
+        return toDTO(saved);
     }
 
     @Transactional
     public ProductDTO updateProduct(Long id, ProductCreateDTO dto) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proizvod sa ID " + id + " nije pronadjen."));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found."));
 
         if (dto.getBarcode() != null && !dto.getBarcode().isBlank()
                 && !dto.getBarcode().equals(product.getBarcode())
                 && productRepository.existsByBarcode(dto.getBarcode()))
-            throw new DuplicateResourceException("Proizvod sa barkodom '" + dto.getBarcode() + "' vec postoji.");
+            throw new DuplicateResourceException("Product with barcode '" + dto.getBarcode() + "' already exists.");
 
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Kategorija sa ID " + dto.getCategoryId() + " nije pronadjena."));
+                        "Category with ID " + dto.getCategoryId() + " not found."));
 
         mapDtoToProduct(dto, product, category);
         product.setSubstances(resolveSubstances(dto.getSubstanceIds()));
-        return toDTO(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        log.info("Product updated with id: {}", saved.getId());
+        return toDTO(saved);
     }
 
     @Transactional
     public void deactivateProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proizvod sa ID " + id + " nije pronadjen."));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found."));
         product.setIsActive(false);
         productRepository.save(product);
+        log.info("Product deactivated with id: {}", id);
     }
 
     @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id))
-            throw new ResourceNotFoundException("Proizvod sa ID " + id + " nije pronadjen.");
+            throw new ResourceNotFoundException("Product with ID " + id + " not found.");
         productRepository.deleteById(id);
+        log.info("Product deleted with id: {}", id);
     }
 
-    // ── PATCH: parcijalno azuriranje ───────────────────────────────────────
+    // ── PATCH - JSON Patch (RFC 6902) ─────────────────────────────────────
 
     @Transactional
-    public ProductDTO patchProduct(Long id, ProductPatchDTO dto) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Proizvod sa ID " + id + " nije pronadjen."));
+    public ProductDTO patchProduct(Long id, String patchDocument) {
+        try {
+            Product product = productRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + id + " not found."));
 
-        if (dto.getName() != null) product.setName(dto.getName());
-        if (dto.getPrice() != null) product.setPrice(dto.getPrice());
-        if (dto.getDescription() != null) product.setDescription(dto.getDescription());
-        if (dto.getBrandName() != null) product.setBrandName(dto.getBrandName());
-        if (dto.getPackageSize() != null) product.setPackageSize(dto.getPackageSize());
-        if (dto.getImageUrl() != null) product.setImageUrl(dto.getImageUrl());
-        if (dto.getRequiresPrescription() != null) product.setRequiresPrescription(dto.getRequiresPrescription());
-        if (dto.getProductType() != null) product.setProductType(Product.ProductType.valueOf(dto.getProductType()));
+            JsonNode productJson = objectMapper.valueToTree(product);
+            JsonPatch patch = JsonPatch.fromJson(objectMapper.readTree(patchDocument));
+            JsonNode patchedJson = patch.apply(productJson);
+            Product patchedProduct = objectMapper.treeToValue(patchedJson, Product.class);
 
-        return toDTO(productRepository.save(product));
+            if (patchedProduct.getBarcode() != null
+                    && !patchedProduct.getBarcode().equals(product.getBarcode())
+                    && productRepository.existsByBarcode(patchedProduct.getBarcode())) {
+                throw new DuplicateResourceException(
+                        "Product with barcode '" + patchedProduct.getBarcode() + "' already exists.");
+            }
+
+            Product saved = productRepository.save(patchedProduct);
+            log.info("Product patched with id: {}", saved.getId());
+            return toDTO(saved);
+
+        } catch (JsonPatchException | java.io.IOException e) {
+            throw new PatchOperationException("Error applying patch: " + e.getMessage(), e);
+        }
     }
 
-    // ── Paginacija i sortiranje ────────────────────────────────────────────
+    // ── Paginacija i sortiranje sa Specification ──────────────────────────
 
     @Transactional(readOnly = true)
-    public ProductPageDTO getProductsPageable(int page, int size, String sortBy, String direction) {
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Product> productPage = productRepository.findAllActivePageable(pageable);
-        return new ProductPageDTO(
-                productPage.getContent().stream().map(this::toDTO).toList(),
-                productPage.getNumber(), productPage.getSize(),
-                productPage.getTotalElements(), productPage.getTotalPages(), productPage.isLast());
+    public Page<ProductDTO> getProductsPageable(String name, String manufacturer,
+                                                 String productType, Boolean requiresPrescription,
+                                                 BigDecimal minPrice, BigDecimal maxPrice,
+                                                 Pageable pageable) {
+        long start = System.currentTimeMillis();
+
+        Specification<Product> spec = Specification
+                .where(ProductSpecs.isActive())
+                .and(ProductSpecs.nameContains(name))
+                .and(ProductSpecs.manufacturerEquals(manufacturer))
+                .and(ProductSpecs.requiresPrescription(requiresPrescription))
+                .and(ProductSpecs.priceBetween(minPrice, maxPrice));
+
+        if (productType != null && !productType.isBlank()) {
+            try {
+                spec = spec.and(ProductSpecs.productTypeEquals(Product.ProductType.valueOf(productType.toUpperCase())));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Unknown product type: " + productType);
+            }
+        }
+
+        Page<ProductDTO> result = productRepository.findAll(spec, pageable).map(this::toDTO);
+        log.info("getProductsPageable executed in {} ms, returned {} of {} total",
+                System.currentTimeMillis() - start, result.getNumberOfElements(), result.getTotalElements());
+        return result;
     }
 
-    @Transactional(readOnly = true)
-    public ProductPageDTO getProductsByCategoryPageable(Long categoryId, int page, int size,
-                                                         String sortBy, String direction) {
-        if (!categoryRepository.existsById(categoryId))
-            throw new ResourceNotFoundException("Kategorija sa ID " + categoryId + " nije pronadjena.");
-        Sort sort = direction.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Product> productPage = productRepository.findByCategoryIdPageable(categoryId, pageable);
-        return new ProductPageDTO(
-                productPage.getContent().stream().map(this::toDTO).toList(),
-                productPage.getNumber(), productPage.getSize(),
-                productPage.getTotalElements(), productPage.getTotalPages(), productPage.isLast());
-    }
-
-    // ── Custom upiti ───────────────────────────────────────────────────────
+    // ── Custom upiti ──────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public List<ProductDTO> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
         if (minPrice.compareTo(maxPrice) > 0)
-            throw new IllegalArgumentException("Minimalna cijena ne smije biti veca od maksimalne.");
+            throw new IllegalArgumentException("Minimum price cannot be greater than maximum price.");
         return productRepository.findByPriceRange(minPrice, maxPrice).stream().map(this::toDTO).toList();
     }
 
@@ -178,8 +209,7 @@ public class ProductService {
             type = Product.ProductType.valueOf(productType.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
-                    "Nepoznat tip proizvoda: " + productType +
-                    ". Dozvoljeni: MEDICATION, SUPPLEMENT, COSMETIC, MEDICAL_DEVICE, OTHER");
+                    "Nepoznat tip: " + productType + ". Allowed values: MEDICATION, SUPPLEMENT, COSMETIC, MEDICAL_DEVICE, OTHER");
         }
         return productRepository.findByTypeAndPrescription(type, requiresPrescription)
                 .stream().map(this::toDTO).toList();
@@ -203,61 +233,60 @@ public class ProductService {
 
     @Transactional
     public List<ProductDTO> createProductsBatch(ProductBatchDTO batchDTO) {
+        long start = System.currentTimeMillis();
         List<Product> toSave = new ArrayList<>();
         for (ProductCreateDTO dto : batchDTO.getProducts()) {
             if (dto.getBarcode() != null && !dto.getBarcode().isBlank()
                     && productRepository.existsByBarcode(dto.getBarcode()))
                 throw new DuplicateResourceException(
-                        "Batch otkazan: proizvod sa barkodom '" + dto.getBarcode() + "' vec postoji.");
-
+                        "Batch failed: product with barcode '" + dto.getBarcode() + "' already exists.");
             Category category = categoryRepository.findById(dto.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Batch otkazan: kategorija sa ID " + dto.getCategoryId() + " nije pronadjena."));
-
+                            "Batch failed: category with ID " + dto.getCategoryId() + " not found."));
             Product product = new Product();
             mapDtoToProduct(dto, product, category);
             product.setIsActive(true);
             product.setSubstances(resolveSubstances(dto.getSubstanceIds()));
             toSave.add(product);
         }
-        return productRepository.saveAll(toSave).stream().map(this::toDTO).toList();
+        List<ProductDTO> result = productRepository.saveAll(toSave).stream().map(this::toDTO).toList();
+        log.info("Batch created {} products in {} ms", result.size(), System.currentTimeMillis() - start);
+        return result;
     }
 
-    // ── Transakcija sa vise repository poziva ─────────────────────────────
+    // ── Transakcija sa vise repo poziva ───────────────────────────────────
 
     @Transactional
     public Map<String, Object> reassignProductsToCategory(CategoryReassignDTO dto) {
-        // Korak 1: provjeri kategoriju
         Category targetCategory = categoryRepository.findById(dto.getTargetCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Ciljna kategorija sa ID " + dto.getTargetCategoryId() + " nije pronadjena."));
+                        "Target category with ID " + dto.getTargetCategoryId() + " not found."));
 
-        // Korak 2: provjeri sve proizvode
         List<Long> productIds = dto.getProductIds();
         for (Long productId : productIds) {
             if (!productRepository.existsById(productId))
                 throw new ResourceNotFoundException(
-                        "Transakcija otkazana: proizvod sa ID " + productId + " nije pronadjen.");
+                        "Transaction cancelled: product with ID " + productId + " not found.");
         }
 
-        // Korak 3: bulk update
         int updatedCount = productRepository.bulkUpdateCategory(productIds, dto.getTargetCategoryId());
 
-        // Korak 4: provjeri rezultat
         if (updatedCount != productIds.size())
             throw new IllegalStateException(
-                    "Bulk update nije uspio: ocekivano " + productIds.size() +
-                    " azuriranja, izvrseno " + updatedCount);
+                    "Bulk update failed: expected " + productIds.size() +
+                    " updates, executed " + updatedCount);
+
+        log.info("Reassigned {} products to category {}", updatedCount, targetCategory.getName());
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("message", "Uspjesno premjesteno " + updatedCount + " proizvoda.");
+        result.put("message", "Successfully moved " + updatedCount + " proizvoda.");
         result.put("targetCategory", targetCategory.getName());
         result.put("updatedProductIds", productIds);
         result.put("updatedCount", updatedCount);
         return result;
     }
 
-    // ── Mapping helperi ────────────────────────────────────────────────────
+    // ── Mapping helperi ───────────────────────────────────────────────────
 
     ProductDTO toDTO(Product p) {
         ProductDTO dto = new ProductDTO();
@@ -300,7 +329,7 @@ public class ProductService {
         return ids.stream()
                 .map(sid -> substanceRepository.findById(sid)
                         .orElseThrow(() -> new ResourceNotFoundException(
-                                "Supstanca sa ID " + sid + " nije pronadjena.")))
+                                "Substance with ID " + sid + " not found.")))
                 .toList();
     }
 }

@@ -84,7 +84,7 @@ class ProductControllerTest {
     @Test
     void getProductById_whenNotExists_shouldReturn404() throws Exception {
         when(productService.getProductById(999L))
-                .thenThrow(new ResourceNotFoundException("Proizvod sa ID 999 nije pronadjen."));
+                .thenThrow(new ResourceNotFoundException("Product with ID 999 not found."));
         mockMvc.perform(get("/api/products/999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Resource Not Found"))
@@ -149,7 +149,7 @@ class ProductControllerTest {
 
     @Test
     void deleteProduct_whenNotExists_shouldReturn404() throws Exception {
-        doThrow(new ResourceNotFoundException("Proizvod sa ID 999 nije pronadjen."))
+        doThrow(new ResourceNotFoundException("Product with ID 999 not found."))
                 .when(productService).deleteProduct(999L);
         mockMvc.perform(delete("/api/products/999"))
                 .andExpect(status().isNotFound());
@@ -189,7 +189,7 @@ class ProductControllerTest {
         ProductPatchDTO patchDTO = new ProductPatchDTO();
         patchDTO.setName("Novo ime");
         when(productService.patchProduct(eq(999L), any()))
-                .thenThrow(new ResourceNotFoundException("Proizvod sa ID 999 nije pronadjen."));
+                .thenThrow(new ResourceNotFoundException("Product with ID 999 not found."));
         mockMvc.perform(patch("/api/products/999")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(patchDTO)))
@@ -215,7 +215,7 @@ class ProductControllerTest {
     @Test
     void getProductsByCategoryPageable_whenCategoryNotExists_shouldReturn404() throws Exception {
         when(productService.getProductsByCategoryPageable(eq(999L), anyInt(), anyInt(), any(), any()))
-                .thenThrow(new ResourceNotFoundException("Kategorija sa ID 999 nije pronadjena."));
+                .thenThrow(new ResourceNotFoundException("Category with ID 999 not found."));
         mockMvc.perform(get("/api/products/category/999/page"))
                 .andExpect(status().isNotFound());
     }
@@ -293,7 +293,7 @@ class ProductControllerTest {
     @Test
     void reassignProductsToCategory_withValidData_shouldReturn200() throws Exception {
         CategoryReassignDTO dto = new CategoryReassignDTO(List.of(1L, 2L), 3L);
-        Map<String, Object> result = Map.of("message", "Uspjesno premjesteno 2 proizvoda.", "updatedCount", 2);
+        Map<String, Object> result = Map.of("message", "Successfully moved 2 proizvoda.", "updatedCount", 2);
         when(productService.reassignProductsToCategory(any())).thenReturn(result);
 
         mockMvc.perform(patch("/api/products/reassign-category")
@@ -318,7 +318,7 @@ class ProductControllerTest {
     void reassignProductsToCategory_whenCategoryNotFound_shouldReturn404() throws Exception {
         CategoryReassignDTO dto = new CategoryReassignDTO(List.of(1L), 999L);
         when(productService.reassignProductsToCategory(any()))
-                .thenThrow(new ResourceNotFoundException("Ciljna kategorija sa ID 999 nije pronadjena."));
+                .thenThrow(new ResourceNotFoundException("Target category with ID 999 not found."));
         mockMvc.perform(patch("/api/products/reassign-category")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))

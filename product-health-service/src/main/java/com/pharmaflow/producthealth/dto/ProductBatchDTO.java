@@ -10,15 +10,15 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO za batch unos više proizvoda u jednom zahtjevu.
+ * DTO for batch insert of multiple products in a single request.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductBatchDTO {
 
-    @NotEmpty(message = "Lista proizvoda ne smije biti prazna")
-    @Size(max = 50, message = "Maksimalan broj proizvoda u jednom batch unosu je 50")
+    @NotEmpty(message = "Product list must not be empty")
+    @Size(max = 50, message = "Maximum number of products in a single batch is 50")
     @Valid
     private List<ProductCreateDTO> products;
 }

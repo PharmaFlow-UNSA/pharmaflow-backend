@@ -38,16 +38,16 @@ public class DrugInteraction {
     @Column(nullable = false)
     private SeverityLevel severity;
 
-    // Opis interakcije (šta se dešava, npr. "Pojačano krvarenje")
+    // Description of interaction (e.g. "Increased bleeding")
     @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    // Klinička preporuka (npr. "Izbjegavati kombinaciju", "Pratiti INR")
+    // Clinical recommendation (e.g. "Avoid combination", "Monitor INR")
     @Column(name = "clinical_recommendation", columnDefinition = "TEXT")
     private String clinicalRecommendation;
 
     public enum SeverityLevel {
-        MINOR,      // Manja, uglavnom bez kliničkog značaja
+        MINOR,      // Minor, generally without clinical significance
         MODERATE,   // Umjerena, treba pratiti
         MAJOR,      // Ozbiljna, izbjegavati kombinaciju
         CONTRAINDICATED // Apsolutno kontraindikovana kombinacija

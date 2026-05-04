@@ -27,7 +27,7 @@ public class ProductSubstitute {
     @JoinColumn(name = "original_product_id", nullable = false)
     private Product originalProduct;
 
-    // Zamjenski lijek (npr. generički Ibuprofen 400mg)
+    // Substitute product (e.g. generic Ibuprofen 400mg)
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "substitute_product_id", nullable = false)
@@ -42,12 +42,12 @@ public class ProductSubstitute {
     @Column(name = "is_therapeutic_equivalent", nullable = false)
     private Boolean isTherapeuticEquivalent = false;
 
-    // Napomena (npr. "Niža cijena", "Dostupno bez recepta")
+    // Note (e.g. "Lower price", "Available without prescription")
     private String note;
 
     public enum SubstituteType {
-        GENERIC,        // Generička verzija istog lijeka
-        THERAPEUTIC,    // Terapijski ekvivalent (ista indikacija, drugačija supstanca)
-        BIOSIMILAR      // Biosimilar (za biološke lijekove)
+        GENERIC,        // Generic version of the same drug
+        THERAPEUTIC,    // Therapeutic equivalent (same indication, different substance)
+        BIOSIMILAR      // Biosimilar (for biological drugs)
     }
 }

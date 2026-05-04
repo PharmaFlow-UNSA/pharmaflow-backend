@@ -10,18 +10,18 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * DTO za transakcijsko premještanje više proizvoda u drugu kategoriju.
- * Koristi se u servisu koji poziva više repository metoda u jednoj transakciji.
+ * DTO for transactional reassignment of multiple products to another category.
+ * Used in service that calls multiple repository methods in a single transaction.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CategoryReassignDTO {
 
-    @NotEmpty(message = "Lista ID-eva proizvoda ne smije biti prazna")
-    private List<@Positive(message = "ID proizvoda mora biti pozitivan") Long> productIds;
+    @NotEmpty(message = "Product ID list must not be empty")
+    private List<@Positive(message = "Product ID must be a positive number") Long> productIds;
 
-    @NotNull(message = "ID ciljne kategorije je obavezan")
-    @Positive(message = "ID kategorije mora biti pozitivan broj")
+    @NotNull(message = "Target category ID is required")
+    @Positive(message = "Category ID must be a positive number")
     private Long targetCategoryId;
 }

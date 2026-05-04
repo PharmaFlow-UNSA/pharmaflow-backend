@@ -15,51 +15,51 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/interactions")
 @RequiredArgsConstructor
-@Tag(name = "Drug Interactions", description = "API za provjeru interakcija između lijekova")
+@Tag(name = "Drug Interactions", description = "API for checking drug interactions")
 public class DrugInteractionController {
 
     private final DrugInteractionService drugInteractionService;
 
     @GetMapping
-    @Operation(summary = "Dohvati sve interakcije lijekova")
+    @Operation(summary = "Get all drug interactions")
     public ResponseEntity<List<DrugInteractionDTO>> getAllInteractions() {
         return ResponseEntity.ok(drugInteractionService.getAllInteractions());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Dohvati interakciju po ID-u")
+    @Operation(summary = "Get interaction by ID")
     public ResponseEntity<DrugInteractionDTO> getInteractionById(@PathVariable Long id) {
         return ResponseEntity.ok(drugInteractionService.getInteractionById(id));
     }
 
     @GetMapping("/substance/{substanceId}")
-    @Operation(summary = "Dohvati sve interakcije za datu supstancu")
+    @Operation(summary = "Get all interactions for a specific substance")
     public ResponseEntity<List<DrugInteractionDTO>> getForSubstance(@PathVariable Long substanceId) {
         return ResponseEntity.ok(drugInteractionService.getInteractionsForSubstance(substanceId));
     }
 
     @GetMapping("/check")
-    @Operation(summary = "Provjeri interakciju između dvije supstance")
+    @Operation(summary = "Check interaction between two substances")
     public ResponseEntity<List<DrugInteractionDTO>> checkInteraction(
             @RequestParam Long substanceAId, @RequestParam Long substanceBId) {
         return ResponseEntity.ok(drugInteractionService.checkInteractionBetween(substanceAId, substanceBId));
     }
 
     @PostMapping
-    @Operation(summary = "Kreiraj novu interakciju lijekova")
+    @Operation(summary = "Create a new drug interaction")
     public ResponseEntity<DrugInteractionDTO> createInteraction(@Valid @RequestBody DrugInteractionDTO dto) {
         return new ResponseEntity<>(drugInteractionService.createInteraction(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Ažuriraj interakciju lijekova")
+    @Operation(summary = "Update drug interaction")
     public ResponseEntity<DrugInteractionDTO> updateInteraction(@PathVariable Long id,
-                                                                  @Valid @RequestBody DrugInteractionDTO dto) {
+                                                                @Valid @RequestBody DrugInteractionDTO dto) {
         return ResponseEntity.ok(drugInteractionService.updateInteraction(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Obriši interakciju lijekova")
+    @Operation(summary = "Delete drug interaction")
     public ResponseEntity<Void> deleteInteraction(@PathVariable Long id) {
         drugInteractionService.deleteInteraction(id);
         return ResponseEntity.noContent().build();
