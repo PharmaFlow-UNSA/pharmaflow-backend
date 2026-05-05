@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,11 +42,11 @@ class ProductControllerTest {
 
     @BeforeEach
     void setUp() {
-        CategoryDTO categoryDTO = new CategoryDTO(1L, "Analgetici", "Opis", null);
+        CategoryDTO categoryDTO = new CategoryDTO(1L, "Analgesics", "Pain relief", null);
 
         testProductDTO = new ProductDTO();
         testProductDTO.setId(1L);
-        testProductDTO.setName("Brufen 400mg");
+        testProductDTO.setName("Brufen 400mg tablets");
         testProductDTO.setPrice(new BigDecimal("4.50"));
         testProductDTO.setManufacturer("Abbott");
         testProductDTO.setRequiresPrescription(false);
@@ -52,7 +55,7 @@ class ProductControllerTest {
         testProductDTO.setCategory(categoryDTO);
 
         validCreateDTO = new ProductCreateDTO();
-        validCreateDTO.setName("Brufen 400mg");
+        validCreateDTO.setName("Brufen 400mg tablets");
         validCreateDTO.setPrice(new BigDecimal("4.50"));
         validCreateDTO.setManufacturer("Abbott");
         validCreateDTO.setRequiresPrescription(false);
@@ -60,7 +63,7 @@ class ProductControllerTest {
         validCreateDTO.setCategoryId(1L);
     }
 
-    // ── Osnovni CRUD testovi ───────────────────────────────────────────────
+    // ── Basic CRUD tests ──────────────────────────────────────────────────
 
     @Test
     void getAllProducts_shouldReturn200AndList() throws Exception {
@@ -68,7 +71,7 @@ class ProductControllerTest {
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name").value("Brufen 400mg"));
+                .andExpect(jsonPath("$[0].name").value("Brufen 400mg tablets"));
         verify(productService).getAllActiveProducts();
     }
 
@@ -98,7 +101,7 @@ class ProductControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validCreateDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Brufen 400mg"));
+                .andExpect(jsonPath("$.name").value("Brufen 400mg tablets"));
         verify(productService).createProduct(any());
     }
 
@@ -155,72 +158,64 @@ class ProductControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ── PATCH testovi ──────────────────────────────────────────────────────
+    // ── PATCH (JSON Patch RFC 6902) tests ─────────────────────────────────
 
     @Test
-    void patchProduct_withValidData_shouldReturn200() throws Exception {
-        ProductPatchDTO patchDTO = new ProductPatchDTO();
-        patchDTO.setPrice(new BigDecimal("5.99"));
-        patchDTO.setPackageSize("40 tableta");
+    void patchProduct_withValidJsonPatch_shouldReturn200() throws Exception {
+        when(productService.patchProduct(eq(1L), any(String.class))).thenReturn(testProductDTO);
 
-        when(productService.patchProduct(eq(1L), any(ProductPatchDTO.class))).thenReturn(testProductDTO);
+        String patchDoc = "[{\"op\":\"replace\",\"path\":\"/price\",\"value\":9.99}]";
 
         mockMvc.perform(patch("/api/products/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(patchDTO)))
+                        .contentType("application/json-patch+json")
+                        .content(patchDoc))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1));
-        verify(productService).patchProduct(eq(1L), any());
-    }
-
-    @Test
-    void patchProduct_withInvalidPrice_shouldReturn400() throws Exception {
-        ProductPatchDTO patchDTO = new ProductPatchDTO();
-        patchDTO.setPrice(new BigDecimal("-1.00"));
-        mockMvc.perform(patch("/api/products/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(patchDTO)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.price").exists());
+        verify(productService).patchProduct(eq(1L), any(String.class));
     }
 
     @Test
     void patchProduct_whenNotExists_shouldReturn404() throws Exception {
-        ProductPatchDTO patchDTO = new ProductPatchDTO();
-        patchDTO.setName("Novo ime");
-        when(productService.patchProduct(eq(999L), any()))
+        when(productService.patchProduct(eq(999L), any(String.class)))
                 .thenThrow(new ResourceNotFoundException("Product with ID 999 not found."));
+
+        String patchDoc = "[{\"op\":\"replace\",\"path\":\"/price\",\"value\":9.99}]";
+
         mockMvc.perform(patch("/api/products/999")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(patchDTO)))
+                        .contentType("application/json-patch+json")
+                        .content(patchDoc))
                 .andExpect(status().isNotFound());
     }
 
-    // ── Paginacija testovi ─────────────────────────────────────────────────
+    // ── Pagination tests ──────────────────────────────────────────────────
 
     @Test
     void getProductsPageable_shouldReturn200WithPageData() throws Exception {
-        ProductPageDTO pageDTO = new ProductPageDTO(List.of(testProductDTO), 0, 10, 1L, 1, true);
-        when(productService.getProductsPageable(0, 10, "name", "asc")).thenReturn(pageDTO);
+        Page<ProductDTO> page = new PageImpl<>(List.of(testProductDTO));
+        when(productService.getProductsPageable(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(page);
 
         mockMvc.perform(get("/api/products/page")
-                        .param("page", "0").param("size", "10")
-                        .param("sortBy", "name").param("direction", "asc"))
+                        .param("page", "0")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.pageNumber").value(0))
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content", hasSize(1)));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
-    void getProductsByCategoryPageable_whenCategoryNotExists_shouldReturn404() throws Exception {
-        when(productService.getProductsByCategoryPageable(eq(999L), anyInt(), anyInt(), any(), any()))
-                .thenThrow(new ResourceNotFoundException("Category with ID 999 not found."));
-        mockMvc.perform(get("/api/products/category/999/page"))
-                .andExpect(status().isNotFound());
+    void getProductsPageable_withFilters_shouldReturn200() throws Exception {
+        Page<ProductDTO> page = new PageImpl<>(List.of(testProductDTO));
+        when(productService.getProductsPageable(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(page);
+
+        mockMvc.perform(get("/api/products/page")
+                        .param("requiresPrescription", "false")
+                        .param("productType", "MEDICATION"))
+                .andExpect(status().isOk());
     }
 
-    // ── Custom upiti testovi ───────────────────────────────────────────────
+    // ── Custom query tests ────────────────────────────────────────────────
 
     @Test
     void getByPriceRange_withValidRange_shouldReturn200() throws Exception {
@@ -264,7 +259,7 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.MEDICATION").value(5));
     }
 
-    // ── Batch testovi ──────────────────────────────────────────────────────
+    // ── Batch tests ───────────────────────────────────────────────────────
 
     @Test
     void createProductsBatch_withValidData_shouldReturn201() throws Exception {
@@ -288,12 +283,12 @@ class ProductControllerTest {
         verify(productService, never()).createProductsBatch(any());
     }
 
-    // ── Transakcija reassign testovi ───────────────────────────────────────
+    // ── Transactional reassign tests ──────────────────────────────────────
 
     @Test
     void reassignProductsToCategory_withValidData_shouldReturn200() throws Exception {
         CategoryReassignDTO dto = new CategoryReassignDTO(List.of(1L, 2L), 3L);
-        Map<String, Object> result = Map.of("message", "Successfully moved 2 proizvoda.", "updatedCount", 2);
+        Map<String, Object> result = Map.of("message", "Successfully moved 2 products.", "updatedCount", 2);
         when(productService.reassignProductsToCategory(any())).thenReturn(result);
 
         mockMvc.perform(patch("/api/products/reassign-category")

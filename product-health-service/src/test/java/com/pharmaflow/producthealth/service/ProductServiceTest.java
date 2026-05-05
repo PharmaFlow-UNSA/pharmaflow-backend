@@ -9,6 +9,7 @@ import com.pharmaflow.producthealth.repositories.CategoryRepository;
 import com.pharmaflow.producthealth.repositories.ProductRepository;
 import com.pharmaflow.producthealth.repositories.SubstanceRepository;
 import com.pharmaflow.producthealth.services.ProductService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,6 +39,7 @@ class ProductServiceTest {
     @Mock private CategoryRepository categoryRepository;
     @Mock private SubstanceRepository substanceRepository;
     @Mock private ModelMapper modelMapper;
+    @Mock private ObjectMapper objectMapper;
     @InjectMocks private ProductService productService;
 
     private Product testProduct;
@@ -48,11 +50,11 @@ class ProductServiceTest {
     void setUp() {
         testCategory = new Category();
         testCategory.setId(1L);
-        testCategory.setName("Analgetici");
+        testCategory.setName("Analgesics");
 
         testProduct = new Product();
         testProduct.setId(1L);
-        testProduct.setName("Brufen 400mg");
+        testProduct.setName("Brufen 400mg tablets");
         testProduct.setPrice(new BigDecimal("4.50"));
         testProduct.setManufacturer("Abbott");
         testProduct.setRequiresPrescription(false);
@@ -62,7 +64,7 @@ class ProductServiceTest {
         testProduct.setSubstances(List.of());
 
         validCreateDTO = new ProductCreateDTO();
-        validCreateDTO.setName("Brufen 400mg");
+        validCreateDTO.setName("Brufen 400mg tablets");
         validCreateDTO.setPrice(new BigDecimal("4.50"));
         validCreateDTO.setManufacturer("Abbott");
         validCreateDTO.setRequiresPrescription(false);
@@ -70,7 +72,7 @@ class ProductServiceTest {
         validCreateDTO.setCategoryId(1L);
     }
 
-    // ── Osnovni CRUD testovi ────────────────────────────────────────────
+    // ── Basic CRUD tests ────────────────────────────────────────────────
 
     @Test
     void getAllActiveProducts_shouldReturnList() {
@@ -86,7 +88,7 @@ class ProductServiceTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
         ProductDTO result = productService.getProductById(1L);
         assertNotNull(result);
-        assertEquals("Brufen 400mg", result.getName());
+        assertEquals("Brufen 400mg tablets", result.getName());
     }
 
     @Test
@@ -97,7 +99,6 @@ class ProductServiceTest {
 
     @Test
     void createProduct_withValidData_shouldReturnDTO() {
-        when(productRepository.existsByBarcode(any())).thenReturn(false);
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
         when(productRepository.save(any(Product.class))).thenReturn(testProduct);
         ProductDTO result = productService.createProduct(validCreateDTO);
@@ -115,7 +116,6 @@ class ProductServiceTest {
 
     @Test
     void createProduct_withNonexistentCategory_shouldThrowException() {
-        when(productRepository.existsByBarcode(any())).thenReturn(false);
         when(categoryRepository.findById(99L)).thenReturn(Optional.empty());
         validCreateDTO.setCategoryId(99L);
         assertThrows(ResourceNotFoundException.class, () -> productService.createProduct(validCreateDTO));
@@ -138,66 +138,36 @@ class ProductServiceTest {
         verify(productRepository, never()).deleteById(any());
     }
 
-    // ── PATCH testovi ───────────────────────────────────────────────────
-
-    @Test
-    void patchProduct_shouldUpdateOnlyNonNullFields() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(productRepository.save(any())).thenReturn(testProduct);
-
-        ProductPatchDTO patch = new ProductPatchDTO();
-        patch.setPrice(new BigDecimal("9.99"));
-        patch.setPackageSize("40 tableta");
-
-        productService.patchProduct(1L, patch);
-
-        assertEquals(new BigDecimal("9.99"), testProduct.getPrice());
-        assertEquals("40 tableta", testProduct.getPackageSize());
-        assertEquals("Abbott", testProduct.getManufacturer()); // nije se promijenio
-        verify(productRepository).save(testProduct);
-    }
-
-    @Test
-    void patchProduct_withEmptyPatch_shouldNotChangeAnything() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(testProduct));
-        when(productRepository.save(any())).thenReturn(testProduct);
-
-        String originalName = testProduct.getName();
-        productService.patchProduct(1L, new ProductPatchDTO());
-
-        assertEquals(originalName, testProduct.getName());
-    }
+    // ── PATCH tests (JSON Patch RFC 6902) ───────────────────────────────
 
     @Test
     void patchProduct_whenNotExists_shouldThrowException() {
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
-                () -> productService.patchProduct(999L, new ProductPatchDTO()));
+                () -> productService.patchProduct(999L, "[{\"op\":\"replace\",\"path\":\"/price\",\"value\":9.99}]"));
     }
 
-    // ── Paginacija testovi ──────────────────────────────────────────────
+    // ── Pagination tests ─────────────────────────────────────────────────
 
     @Test
-    void getProductsPageable_shouldReturnPageDTO() {
+    void getProductsPageable_withValidParams_shouldReturnPage() {
         Page<Product> mockPage = new PageImpl<>(List.of(testProduct));
-        when(productRepository.findAllActivePageable(any(Pageable.class))).thenReturn(mockPage);
-
-        ProductPageDTO result = productService.getProductsPageable(0, 10, "name", "asc");
+        when(productRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class))).thenReturn(mockPage);
+        Page<ProductDTO> result = productService.getProductsPageable(
+                null, null, null, null, null, null, Pageable.ofSize(10));
 
         assertNotNull(result);
-        assertEquals(0, result.getPageNumber());
         assertEquals(1, result.getTotalElements());
-        assertEquals(1, result.getContent().size());
     }
 
     @Test
-    void getProductsByCategoryPageable_whenCategoryNotExists_shouldThrow() {
-        when(categoryRepository.existsById(999L)).thenReturn(false);
-        assertThrows(ResourceNotFoundException.class,
-                () -> productService.getProductsByCategoryPageable(999L, 0, 10, "name", "asc"));
+    void getProductsPageable_withInvalidProductType_shouldThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> productService.getProductsPageable(
+                        null, null, "INVALID_TYPE", null, null, null, Pageable.ofSize(10)));
     }
 
-    // ── Custom upiti testovi ────────────────────────────────────────────
+    // ── Custom query tests ────────────────────────────────────────────────
 
     @Test
     void getProductsByPriceRange_withValidRange_shouldReturnList() {
@@ -231,11 +201,10 @@ class ProductServiceTest {
         verify(productRepository, never()).findByTypeAndPrescription(any(), any());
     }
 
-    // ── Batch testovi ────────────────────────────────────────────────────
+    // ── Batch tests ────────────────────────────────────────────────────────
 
     @Test
     void createProductsBatch_withValidData_shouldSaveAll() {
-        when(productRepository.existsByBarcode(any())).thenReturn(false);
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
         when(productRepository.saveAll(any())).thenReturn(List.of(testProduct));
 
@@ -257,7 +226,7 @@ class ProductServiceTest {
         verify(productRepository, never()).saveAll(any());
     }
 
-    // ── Transakcija reassign testovi ─────────────────────────────────────
+    // ── Transactional reassign tests ─────────────────────────────────────
 
     @Test
     void reassignProductsToCategory_withValidData_shouldReturnResult() {
