@@ -28,44 +28,46 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "FAQ")
 public class FaqController {
 
-    private final FaqService faqService;
+  private final FaqService faqService;
 
-    public FaqController(FaqService faqService) {
-        this.faqService = faqService;
-    }
+  public FaqController(FaqService faqService) {
+    this.faqService = faqService;
+  }
 
-    @GetMapping
-    public ResponseEntity<List<FaqEntryResponseDto>> getFaqEntries() {
-        return ResponseEntity.ok(faqService.getFaqEntries());
-    }
+  @GetMapping
+  public ResponseEntity<List<FaqEntryResponseDto>> getFaqEntries() {
+    return ResponseEntity.ok(faqService.getFaqEntries());
+  }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<FaqEntryResponseDto> getFaqEntry(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(faqService.getFaqEntry(id));
-    }
+  @GetMapping("/{id}")
+  public ResponseEntity<FaqEntryResponseDto> getFaqEntry(@PathVariable @Positive Long id) {
+    return ResponseEntity.ok(faqService.getFaqEntry(id));
+  }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<FaqEntryResponseDto>> searchFaqEntries(
-            @RequestParam @NotBlank(message = "query is required")
-                    @Size(min = 2, max = 200, message = "query must be between 2 and 200 characters")
-                    String query) {
-        return ResponseEntity.ok(faqService.searchFaqEntries(query));
-    }
+  @GetMapping("/search")
+  public ResponseEntity<List<FaqEntryResponseDto>> searchFaqEntries(
+      @RequestParam
+          @NotBlank(message = "query is required")
+          @Size(min = 2, max = 200, message = "query must be between 2 and 200 characters")
+          String query) {
+    return ResponseEntity.ok(faqService.searchFaqEntries(query));
+  }
 
-    @PostMapping
-    public ResponseEntity<FaqEntryResponseDto> createFaqEntry(@Valid @RequestBody FaqEntryRequestDto requestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(faqService.createFaqEntry(requestDto));
-    }
+  @PostMapping
+  public ResponseEntity<FaqEntryResponseDto> createFaqEntry(
+      @Valid @RequestBody FaqEntryRequestDto requestDto) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(faqService.createFaqEntry(requestDto));
+  }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<FaqEntryResponseDto> updateFaqEntry(
-            @PathVariable @Positive Long id, @Valid @RequestBody FaqEntryRequestDto requestDto) {
-        return ResponseEntity.ok(faqService.updateFaqEntry(id, requestDto));
-    }
+  @PutMapping("/{id}")
+  public ResponseEntity<FaqEntryResponseDto> updateFaqEntry(
+      @PathVariable @Positive Long id, @Valid @RequestBody FaqEntryRequestDto requestDto) {
+    return ResponseEntity.ok(faqService.updateFaqEntry(id, requestDto));
+  }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFaqEntry(@PathVariable @Positive Long id) {
-        faqService.deleteFaqEntry(id);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteFaqEntry(@PathVariable @Positive Long id) {
+    faqService.deleteFaqEntry(id);
+    return ResponseEntity.noContent().build();
+  }
 }

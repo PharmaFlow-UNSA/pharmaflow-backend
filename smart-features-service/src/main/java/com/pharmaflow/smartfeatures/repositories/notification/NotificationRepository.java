@@ -10,13 +10,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    @EntityGraph(attributePaths = "therapyReminder")
-    List<Notification> findAllByOrderByCreatedAtDesc();
+  @EntityGraph(attributePaths = "therapyReminder")
+  List<Notification> findAllByOrderByCreatedAtDesc();
 
-    @EntityGraph(attributePaths = "therapyReminder")
-    List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
+  @EntityGraph(attributePaths = "therapyReminder")
+  List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    @Override
-    @EntityGraph(attributePaths = "therapyReminder")
-    Optional<Notification> findById(Long notificationId);
+  @Override
+  @EntityGraph(attributePaths = "therapyReminder")
+  Optional<Notification> findById(Long notificationId);
 }

@@ -6,22 +6,22 @@ import jakarta.validation.ConstraintValidatorContext;
 
 public class SanitizedNameSizeValidator implements ConstraintValidator<SanitizedNameSize, String> {
 
-    private int min;
-    private int max;
+  private int min;
+  private int max;
 
-    @Override
-    public void initialize(SanitizedNameSize constraintAnnotation) {
-        this.min = constraintAnnotation.min();
-        this.max = constraintAnnotation.max();
+  @Override
+  public void initialize(SanitizedNameSize constraintAnnotation) {
+    this.min = constraintAnnotation.min();
+    this.max = constraintAnnotation.max();
+  }
+
+  @Override
+  public boolean isValid(String value, ConstraintValidatorContext context) {
+    if (value == null || value.isBlank()) {
+      return true;
     }
 
-    @Override
-    public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null || value.isBlank()) {
-            return true;
-        }
-
-        String sanitizedName = TextSanitizer.sanitizeRequiredText(value);
-        return sanitizedName != null && sanitizedName.length() >= min && sanitizedName.length() <= max;
-    }
+    String sanitizedName = TextSanitizer.sanitizeRequiredText(value);
+    return sanitizedName != null && sanitizedName.length() >= min && sanitizedName.length() <= max;
+  }
 }

@@ -15,17 +15,17 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomSearchRequestDto {
 
-    @NotNull(message = "userId is required")
-    @Positive(message = "userId must be positive")
-    private Long userId;
+  @NotNull(message = "userId is required")
+  @Positive(message = "userId must be positive")
+  private Long userId;
 
-    @NullablePositive(message = "patientProfileId must be positive")
-    private Long patientProfileId;
+  @NullablePositive(message = "patientProfileId must be positive")
+  private Long patientProfileId;
 
-    @SanitizedTextSize(
-            min = 2,
-            max = 255,
-            allowBlank = false,
-            message = "searchQuery must be between 2 and 255 characters after trimming")
-    private String searchQuery;
+  @SanitizedTextSize(
+      min = 2,
+      max = 255,
+      allowBlank = false,
+      message = "searchQuery must be between 2 and 255 characters after trimming")
+  private String searchQuery;
 }

@@ -13,11 +13,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChatMessageResponseDto {
 
-    private Long id;
-    private Long sessionId;
-    private ChatSenderType senderType;
-    private Long senderId;
-    private String messageText;
-    private String attachmentUrl;
-    private LocalDateTime createdAt;
+  private Long id;
+  private Long sessionId;
+  private ChatSenderType senderType;
+  private Long senderId;
+  private String messageText;
+  private String attachmentUrl;
+  private LocalDateTime createdAt;
 }

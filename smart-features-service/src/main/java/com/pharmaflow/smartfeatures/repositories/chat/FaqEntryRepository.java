@@ -10,13 +10,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FaqEntryRepository extends JpaRepository<FaqEntry, Long> {
 
-    List<FaqEntry> findAllByOrderByQuestionAsc();
+  List<FaqEntry> findAllByOrderByQuestionAsc();
 
-    boolean existsByNormalizedQuestion(String normalizedQuestion);
+  boolean existsByNormalizedQuestion(String normalizedQuestion);
 
-    boolean existsByNormalizedQuestionAndFaqIdNot(String normalizedQuestion, Long faqId);
+  boolean existsByNormalizedQuestionAndFaqIdNot(String normalizedQuestion, Long faqId);
 
-    @Query("""
+  @Query(
+      """
             select f
             from FaqEntry f
             where f.isActive = true
@@ -27,5 +28,5 @@ public interface FaqEntryRepository extends JpaRepository<FaqEntry, Long> {
               )
             order by f.question asc
             """)
-    List<FaqEntry> searchActive(@Param("query") String query);
+  List<FaqEntry> searchActive(@Param("query") String query);
 }

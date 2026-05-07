@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> {
 
-    List<ChatSession> findByUserIdOrderByStartedAtDesc(Long userId);
+  List<ChatSession> findByUserIdOrderByStartedAtDesc(Long userId);
 }

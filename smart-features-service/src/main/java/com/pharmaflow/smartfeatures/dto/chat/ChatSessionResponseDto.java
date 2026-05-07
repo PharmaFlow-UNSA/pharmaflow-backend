@@ -14,11 +14,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChatSessionResponseDto {
 
-    private Long id;
-    private Long userId;
-    private Long patientProfileId;
-    private ChatSessionType sessionType;
-    private ChatSessionStatus status;
-    private LocalDateTime startedAt;
-    private LocalDateTime endedAt;
+  private Long id;
+  private Long userId;
+  private Long patientProfileId;
+  private ChatSessionType sessionType;
+  private ChatSessionStatus status;
+  private LocalDateTime startedAt;
+  private LocalDateTime endedAt;
 }

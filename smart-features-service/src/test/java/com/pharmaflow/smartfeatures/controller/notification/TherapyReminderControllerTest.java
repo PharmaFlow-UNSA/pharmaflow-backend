@@ -29,35 +29,36 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc(addFilters = false)
 class TherapyReminderControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private TherapyReminderService therapyReminderService;
+  @MockitoBean private TherapyReminderService therapyReminderService;
 
-    private TherapyReminderResponseDto responseDto;
+  private TherapyReminderResponseDto responseDto;
 
-    @BeforeEach
-    void setUp() {
-        responseDto = new TherapyReminderResponseDto();
-        responseDto.setId(1L);
-        responseDto.setPatientProfileId(10L);
-        responseDto.setProductId(20L);
-        responseDto.setDosageInstruction("Take once daily");
-        responseDto.setFrequencyPerDay(1);
-        responseDto.setStartDate(LocalDate.now().plusDays(1));
-        responseDto.setEndDate(LocalDate.now().plusDays(5));
-        responseDto.setNextReminderAt(LocalDateTime.now().plusDays(1));
-        responseDto.setStatus(TherapyReminderStatus.ACTIVE);
-    }
+  @BeforeEach
+  void setUp() {
+    responseDto = new TherapyReminderResponseDto();
+    responseDto.setId(1L);
+    responseDto.setPatientProfileId(10L);
+    responseDto.setProductId(20L);
+    responseDto.setDosageInstruction("Take once daily");
+    responseDto.setFrequencyPerDay(1);
+    responseDto.setStartDate(LocalDate.now().plusDays(1));
+    responseDto.setEndDate(LocalDate.now().plusDays(5));
+    responseDto.setNextReminderAt(LocalDateTime.now().plusDays(1));
+    responseDto.setStatus(TherapyReminderStatus.ACTIVE);
+  }
 
-    @Test
-    void createReminderShouldReturn201() throws Exception {
-        when(therapyReminderService.createReminder(any())).thenReturn(responseDto);
+  @Test
+  void createReminderShouldReturn201() throws Exception {
+    when(therapyReminderService.createReminder(any())).thenReturn(responseDto);
 
-        mockMvc.perform(post("/api/reminders")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+    mockMvc
+        .perform(
+            post("/api/reminders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "patientProfileId": 10,
                                   "productId": 20,
@@ -67,16 +68,19 @@ class TherapyReminderControllerTest {
                                   "endDate": "2030-01-15"
                                 }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
-    }
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.status").value("ACTIVE"));
+  }
 
-    @Test
-    void createReminderShouldRejectEndDateBeforeStartDate() throws Exception {
-        mockMvc.perform(post("/api/reminders")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+  @Test
+  void createReminderShouldRejectEndDateBeforeStartDate() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/reminders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "patientProfileId": 10,
                                   "productId": 20,
@@ -86,9 +90,9 @@ class TherapyReminderControllerTest {
                                   "endDate": "2030-01-10"
                                 }
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
-        verify(therapyReminderService, never()).createReminder(any());
-    }
+    verify(therapyReminderService, never()).createReminder(any());
+  }
 }

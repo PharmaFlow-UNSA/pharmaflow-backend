@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationTriggerRepository extends JpaRepository<NotificationTrigger, Long> {
 
-    @EntityGraph(attributePaths = "notification")
-    List<NotificationTrigger> findByNotificationNotificationIdOrderByTriggeredAtDesc(Long notificationId);
+  @EntityGraph(attributePaths = "notification")
+  List<NotificationTrigger> findByNotificationNotificationIdOrderByTriggeredAtDesc(
+      Long notificationId);
 }

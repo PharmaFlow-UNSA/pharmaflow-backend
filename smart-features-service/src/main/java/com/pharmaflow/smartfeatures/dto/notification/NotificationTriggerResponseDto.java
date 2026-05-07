@@ -13,9 +13,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class NotificationTriggerResponseDto {
 
-    private Long id;
-    private Long notificationId;
-    private NotificationTriggerSource triggerSource;
-    private Long sourceEntityId;
-    private LocalDateTime triggeredAt;
+  private Long id;
+  private Long notificationId;
+  private NotificationTriggerSource triggerSource;
+  private Long sourceEntityId;
+  private LocalDateTime triggeredAt;
 }

@@ -12,10 +12,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomProductMatchResponseDto {
 
-    private Long id;
-    private Long symptomId;
-    private Long productId;
-    private Double relevanceScore;
-    private String matchReason;
-    private List<Long> matchedSymptomIds;
+  private Long id;
+  private Long symptomId;
+  private Long productId;
+  private Double relevanceScore;
+  private String matchReason;
+  private List<Long> matchedSymptomIds;
 }

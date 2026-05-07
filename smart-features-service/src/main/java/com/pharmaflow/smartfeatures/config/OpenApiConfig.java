@@ -8,12 +8,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI smartFeaturesOpenApi() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("PharmaFlow Smart Features API")
-                        .description("API documentation for the smart-features-service module.")
-                        .version("v1"));
-    }
+  @Bean
+  public OpenAPI smartFeaturesOpenApi() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("PharmaFlow Smart Features API")
+                .description("API documentation for the smart-features-service module.")
+                .version("v1"));
+  }
 }

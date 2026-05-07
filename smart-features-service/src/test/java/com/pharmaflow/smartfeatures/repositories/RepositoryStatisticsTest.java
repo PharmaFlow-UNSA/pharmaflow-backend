@@ -68,168 +68,169 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = "spring.jpa.properties.hibernate.generate_statistics=true")
 class RepositoryStatisticsTest {
 
-    @Autowired
-    private EntityManager entityManager;
+  @Autowired private EntityManager entityManager;
 
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
+  @Autowired private EntityManagerFactory entityManagerFactory;
 
-    @Autowired
-    private ChatSessionRepository chatSessionRepository;
+  @Autowired private ChatSessionRepository chatSessionRepository;
 
-    @Autowired
-    private ChatMessageRepository chatMessageRepository;
+  @Autowired private ChatMessageRepository chatMessageRepository;
 
-    @Autowired
-    private ChatIntentMatchRepository chatIntentMatchRepository;
+  @Autowired private ChatIntentMatchRepository chatIntentMatchRepository;
 
-    @Autowired
-    private FaqEntryRepository faqEntryRepository;
+  @Autowired private FaqEntryRepository faqEntryRepository;
 
-    @Autowired
-    private FraudCheckRepository fraudCheckRepository;
+  @Autowired private FraudCheckRepository fraudCheckRepository;
 
-    @Autowired
-    private FraudLogRepository fraudLogRepository;
+  @Autowired private FraudLogRepository fraudLogRepository;
 
-    @Autowired
-    private FraudRuleRepository fraudRuleRepository;
+  @Autowired private FraudRuleRepository fraudRuleRepository;
 
-    @Autowired
-    private NotificationRepository notificationRepository;
+  @Autowired private NotificationRepository notificationRepository;
 
-    @Autowired
-    private NotificationTriggerRepository notificationTriggerRepository;
+  @Autowired private NotificationTriggerRepository notificationTriggerRepository;
 
-    @Autowired
-    private TherapyReminderRepository therapyReminderRepository;
+  @Autowired private TherapyReminderRepository therapyReminderRepository;
 
-    @Autowired
-    private RecommendationRepository recommendationRepository;
+  @Autowired private RecommendationRepository recommendationRepository;
 
-    @Autowired
-    private RecommendationEventRepository recommendationEventRepository;
+  @Autowired private RecommendationEventRepository recommendationEventRepository;
 
-    @Autowired
-    private SymptomRepository symptomRepository;
+  @Autowired private SymptomRepository symptomRepository;
 
-    @Autowired
-    private SymptomProductMatchRepository symptomProductMatchRepository;
+  @Autowired private SymptomProductMatchRepository symptomProductMatchRepository;
 
-    @Autowired
-    private SymptomSearchRepository symptomSearchRepository;
+  @Autowired private SymptomSearchRepository symptomSearchRepository;
 
-    @Autowired
-    private SymptomSearchItemRepository symptomSearchItemRepository;
+  @Autowired private SymptomSearchItemRepository symptomSearchItemRepository;
 
-    private Statistics statistics;
-    private Long notificationId;
-    private Long reminderId;
-    private Long recommendationId;
-    private Long searchId;
-    private Long symptomId;
-    private Long fraudCheckId;
-    private Long sessionId;
-    private Long messageId;
+  private Statistics statistics;
+  private Long notificationId;
+  private Long reminderId;
+  private Long recommendationId;
+  private Long searchId;
+  private Long symptomId;
+  private Long fraudCheckId;
+  private Long sessionId;
+  private Long messageId;
 
-    @BeforeEach
-    void setUp() {
-        statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-        deleteAllData();
-        seedData();
-        entityManager.flush();
-        entityManager.clear();
-        statistics.clear();
-    }
+  @BeforeEach
+  void setUp() {
+    statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+    deleteAllData();
+    seedData();
+    entityManager.flush();
+    entityManager.clear();
+    statistics.clear();
+  }
 
-    @Test
-    void notificationRepositoryShouldAvoidNPlusOneWhenAccessingReminder() {
-        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(100L);
+  @Test
+  void notificationRepositoryShouldAvoidNPlusOneWhenAccessingReminder() {
+    List<Notification> notifications =
+        notificationRepository.findByUserIdOrderByCreatedAtDesc(100L);
 
-        assertThat(notifications).hasSize(2);
-        assertThat(notifications)
-                .extracting(notification -> notification.getTherapyReminder().getReminderId())
-                .containsOnly(reminderId);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(notifications).hasSize(2);
+    assertThat(notifications)
+        .extracting(notification -> notification.getTherapyReminder().getReminderId())
+        .containsOnly(reminderId);
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    @Test
-    void notificationTriggerRepositoryShouldAvoidNPlusOneWhenAccessingNotification() {
-        List<NotificationTrigger> triggers =
-                notificationTriggerRepository.findByNotificationNotificationIdOrderByTriggeredAtDesc(notificationId);
+  @Test
+  void notificationTriggerRepositoryShouldAvoidNPlusOneWhenAccessingNotification() {
+    List<NotificationTrigger> triggers =
+        notificationTriggerRepository.findByNotificationNotificationIdOrderByTriggeredAtDesc(
+            notificationId);
 
-        assertThat(triggers).hasSize(2);
-        assertThat(triggers)
-                .extracting(trigger -> trigger.getNotification().getNotificationId())
-                .containsOnly(notificationId);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(triggers).hasSize(2);
+    assertThat(triggers)
+        .extracting(trigger -> trigger.getNotification().getNotificationId())
+        .containsOnly(notificationId);
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    @Test
-    void recommendationEventRepositoryShouldAvoidNPlusOneWhenAccessingRecommendation() {
-        List<RecommendationEvent> events =
-                recommendationEventRepository.findByRecommendationRecommendationIdOrderByEventTimeDesc(recommendationId);
+  @Test
+  void recommendationEventRepositoryShouldAvoidNPlusOneWhenAccessingRecommendation() {
+    List<RecommendationEvent> events =
+        recommendationEventRepository.findByRecommendationRecommendationIdOrderByEventTimeDesc(
+            recommendationId);
 
-        assertThat(events).hasSize(2);
-        assertThat(events)
-                .extracting(event -> event.getRecommendation().getRecommendationId())
-                .containsOnly(recommendationId);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(events).hasSize(2);
+    assertThat(events)
+        .extracting(event -> event.getRecommendation().getRecommendationId())
+        .containsOnly(recommendationId);
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    @Test
-    void symptomSearchItemRepositoryShouldAvoidNPlusOneWhenAccessingSearchAndSymptom() {
-        List<SymptomSearchItem> items = symptomSearchItemRepository.findBySearchSearchIdOrderBySearchItemIdAsc(searchId);
+  @Test
+  void symptomSearchItemRepositoryShouldAvoidNPlusOneWhenAccessingSearchAndSymptom() {
+    List<SymptomSearchItem> items =
+        symptomSearchItemRepository.findBySearchSearchIdOrderBySearchItemIdAsc(searchId);
 
-        assertThat(items).hasSize(2);
-        assertThat(items).extracting(item -> item.getSearch().getSearchId()).containsOnly(searchId);
-        assertThat(items).extracting(item -> item.getSymptom().getName()).containsExactly("Dry Cough", "Fever");
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(items).hasSize(2);
+    assertThat(items).extracting(item -> item.getSearch().getSearchId()).containsOnly(searchId);
+    assertThat(items)
+        .extracting(item -> item.getSymptom().getName())
+        .containsExactly("Dry Cough", "Fever");
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    @Test
-    void symptomProductMatchRepositoryShouldAvoidNPlusOneWhenAccessingSymptom() {
-        List<SymptomProductMatch> matches =
-                symptomProductMatchRepository.findBySymptomSymptomIdOrderByRelevanceScoreDescMatchIdAsc(symptomId);
+  @Test
+  void symptomProductMatchRepositoryShouldAvoidNPlusOneWhenAccessingSymptom() {
+    List<SymptomProductMatch> matches =
+        symptomProductMatchRepository.findBySymptomSymptomIdOrderByRelevanceScoreDescMatchIdAsc(
+            symptomId);
 
-        assertThat(matches).hasSize(2);
-        assertThat(matches).extracting(match -> match.getSymptom().getSymptomId()).containsOnly(symptomId);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(matches).hasSize(2);
+    assertThat(matches)
+        .extracting(match -> match.getSymptom().getSymptomId())
+        .containsOnly(symptomId);
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    @Test
-    void fraudLogRepositoryShouldAvoidNPlusOneWhenAccessingCheckAndRule() {
-        List<FraudLog> logs = fraudLogRepository.findByFraudCheckFraudCheckIdOrderByCreatedAtDesc(fraudCheckId);
+  @Test
+  void fraudLogRepositoryShouldAvoidNPlusOneWhenAccessingCheckAndRule() {
+    List<FraudLog> logs =
+        fraudLogRepository.findByFraudCheckFraudCheckIdOrderByCreatedAtDesc(fraudCheckId);
 
-        assertThat(logs).hasSize(2);
-        assertThat(logs).extracting(log -> log.getFraudCheck().getFraudCheckId()).containsOnly(fraudCheckId);
-        assertThat(logs).extracting(log -> log.getFraudRule().getRuleName()).containsExactly("Late pickup", "High value");
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(logs).hasSize(2);
+    assertThat(logs)
+        .extracting(log -> log.getFraudCheck().getFraudCheckId())
+        .containsOnly(fraudCheckId);
+    assertThat(logs)
+        .extracting(log -> log.getFraudRule().getRuleName())
+        .containsExactly("Late pickup", "High value");
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    @Test
-    void chatMessageRepositoryShouldAvoidNPlusOneWhenAccessingSession() {
-        List<ChatMessage> messages = chatMessageRepository.findBySessionSessionIdOrderByCreatedAtAsc(sessionId);
-        long queriesAfterFetch = statistics.getPrepareStatementCount();
+  @Test
+  void chatMessageRepositoryShouldAvoidNPlusOneWhenAccessingSession() {
+    List<ChatMessage> messages =
+        chatMessageRepository.findBySessionSessionIdOrderByCreatedAtAsc(sessionId);
+    long queriesAfterFetch = statistics.getPrepareStatementCount();
 
-        assertThat(messages).hasSize(2);
-        assertThat(messages).extracting(message -> message.getSession().getSessionId()).containsOnly(sessionId);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(queriesAfterFetch);
-        assertThat(queriesAfterFetch).isLessThanOrEqualTo(3L);
-    }
+    assertThat(messages).hasSize(2);
+    assertThat(messages)
+        .extracting(message -> message.getSession().getSessionId())
+        .containsOnly(sessionId);
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(queriesAfterFetch);
+    assertThat(queriesAfterFetch).isLessThanOrEqualTo(3L);
+  }
 
-    @Test
-    void chatIntentMatchRepositoryShouldFetchMessageAndFaqInSingleQuery() {
-        ChatIntentMatch intentMatch =
-                chatIntentMatchRepository.findByMessageMessageId(messageId).orElseThrow();
+  @Test
+  void chatIntentMatchRepositoryShouldFetchMessageAndFaqInSingleQuery() {
+    ChatIntentMatch intentMatch =
+        chatIntentMatchRepository.findByMessageMessageId(messageId).orElseThrow();
 
-        assertThat(intentMatch.getMessage().getMessageId()).isEqualTo(messageId);
-        assertThat(intentMatch.getFaqEntry().getQuestion()).isEqualTo("How to pay?");
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
-    }
+    assertThat(intentMatch.getMessage().getMessageId()).isEqualTo(messageId);
+    assertThat(intentMatch.getFaqEntry().getQuestion()).isEqualTo("How to pay?");
+    assertThat(statistics.getPrepareStatementCount()).isEqualTo(1L);
+  }
 
-    private void seedData() {
-        TherapyReminder reminder = therapyReminderRepository.save(TherapyReminder.builder()
+  private void seedData() {
+    TherapyReminder reminder =
+        therapyReminderRepository.save(
+            TherapyReminder.builder()
                 .patientProfileId(200L)
                 .productId(300L)
                 .dosageInstruction("Take once daily")
@@ -239,9 +240,11 @@ class RepositoryStatisticsTest {
                 .nextReminderAt(LocalDateTime.now().plusDays(1))
                 .status(TherapyReminderStatus.ACTIVE)
                 .build());
-        reminderId = reminder.getReminderId();
+    reminderId = reminder.getReminderId();
 
-        Notification firstNotification = notificationRepository.save(Notification.builder()
+    Notification firstNotification =
+        notificationRepository.save(
+            Notification.builder()
                 .therapyReminder(reminder)
                 .userId(100L)
                 .patientProfileId(200L)
@@ -252,7 +255,9 @@ class RepositoryStatisticsTest {
                 .status(NotificationStatus.PENDING)
                 .createdAt(LocalDateTime.now().minusMinutes(2))
                 .build());
-        Notification secondNotification = notificationRepository.save(Notification.builder()
+    Notification secondNotification =
+        notificationRepository.save(
+            Notification.builder()
                 .therapyReminder(reminder)
                 .userId(100L)
                 .patientProfileId(200L)
@@ -264,23 +269,26 @@ class RepositoryStatisticsTest {
                 .createdAt(LocalDateTime.now().minusMinutes(1))
                 .sentAt(LocalDateTime.now().minusSeconds(30))
                 .build());
-        notificationId = secondNotification.getNotificationId();
+    notificationId = secondNotification.getNotificationId();
 
-        notificationTriggerRepository.saveAll(List.of(
-                NotificationTrigger.builder()
-                        .notification(secondNotification)
-                        .triggerSource(NotificationTriggerSource.THERAPY)
-                        .sourceEntityId(reminderId)
-                        .triggeredAt(LocalDateTime.now().minusSeconds(20))
-                        .build(),
-                NotificationTrigger.builder()
-                        .notification(secondNotification)
-                        .triggerSource(NotificationTriggerSource.THERAPY)
-                        .sourceEntityId(reminderId)
-                        .triggeredAt(LocalDateTime.now().minusSeconds(10))
-                        .build()));
+    notificationTriggerRepository.saveAll(
+        List.of(
+            NotificationTrigger.builder()
+                .notification(secondNotification)
+                .triggerSource(NotificationTriggerSource.THERAPY)
+                .sourceEntityId(reminderId)
+                .triggeredAt(LocalDateTime.now().minusSeconds(20))
+                .build(),
+            NotificationTrigger.builder()
+                .notification(secondNotification)
+                .triggerSource(NotificationTriggerSource.THERAPY)
+                .sourceEntityId(reminderId)
+                .triggeredAt(LocalDateTime.now().minusSeconds(10))
+                .build()));
 
-        Recommendation recommendation = recommendationRepository.save(Recommendation.builder()
+    Recommendation recommendation =
+        recommendationRepository.save(
+            Recommendation.builder()
                 .userId(400L)
                 .patientProfileId(401L)
                 .productId(402L)
@@ -291,99 +299,123 @@ class RepositoryStatisticsTest {
                 .expiresAt(LocalDateTime.now().plusDays(2))
                 .status(RecommendationStatus.ACTIVE)
                 .build());
-        recommendationId = recommendation.getRecommendationId();
+    recommendationId = recommendation.getRecommendationId();
 
-        recommendationEventRepository.saveAll(List.of(
-                RecommendationEvent.builder()
-                        .recommendation(recommendation)
-                        .eventType(RecommendationEventType.VIEWED)
-                        .eventTime(LocalDateTime.now().minusMinutes(2))
-                        .build(),
-                RecommendationEvent.builder()
-                        .recommendation(recommendation)
-                        .eventType(RecommendationEventType.CLICKED)
-                        .eventTime(LocalDateTime.now().minusMinutes(1))
-                        .build()));
+    recommendationEventRepository.saveAll(
+        List.of(
+            RecommendationEvent.builder()
+                .recommendation(recommendation)
+                .eventType(RecommendationEventType.VIEWED)
+                .eventTime(LocalDateTime.now().minusMinutes(2))
+                .build(),
+            RecommendationEvent.builder()
+                .recommendation(recommendation)
+                .eventType(RecommendationEventType.CLICKED)
+                .eventTime(LocalDateTime.now().minusMinutes(1))
+                .build()));
 
-        Symptom dryCough = symptomRepository.save(Symptom.builder()
+    Symptom dryCough =
+        symptomRepository.save(
+            Symptom.builder()
                 .name("Dry Cough")
                 .description("Persistent cough")
                 .severityLevel(SymptomSeverityLevel.MEDIUM)
                 .isActive(true)
                 .build());
-        Symptom fever = symptomRepository.save(Symptom.builder()
+    Symptom fever =
+        symptomRepository.save(
+            Symptom.builder()
                 .name("Fever")
                 .description("Elevated temperature")
                 .severityLevel(SymptomSeverityLevel.HIGH)
                 .isActive(true)
                 .build());
-        symptomId = dryCough.getSymptomId();
+    symptomId = dryCough.getSymptomId();
 
-        symptomProductMatchRepository.saveAll(List.of(
-                SymptomProductMatch.builder()
-                        .symptom(dryCough)
-                        .productId(501L)
-                        .relevanceScore(0.9)
-                        .matchReason("Targets dry cough")
-                        .build(),
-                SymptomProductMatch.builder()
-                        .symptom(dryCough)
-                        .productId(502L)
-                        .relevanceScore(0.7)
-                        .matchReason("Night relief")
-                        .build()));
+    symptomProductMatchRepository.saveAll(
+        List.of(
+            SymptomProductMatch.builder()
+                .symptom(dryCough)
+                .productId(501L)
+                .relevanceScore(0.9)
+                .matchReason("Targets dry cough")
+                .build(),
+            SymptomProductMatch.builder()
+                .symptom(dryCough)
+                .productId(502L)
+                .relevanceScore(0.7)
+                .matchReason("Night relief")
+                .build()));
 
-        SymptomSearch search = symptomSearchRepository.save(SymptomSearch.builder()
+    SymptomSearch search =
+        symptomSearchRepository.save(
+            SymptomSearch.builder()
                 .userId(600L)
                 .patientProfileId(601L)
                 .searchQuery("dry cough and fever")
                 .searchedAt(LocalDateTime.now().minusMinutes(5))
                 .build());
-        searchId = search.getSearchId();
+    searchId = search.getSearchId();
 
-        symptomSearchItemRepository.saveAll(List.of(
-                SymptomSearchItem.builder().search(search).symptom(dryCough).build(),
-                SymptomSearchItem.builder().search(search).symptom(fever).build()));
+    symptomSearchItemRepository.saveAll(
+        List.of(
+            SymptomSearchItem.builder().search(search).symptom(dryCough).build(),
+            SymptomSearchItem.builder().search(search).symptom(fever).build()));
 
-        FraudRule highValueRule = fraudRuleRepository.save(FraudRule.builder()
+    FraudRule highValueRule =
+        fraudRuleRepository.save(
+            FraudRule.builder()
                 .ruleName("High value")
+                .ruleCode("ORDER_HIGH_QUANTITY")
+                .category("ORDER")
                 .description("High order total")
                 .weight(45.0)
                 .isActive(true)
                 .build());
-        FraudRule latePickupRule = fraudRuleRepository.save(FraudRule.builder()
+    FraudRule latePickupRule =
+        fraudRuleRepository.save(
+            FraudRule.builder()
                 .ruleName("Late pickup")
+                .ruleCode("ORDER_VELOCITY")
+                .category("ORDER")
                 .description("Repeated delayed pickup")
                 .weight(20.0)
                 .isActive(true)
                 .build());
 
-        FraudCheck fraudCheck = fraudCheckRepository.save(FraudCheck.builder()
+    FraudCheck fraudCheck =
+        fraudCheckRepository.save(
+            FraudCheck.builder()
                 .userId(700L)
                 .orderId(701L)
                 .riskScore(65.0)
                 .decision(FraudDecision.REVIEW)
                 .checkedAt(LocalDateTime.now().minusMinutes(10))
                 .build());
-        fraudCheckId = fraudCheck.getFraudCheckId();
+    fraudCheckId = fraudCheck.getFraudCheckId();
 
-        fraudLogRepository.saveAll(List.of(
-                FraudLog.builder()
-                        .fraudCheck(fraudCheck)
-                        .fraudRule(highValueRule)
-                        .eventType(FraudEventType.TRIGGERED)
-                        .details("Triggered by amount")
-                        .createdAt(LocalDateTime.now().minusMinutes(4))
-                        .build(),
-                FraudLog.builder()
-                        .fraudCheck(fraudCheck)
-                        .fraudRule(latePickupRule)
-                        .eventType(FraudEventType.CLEARED)
-                        .details("Not triggered")
-                        .createdAt(LocalDateTime.now().minusMinutes(3))
-                        .build()));
+    fraudLogRepository.saveAll(
+        List.of(
+            FraudLog.builder()
+                .fraudCheck(fraudCheck)
+                .fraudRule(highValueRule)
+                .eventType(FraudEventType.TRIGGERED)
+                .details("Triggered by amount")
+                .scoreContribution(45.0)
+                .createdAt(LocalDateTime.now().minusMinutes(4))
+                .build(),
+            FraudLog.builder()
+                .fraudCheck(fraudCheck)
+                .fraudRule(latePickupRule)
+                .eventType(FraudEventType.CLEARED)
+                .details("Not triggered")
+                .scoreContribution(0.0)
+                .createdAt(LocalDateTime.now().minusMinutes(3))
+                .build()));
 
-        FaqEntry faqEntry = faqEntryRepository.save(FaqEntry.builder()
+    FaqEntry faqEntry =
+        faqEntryRepository.save(
+            FaqEntry.builder()
                 .question("How to pay?")
                 .answer("Use card or cash.")
                 .category(FaqCategory.PAYMENTS)
@@ -392,60 +424,67 @@ class RepositoryStatisticsTest {
                 .updatedAt(LocalDateTime.now().minusDays(1))
                 .build());
 
-        ChatSession session = chatSessionRepository.save(ChatSession.builder()
+    ChatSession session =
+        chatSessionRepository.save(
+            ChatSession.builder()
                 .userId(800L)
                 .patientProfileId(801L)
                 .sessionType(ChatSessionType.FAQ_BOT)
                 .status(ChatSessionStatus.OPEN)
                 .startedAt(LocalDateTime.now().minusMinutes(30))
                 .build());
-        sessionId = session.getSessionId();
+    sessionId = session.getSessionId();
 
-        ChatMessage firstMessage = chatMessageRepository.save(ChatMessage.builder()
+    ChatMessage firstMessage =
+        chatMessageRepository.save(
+            ChatMessage.builder()
                 .session(session)
                 .senderType(ChatSenderType.USER)
                 .senderId(800L)
                 .messageText("How to pay?")
                 .createdAt(LocalDateTime.now().minusMinutes(29))
                 .build());
-        ChatMessage secondMessage = chatMessageRepository.save(ChatMessage.builder()
+    ChatMessage secondMessage =
+        chatMessageRepository.save(
+            ChatMessage.builder()
                 .session(session)
                 .senderType(ChatSenderType.BOT)
                 .messageText("Use card or cash.")
                 .createdAt(LocalDateTime.now().minusMinutes(28))
                 .build());
-        messageId = firstMessage.getMessageId();
+    messageId = firstMessage.getMessageId();
 
-        chatIntentMatchRepository.save(ChatIntentMatch.builder()
-                .message(firstMessage)
-                .faqEntry(faqEntry)
-                .detectedIntent("PAYMENTS")
-                .confidenceScore(0.95)
-                .build());
+    chatIntentMatchRepository.save(
+        ChatIntentMatch.builder()
+            .message(firstMessage)
+            .faqEntry(faqEntry)
+            .detectedIntent("PAYMENTS")
+            .confidenceScore(0.95)
+            .build());
 
-        assertThat(secondMessage.getMessageId()).isNotNull();
-    }
+    assertThat(secondMessage.getMessageId()).isNotNull();
+  }
 
-    private void deleteAllData() {
-        chatIntentMatchRepository.deleteAll();
-        chatMessageRepository.deleteAll();
-        chatSessionRepository.deleteAll();
-        faqEntryRepository.deleteAll();
+  private void deleteAllData() {
+    chatIntentMatchRepository.deleteAll();
+    chatMessageRepository.deleteAll();
+    chatSessionRepository.deleteAll();
+    faqEntryRepository.deleteAll();
 
-        fraudLogRepository.deleteAll();
-        fraudCheckRepository.deleteAll();
-        fraudRuleRepository.deleteAll();
+    fraudLogRepository.deleteAll();
+    fraudCheckRepository.deleteAll();
+    fraudRuleRepository.deleteAll();
 
-        notificationTriggerRepository.deleteAll();
-        notificationRepository.deleteAll();
-        therapyReminderRepository.deleteAll();
+    notificationTriggerRepository.deleteAll();
+    notificationRepository.deleteAll();
+    therapyReminderRepository.deleteAll();
 
-        recommendationEventRepository.deleteAll();
-        recommendationRepository.deleteAll();
+    recommendationEventRepository.deleteAll();
+    recommendationRepository.deleteAll();
 
-        symptomSearchItemRepository.deleteAll();
-        symptomProductMatchRepository.deleteAll();
-        symptomSearchRepository.deleteAll();
-        symptomRepository.deleteAll();
-    }
+    symptomSearchItemRepository.deleteAll();
+    symptomProductMatchRepository.deleteAll();
+    symptomSearchRepository.deleteAll();
+    symptomRepository.deleteAll();
+  }
 }

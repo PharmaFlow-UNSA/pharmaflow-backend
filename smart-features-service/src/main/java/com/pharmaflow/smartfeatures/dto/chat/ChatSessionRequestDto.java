@@ -15,13 +15,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChatSessionRequestDto {
 
-    @NotNull(message = "userId is required")
-    @Positive(message = "userId must be positive")
-    private Long userId;
+  @NotNull(message = "userId is required")
+  @Positive(message = "userId must be positive")
+  private Long userId;
 
-    @NullablePositive(message = "patientProfileId must be positive")
-    private Long patientProfileId;
+  @NullablePositive(message = "patientProfileId must be positive")
+  private Long patientProfileId;
 
-    @NotNull(message = "sessionType is required")
-    private ChatSessionType sessionType;
+  @NotNull(message = "sessionType is required")
+  private ChatSessionType sessionType;
 }

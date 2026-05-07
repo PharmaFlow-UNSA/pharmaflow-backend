@@ -29,49 +29,54 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Symptoms")
 public class SymptomSearchController {
 
-    private final SymptomSearchService symptomSearchService;
+  private final SymptomSearchService symptomSearchService;
 
-    public SymptomSearchController(SymptomSearchService symptomSearchService) {
-        this.symptomSearchService = symptomSearchService;
-    }
+  public SymptomSearchController(SymptomSearchService symptomSearchService) {
+    this.symptomSearchService = symptomSearchService;
+  }
 
-    @GetMapping
-    public ResponseEntity<List<SymptomSearchResponseDto>> getSearches(
-            @RequestParam(required = false) @NullablePositive Long userId,
-            @RequestParam(required = false) @NullablePositive Long patientProfileId) {
-        return ResponseEntity.ok(symptomSearchService.getSearches(userId, patientProfileId));
-    }
+  @GetMapping
+  public ResponseEntity<List<SymptomSearchResponseDto>> getSearches(
+      @RequestParam(required = false) @NullablePositive Long userId,
+      @RequestParam(required = false) @NullablePositive Long patientProfileId) {
+    return ResponseEntity.ok(symptomSearchService.getSearches(userId, patientProfileId));
+  }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<SymptomSearchResponseDto> getSearch(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(symptomSearchService.getSearch(id));
-    }
+  @GetMapping("/{id}")
+  public ResponseEntity<SymptomSearchResponseDto> getSearch(@PathVariable @Positive Long id) {
+    return ResponseEntity.ok(symptomSearchService.getSearch(id));
+  }
 
-    @PostMapping
-    public ResponseEntity<SymptomSearchResponseDto> createSearch(
-            @Valid @RequestBody SymptomSearchRequestDto requestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(symptomSearchService.createSearch(requestDto));
-    }
+  @PostMapping
+  public ResponseEntity<SymptomSearchResponseDto> createSearch(
+      @Valid @RequestBody SymptomSearchRequestDto requestDto) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(symptomSearchService.createSearch(requestDto));
+  }
 
-    @GetMapping("/{id}/items")
-    public ResponseEntity<List<SymptomSearchItemResponseDto>> getItems(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(symptomSearchService.getItems(id));
-    }
+  @GetMapping("/{id}/items")
+  public ResponseEntity<List<SymptomSearchItemResponseDto>> getItems(
+      @PathVariable @Positive Long id) {
+    return ResponseEntity.ok(symptomSearchService.getItems(id));
+  }
 
-    @PostMapping("/{id}/items")
-    public ResponseEntity<SymptomSearchItemResponseDto> addItem(
-            @PathVariable @Positive Long id, @Valid @RequestBody SymptomSearchItemRequestDto requestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(symptomSearchService.addItem(id, requestDto));
-    }
+  @PostMapping("/{id}/items")
+  public ResponseEntity<SymptomSearchItemResponseDto> addItem(
+      @PathVariable @Positive Long id, @Valid @RequestBody SymptomSearchItemRequestDto requestDto) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(symptomSearchService.addItem(id, requestDto));
+  }
 
-    @DeleteMapping("/{id}/items/{itemId}")
-    public ResponseEntity<Void> deleteItem(@PathVariable @Positive Long id, @PathVariable @Positive Long itemId) {
-        symptomSearchService.deleteItem(id, itemId);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{id}/items/{itemId}")
+  public ResponseEntity<Void> deleteItem(
+      @PathVariable @Positive Long id, @PathVariable @Positive Long itemId) {
+    symptomSearchService.deleteItem(id, itemId);
+    return ResponseEntity.noContent().build();
+  }
 
-    @GetMapping("/{id}/matches")
-    public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(symptomSearchService.getMatches(id));
-    }
+  @GetMapping("/{id}/matches")
+  public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(
+      @PathVariable @Positive Long id) {
+    return ResponseEntity.ok(symptomSearchService.getMatches(id));
+  }
 }

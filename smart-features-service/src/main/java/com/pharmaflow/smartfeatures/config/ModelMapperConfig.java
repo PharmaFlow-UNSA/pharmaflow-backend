@@ -11,24 +11,28 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ModelMapperConfig {
 
-    @Bean
-    public ModelMapper modelMapper() {
-        ModelMapper modelMapper = new ModelMapper();
-        modelMapper.getConfiguration()
-                .setMatchingStrategy(MatchingStrategies.STRICT)
-                .setFieldMatchingEnabled(true)
-                .setAmbiguityIgnored(false)
-                .setSkipNullEnabled(false);
+  @Bean
+  public ModelMapper modelMapper() {
+    ModelMapper modelMapper = new ModelMapper();
+    modelMapper
+        .getConfiguration()
+        .setMatchingStrategy(MatchingStrategies.STRICT)
+        .setFieldMatchingEnabled(true)
+        .setAmbiguityIgnored(false)
+        .setSkipNullEnabled(false);
 
-        modelMapper.typeMap(Symptom.class, SymptomResponseDto.class)
-                .addMappings(mapper -> {
-                    mapper.map(Symptom::getSymptomId, SymptomResponseDto::setId);
-                    mapper.map(Symptom::isActive, SymptomResponseDto::setActive);
-                });
+    modelMapper
+        .typeMap(Symptom.class, SymptomResponseDto.class)
+        .addMappings(
+            mapper -> {
+              mapper.map(Symptom::getSymptomId, SymptomResponseDto::setId);
+              mapper.map(Symptom::isActive, SymptomResponseDto::setActive);
+            });
 
-        modelMapper.typeMap(SymptomRequestDto.class, Symptom.class)
-                .addMappings(mapper -> mapper.map(SymptomRequestDto::getActive, Symptom::setActive));
+    modelMapper
+        .typeMap(SymptomRequestDto.class, Symptom.class)
+        .addMappings(mapper -> mapper.map(SymptomRequestDto::getActive, Symptom::setActive));
 
-        return modelMapper;
-    }
+    return modelMapper;
+  }
 }

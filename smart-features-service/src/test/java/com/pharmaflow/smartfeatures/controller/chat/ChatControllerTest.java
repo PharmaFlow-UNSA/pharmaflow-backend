@@ -29,56 +29,60 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc(addFilters = false)
 class ChatControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private ChatService chatService;
+  @MockitoBean private ChatService chatService;
 
-    private ChatSessionResponseDto sessionResponseDto;
+  private ChatSessionResponseDto sessionResponseDto;
 
-    @BeforeEach
-    void setUp() {
-        sessionResponseDto = new ChatSessionResponseDto();
-        sessionResponseDto.setId(1L);
-        sessionResponseDto.setUserId(10L);
-        sessionResponseDto.setPatientProfileId(20L);
-        sessionResponseDto.setSessionType(ChatSessionType.FAQ_BOT);
-        sessionResponseDto.setStatus(ChatSessionStatus.OPEN);
-        sessionResponseDto.setStartedAt(LocalDateTime.now());
-    }
+  @BeforeEach
+  void setUp() {
+    sessionResponseDto = new ChatSessionResponseDto();
+    sessionResponseDto.setId(1L);
+    sessionResponseDto.setUserId(10L);
+    sessionResponseDto.setPatientProfileId(20L);
+    sessionResponseDto.setSessionType(ChatSessionType.FAQ_BOT);
+    sessionResponseDto.setStatus(ChatSessionStatus.OPEN);
+    sessionResponseDto.setStartedAt(LocalDateTime.now());
+  }
 
-    @Test
-    void createSessionShouldReturn201() throws Exception {
-        when(chatService.createSession(any())).thenReturn(sessionResponseDto);
+  @Test
+  void createSessionShouldReturn201() throws Exception {
+    when(chatService.createSession(any())).thenReturn(sessionResponseDto);
 
-        mockMvc.perform(post("/api/chat-sessions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+    mockMvc
+        .perform(
+            post("/api/chat-sessions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "userId": 10,
                                   "patientProfileId": 20,
                                   "sessionType": "FAQ_BOT"
                                 }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("OPEN"));
-    }
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.status").value("OPEN"));
+  }
 
-    @Test
-    void createMessageShouldRejectBodyWithoutMessageOrAttachment() throws Exception {
-        mockMvc.perform(post("/api/chat-sessions/1/messages")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+  @Test
+  void createMessageShouldRejectBodyWithoutMessageOrAttachment() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/chat-sessions/1/messages")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "senderType": "USER",
                                   "senderId": 10
                                 }
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
-        verify(chatService, never()).createMessage(any(), any());
-    }
+    verify(chatService, never()).createMessage(any(), any());
+  }
 }

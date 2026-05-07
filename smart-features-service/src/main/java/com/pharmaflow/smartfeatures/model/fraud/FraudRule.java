@@ -26,15 +26,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents a fraud rule used to score or explain fraud checks.
- */
+/** Represents a fraud rule used to score or explain fraud checks. */
 @Entity
 @Table(
-        name = "fraud_rule",
-        uniqueConstraints = {
-            @UniqueConstraint(name = "uk_fraud_rule_normalized_name", columnNames = "normalized_rule_name")
-        })
+    name = "fraud_rule",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_fraud_rule_normalized_name",
+          columnNames = "normalized_rule_name")
+    })
 @Getter
 @Setter
 @Builder
@@ -42,50 +42,64 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FraudRule {
 
-    /** Primary key of the fraud rule. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "rule_id", nullable = false, updatable = false)
-    private Long ruleId;
+  /** Primary key of the fraud rule. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "rule_id", nullable = false, updatable = false)
+  private Long ruleId;
 
-    /** Human-readable name of the rule. */
-    @NotBlank
-    @Size(max = 100)
-    @Column(name = "rule_name", nullable = false, length = 100)
-    private String ruleName;
+  /** Human-readable name of the rule. */
+  @NotBlank
+  @Size(max = 100)
+  @Column(name = "rule_name", nullable = false, length = 100)
+  private String ruleName;
 
-    /** Normalized rule name used for duplicate detection. */
-    @NotBlank
-    @Size(max = 100)
-    @Column(name = "normalized_rule_name", nullable = false, length = 100)
-    private String normalizedRuleName;
+  /** Normalized rule name used for duplicate detection. */
+  @NotBlank
+  @Size(max = 100)
+  @Column(name = "normalized_rule_name", nullable = false, length = 100)
+  private String normalizedRuleName;
 
-    /** Short explanation of what the rule checks. */
-    @Size(max = 500)
-    @Column(name = "description", length = 500)
-    private String description;
+  /** Stable machine-readable rule identifier used by the evaluator. */
+  @NotBlank
+  @Size(max = 80)
+  @Column(name = "rule_code", nullable = false, length = 80, unique = true)
+  private String ruleCode;
 
-    /** Relative score impact of the rule. */
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
-    @DecimalMax("100.0")
-    @Column(name = "weight")
-    private Double weight;
+  /** Broad grouping used for administration and audit display. */
+  @NotBlank
+  @Size(max = 50)
+  @Column(name = "category", nullable = false, length = 50)
+  private String category;
 
-    /** Indicates whether the rule is currently enabled. */
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+  /** Short explanation of what the rule checks. */
+  @Size(max = 500)
+  @Column(name = "description", length = 500)
+  private String description;
 
-    /** Fraud logs that reference this rule. */
-    @Default
-    @OneToMany(mappedBy = "fraudRule", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FraudLog> fraudLogs = new ArrayList<>();
+  /** Relative score impact of the rule. */
+  @NotNull
+  @DecimalMin(value = "0.0", inclusive = false)
+  @DecimalMax("100.0")
+  @Column(name = "weight")
+  private Double weight;
 
-    @PrePersist
-    @PreUpdate
-    void normalizeFields() {
-        ruleName = TextSanitizer.sanitizeRequiredText(ruleName);
-        description = TextSanitizer.sanitizeOptionalText(description);
-        normalizedRuleName = TextSanitizer.normalizeKey(ruleName);
-    }
+  /** Indicates whether the rule is currently enabled. */
+  @Column(name = "is_active", nullable = false)
+  private boolean isActive;
+
+  /** Fraud logs that reference this rule. */
+  @Default
+  @OneToMany(mappedBy = "fraudRule", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<FraudLog> fraudLogs = new ArrayList<>();
+
+  @PrePersist
+  @PreUpdate
+  void normalizeFields() {
+    ruleName = TextSanitizer.sanitizeRequiredText(ruleName);
+    description = TextSanitizer.sanitizeOptionalText(description);
+    ruleCode = TextSanitizer.normalizeKey(ruleCode).replace(' ', '_').toUpperCase();
+    category = TextSanitizer.normalizeKey(category).replace(' ', '_').toUpperCase();
+    normalizedRuleName = TextSanitizer.normalizeKey(ruleName);
+  }
 }

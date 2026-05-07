@@ -23,9 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents an individual message sent inside a chat session.
- */
+/** Represents an individual message sent inside a chat session. */
 @Entity
 @Table(name = "chat_message")
 @Getter
@@ -35,45 +33,45 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChatMessage {
 
-    /** Primary key of the message. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "message_id", nullable = false, updatable = false)
-    private Long messageId;
+  /** Primary key of the message. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "message_id", nullable = false, updatable = false)
+  private Long messageId;
 
-    /** Parent chat session that contains this message. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "session_id", nullable = false)
-    private ChatSession session;
+  /** Parent chat session that contains this message. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "session_id", nullable = false)
+  private ChatSession session;
 
-    /** Role of the sender. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "sender_type", nullable = false)
-    private ChatSenderType senderType;
+  /** Role of the sender. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "sender_type", nullable = false)
+  private ChatSenderType senderType;
 
-    /** Optional external reference to the sender. */
-    @Positive
-    @Column(name = "sender_id")
-    private Long senderId;
+  /** Optional external reference to the sender. */
+  @Positive
+  @Column(name = "sender_id")
+  private Long senderId;
 
-    /** Main text content of the message. */
-    @Size(max = 2000)
-    @Column(name = "message_text", length = 2000)
-    private String messageText;
+  /** Main text content of the message. */
+  @Size(max = 2000)
+  @Column(name = "message_text", length = 2000)
+  private String messageText;
 
-    /** Optional URL for an attachment linked to the message. */
-    @Size(max = 1000)
-    @Column(name = "attachment_url", length = 1000)
-    private String attachmentUrl;
+  /** Optional URL for an attachment linked to the message. */
+  @Size(max = 1000)
+  @Column(name = "attachment_url", length = 1000)
+  private String attachmentUrl;
 
-    /** Timestamp when the message was created. */
-    @NotNull
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+  /** Timestamp when the message was created. */
+  @NotNull
+  @Column(name = "created_at", nullable = false)
+  private LocalDateTime createdAt;
 
-    /** Optional intent analysis linked to the message. */
-    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
-    private ChatIntentMatch intentMatch;
+  /** Optional intent analysis linked to the message. */
+  @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+  private ChatIntentMatch intentMatch;
 }

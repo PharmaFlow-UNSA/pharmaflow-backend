@@ -4,40 +4,59 @@ import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationStatus;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationType;
 import com.pharmaflow.smartfeatures.model.recommendation.Recommendation;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RecommendationRepository extends JpaRepository<Recommendation, Long> {
 
-    List<Recommendation> findAllByOrderByGeneratedAtDesc();
+  List<Recommendation> findAllByOrderByGeneratedAtDesc();
 
-    List<Recommendation> findByUserIdOrderByGeneratedAtDesc(Long userId);
+  List<Recommendation> findByUserIdOrderByGeneratedAtDesc(Long userId);
 
-    List<Recommendation> findByPatientProfileIdOrderByGeneratedAtDesc(Long patientProfileId);
+  List<Recommendation> findByPatientProfileIdOrderByGeneratedAtDesc(Long patientProfileId);
 
-    boolean existsByUserIdAndPatientProfileIdAndProductIdAndRecommendationTypeAndStatus(
-            Long userId,
-            Long patientProfileId,
-            Long productId,
-            RecommendationType recommendationType,
-            RecommendationStatus status);
+  Optional<Recommendation> findByUserIdAndProductIdAndRecommendationTypeAndStatus(
+      Long userId,
+      Long productId,
+      RecommendationType recommendationType,
+      RecommendationStatus status);
 
-    boolean existsByUserIdAndProductIdAndRecommendationTypeAndStatus(
-            Long userId, Long productId, RecommendationType recommendationType, RecommendationStatus status);
+  Optional<Recommendation>
+      findByUserIdAndPatientProfileIdAndProductIdAndRecommendationTypeAndStatus(
+          Long userId,
+          Long patientProfileId,
+          Long productId,
+          RecommendationType recommendationType,
+          RecommendationStatus status);
 
-    boolean existsByUserIdAndProductIdAndRecommendationTypeAndStatusAndRecommendationIdNot(
-            Long userId,
-            Long productId,
-            RecommendationType recommendationType,
-            RecommendationStatus status,
-            Long recommendationId);
+  boolean existsByUserIdAndPatientProfileIdAndProductIdAndRecommendationTypeAndStatus(
+      Long userId,
+      Long patientProfileId,
+      Long productId,
+      RecommendationType recommendationType,
+      RecommendationStatus status);
 
-    boolean existsByUserIdAndPatientProfileIdAndProductIdAndRecommendationTypeAndStatusAndRecommendationIdNot(
-            Long userId,
-            Long patientProfileId,
-            Long productId,
-            RecommendationType recommendationType,
-            RecommendationStatus status,
-            Long recommendationId);
+  boolean existsByUserIdAndProductIdAndRecommendationTypeAndStatus(
+      Long userId,
+      Long productId,
+      RecommendationType recommendationType,
+      RecommendationStatus status);
+
+  boolean existsByUserIdAndProductIdAndRecommendationTypeAndStatusAndRecommendationIdNot(
+      Long userId,
+      Long productId,
+      RecommendationType recommendationType,
+      RecommendationStatus status,
+      Long recommendationId);
+
+  boolean
+      existsByUserIdAndPatientProfileIdAndProductIdAndRecommendationTypeAndStatusAndRecommendationIdNot(
+          Long userId,
+          Long patientProfileId,
+          Long productId,
+          RecommendationType recommendationType,
+          RecommendationStatus status,
+          Long recommendationId);
 }

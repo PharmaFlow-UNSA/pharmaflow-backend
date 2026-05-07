@@ -10,13 +10,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SymptomProductMatchRepository extends JpaRepository<SymptomProductMatch, Long> {
 
-    @EntityGraph(attributePaths = "symptom")
-    List<SymptomProductMatch> findBySymptomSymptomIdOrderByRelevanceScoreDescMatchIdAsc(Long symptomId);
+  @EntityGraph(attributePaths = "symptom")
+  List<SymptomProductMatch> findBySymptomSymptomIdOrderByRelevanceScoreDescMatchIdAsc(
+      Long symptomId);
 
-    @EntityGraph(attributePaths = "symptom")
-    Optional<SymptomProductMatch> findBySymptomSymptomIdAndMatchId(Long symptomId, Long matchId);
+  @EntityGraph(attributePaths = "symptom")
+  Optional<SymptomProductMatch> findBySymptomSymptomIdAndMatchId(Long symptomId, Long matchId);
 
-    boolean existsBySymptomSymptomIdAndProductId(Long symptomId, Long productId);
+  boolean existsBySymptomSymptomIdAndProductId(Long symptomId, Long productId);
 
-    boolean existsBySymptomSymptomIdAndProductIdAndMatchIdNot(Long symptomId, Long productId, Long matchId);
+  boolean existsBySymptomSymptomIdAndProductIdAndMatchIdNot(
+      Long symptomId, Long productId, Long matchId);
 }

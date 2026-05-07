@@ -13,6 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RecommendationInteractionRequestDto {
 
-    @NotNull(message = "interactionType is required")
-    private RecommendationEventType interactionType;
+  @NotNull(message = "interactionType is required")
+  private RecommendationEventType interactionType;
 }

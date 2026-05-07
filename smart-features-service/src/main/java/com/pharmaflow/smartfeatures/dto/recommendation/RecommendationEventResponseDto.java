@@ -13,8 +13,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RecommendationEventResponseDto {
 
-    private Long id;
-    private Long recommendationId;
-    private RecommendationEventType eventType;
-    private LocalDateTime eventTime;
+  private Long id;
+  private Long recommendationId;
+  private RecommendationEventType eventType;
+  private LocalDateTime eventTime;
 }

@@ -9,21 +9,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class SymptomMapper {
 
-    private final ModelMapper modelMapper;
+  private final ModelMapper modelMapper;
 
-    public SymptomMapper(ModelMapper modelMapper) {
-        this.modelMapper = modelMapper;
-    }
+  public SymptomMapper(ModelMapper modelMapper) {
+    this.modelMapper = modelMapper;
+  }
 
-    public Symptom toEntity(SymptomRequestDto requestDto) {
-        return modelMapper.map(requestDto, Symptom.class);
-    }
+  public Symptom toEntity(SymptomRequestDto requestDto) {
+    return modelMapper.map(requestDto, Symptom.class);
+  }
 
-    public SymptomResponseDto toResponseDto(Symptom symptom) {
-        return modelMapper.map(symptom, SymptomResponseDto.class);
-    }
+  public SymptomResponseDto toResponseDto(Symptom symptom) {
+    return modelMapper.map(symptom, SymptomResponseDto.class);
+  }
 
-    public void updateEntity(SymptomRequestDto requestDto, Symptom symptom) {
-        modelMapper.map(requestDto, symptom);
-    }
+  public void updateEntity(SymptomRequestDto requestDto, Symptom symptom) {
+    modelMapper.map(requestDto, symptom);
+  }
 }

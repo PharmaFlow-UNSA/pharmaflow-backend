@@ -13,58 +13,58 @@ import org.junit.jupiter.api.Test;
 
 class SymptomNormalizedNameMigrationTest {
 
-    @Test
-    void migrationShouldBackfillNormalizedNameForExistingRows() throws Exception {
-        String url = "jdbc:h2:mem:migration_backfill;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+  @Test
+  void migrationShouldBackfillNormalizedNameForExistingRows() throws Exception {
+    String url =
+        "jdbc:h2:mem:migration_backfill;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
 
-        try (Connection connection = DriverManager.getConnection(url, "sa", "")) {
-            createLegacySymptomTable(connection);
-            try (Statement statement = connection.createStatement()) {
-                statement.executeUpdate(
-                        "INSERT INTO symptom (name, description, severity_level, is_active) VALUES ('Dry   Cough', 'desc', 'MEDIUM', TRUE)");
-            }
-        }
-
-        Flyway.configure()
-                .dataSource(url, "sa", "")
-                .baselineOnMigrate(true)
-                .load()
-                .migrate();
-
-        try (Connection connection = DriverManager.getConnection(url, "sa", "");
-                Statement statement = connection.createStatement();
-                ResultSet resultSet =
-                        statement.executeQuery("SELECT normalized_name FROM symptom WHERE name = 'Dry   Cough'")) {
-            assertThat(resultSet.next()).isTrue();
-            assertThat(resultSet.getString("normalized_name")).isEqualTo("dry cough");
-        }
+    try (Connection connection = DriverManager.getConnection(url, "sa", "")) {
+      createLegacySymptomTable(connection);
+      try (Statement statement = connection.createStatement()) {
+        statement.executeUpdate(
+            "INSERT INTO symptom (name, description, severity_level, is_active) VALUES ('Dry   Cough', 'desc', 'MEDIUM', TRUE)");
+      }
     }
 
-    @Test
-    void migrationShouldFailWhenLegacyDataContainsWhitespaceDuplicates() throws Exception {
-        String url = "jdbc:h2:mem:migration_duplicates;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+    Flyway.configure().dataSource(url, "sa", "").baselineOnMigrate(true).load().migrate();
 
-        try (Connection connection = DriverManager.getConnection(url, "sa", "")) {
-            createLegacySymptomTable(connection);
-            try (Statement statement = connection.createStatement()) {
-                statement.executeUpdate(
-                        "INSERT INTO symptom (name, description, severity_level, is_active) VALUES ('Dry Cough', 'desc', 'MEDIUM', TRUE)");
-                statement.executeUpdate(
-                        "INSERT INTO symptom (name, description, severity_level, is_active) VALUES ('Dry   Cough', 'desc', 'MEDIUM', TRUE)");
-            }
-        }
+    try (Connection connection = DriverManager.getConnection(url, "sa", "");
+        Statement statement = connection.createStatement();
+        ResultSet resultSet =
+            statement.executeQuery(
+                "SELECT normalized_name FROM symptom WHERE name = 'Dry   Cough'")) {
+      assertThat(resultSet.next()).isTrue();
+      assertThat(resultSet.getString("normalized_name")).isEqualTo("dry cough");
+    }
+  }
 
-        Flyway flyway = Flyway.configure().dataSource(url, "sa", "").baselineOnMigrate(true).load();
+  @Test
+  void migrationShouldFailWhenLegacyDataContainsWhitespaceDuplicates() throws Exception {
+    String url =
+        "jdbc:h2:mem:migration_duplicates;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
 
-        assertThatThrownBy(flyway::migrate)
-                .isInstanceOf(FlywayException.class)
-                .hasRootCauseMessage(
-                        "Cannot apply symptom normalized_name uniqueness: duplicate normalized symptom names already exist. Clean up symptom names before rollout.");
+    try (Connection connection = DriverManager.getConnection(url, "sa", "")) {
+      createLegacySymptomTable(connection);
+      try (Statement statement = connection.createStatement()) {
+        statement.executeUpdate(
+            "INSERT INTO symptom (name, description, severity_level, is_active) VALUES ('Dry Cough', 'desc', 'MEDIUM', TRUE)");
+        statement.executeUpdate(
+            "INSERT INTO symptom (name, description, severity_level, is_active) VALUES ('Dry   Cough', 'desc', 'MEDIUM', TRUE)");
+      }
     }
 
-    private void createLegacySymptomTable(Connection connection) throws Exception {
-        try (Statement statement = connection.createStatement()) {
-            statement.execute("""
+    Flyway flyway = Flyway.configure().dataSource(url, "sa", "").baselineOnMigrate(true).load();
+
+    assertThatThrownBy(flyway::migrate)
+        .isInstanceOf(FlywayException.class)
+        .hasRootCauseMessage(
+            "Cannot apply symptom normalized_name uniqueness: duplicate normalized symptom names already exist. Clean up symptom names before rollout.");
+  }
+
+  private void createLegacySymptomTable(Connection connection) throws Exception {
+    try (Statement statement = connection.createStatement()) {
+      statement.execute(
+          """
                     CREATE TABLE symptom (
                         symptom_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
                         name VARCHAR(100) NOT NULL,
@@ -73,6 +73,6 @@ class SymptomNormalizedNameMigrationTest {
                         is_active BOOLEAN NOT NULL
                     )
                     """);
-        }
     }
+  }
 }

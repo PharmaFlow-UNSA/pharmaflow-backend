@@ -13,11 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FraudCheckRequestDto {
 
-    @NotNull(message = "userId is required")
-    @Positive(message = "userId must be positive")
-    private Long userId;
-
-    @NotNull(message = "orderId is required")
-    @Positive(message = "orderId must be positive")
-    private Long orderId;
+  @NotNull(message = "orderId is required")
+  @Positive(message = "orderId must be positive")
+  private Long orderId;
 }

@@ -16,17 +16,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Join entity between a symptom search and the symptoms selected in it.
- */
+/** Join entity between a symptom search and the symptoms selected in it. */
 @Entity
 @Table(
-        name = "symptom_search_item",
-        uniqueConstraints = {
-            @UniqueConstraint(
-                    name = "uk_symptom_search_item_search_symptom",
-                    columnNames = {"search_id", "symptom_id"})
-        })
+    name = "symptom_search_item",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_symptom_search_item_search_symptom",
+          columnNames = {"search_id", "symptom_id"})
+    })
 @Getter
 @Setter
 @Builder
@@ -34,21 +32,21 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomSearchItem {
 
-    /** Primary key of the join record. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "search_item_id", nullable = false, updatable = false)
-    private Long searchItemId;
+  /** Primary key of the join record. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "search_item_id", nullable = false, updatable = false)
+  private Long searchItemId;
 
-    /** Parent search that contains this item. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "search_id", nullable = false)
-    private SymptomSearch search;
+  /** Parent search that contains this item. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "search_id", nullable = false)
+  private SymptomSearch search;
 
-    /** Symptom linked to the search. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "symptom_id", nullable = false)
-    private Symptom symptom;
+  /** Symptom linked to the search. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "symptom_id", nullable = false)
+  private Symptom symptom;
 }

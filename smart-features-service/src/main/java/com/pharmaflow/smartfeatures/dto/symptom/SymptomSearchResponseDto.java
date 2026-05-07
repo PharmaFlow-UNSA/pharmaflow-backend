@@ -12,9 +12,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomSearchResponseDto {
 
-    private Long id;
-    private Long userId;
-    private Long patientProfileId;
-    private String searchQuery;
-    private LocalDateTime searchedAt;
+  private Long id;
+  private Long userId;
+  private Long patientProfileId;
+  private String searchQuery;
+  private LocalDateTime searchedAt;
 }

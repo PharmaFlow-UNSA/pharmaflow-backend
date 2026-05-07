@@ -8,11 +8,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FraudRuleRepository extends JpaRepository<FraudRule, Long> {
 
-    List<FraudRule> findAllByOrderByRuleNameAsc();
+  List<FraudRule> findAllByOrderByRuleNameAsc();
 
-    boolean existsByNormalizedRuleName(String normalizedRuleName);
+  boolean existsByNormalizedRuleName(String normalizedRuleName);
 
-    boolean existsByNormalizedRuleNameAndRuleIdNot(String normalizedRuleName, Long ruleId);
+  boolean existsByNormalizedRuleNameAndRuleIdNot(String normalizedRuleName, Long ruleId);
 
-    List<FraudRule> findByIsActiveTrueOrderByRuleNameAsc();
+  boolean existsByRuleCode(String ruleCode);
+
+  boolean existsByRuleCodeAndRuleIdNot(String ruleCode, Long ruleId);
+
+  List<FraudRule> findByIsActiveTrueOrderByRuleNameAsc();
 }

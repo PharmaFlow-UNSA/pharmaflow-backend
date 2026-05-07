@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = NullablePositiveValidator.class)
 public @interface NullablePositive {
 
-    String message() default "Must be a positive number";
+  String message() default "Must be a positive number";
 
-    Class<?>[] groups() default {};
+  Class<?>[] groups() default {};
 
-    Class<? extends Payload>[] payload() default {};
+  Class<? extends Payload>[] payload() default {};
 }

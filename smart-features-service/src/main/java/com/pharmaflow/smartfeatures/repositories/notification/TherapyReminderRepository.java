@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TherapyReminderRepository extends JpaRepository<TherapyReminder, Long> {
 
-    List<TherapyReminder> findAllByOrderByStartDateDesc();
+  List<TherapyReminder> findAllByOrderByStartDateDesc();
 
-    List<TherapyReminder> findByPatientProfileIdOrderByStartDateDesc(Long patientProfileId);
+  List<TherapyReminder> findByPatientProfileIdOrderByStartDateDesc(Long patientProfileId);
 }

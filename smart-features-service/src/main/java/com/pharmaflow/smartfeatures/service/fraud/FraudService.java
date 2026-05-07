@@ -6,7 +6,7 @@ import com.pharmaflow.smartfeatures.dto.fraud.FraudLogResponseDto;
 import com.pharmaflow.smartfeatures.dto.fraud.FraudRuleRequestDto;
 import com.pharmaflow.smartfeatures.dto.fraud.FraudRuleResponseDto;
 import com.pharmaflow.smartfeatures.enums.fraud.FraudDecision;
-import com.pharmaflow.smartfeatures.enums.fraud.FraudEventType;
+import com.pharmaflow.smartfeatures.enums.fraud.FraudRuleCode;
 import com.pharmaflow.smartfeatures.exception.BadRequestException;
 import com.pharmaflow.smartfeatures.exception.DuplicateResourceException;
 import com.pharmaflow.smartfeatures.exception.ResourceNotFoundException;
@@ -19,7 +19,6 @@ import com.pharmaflow.smartfeatures.repositories.fraud.FraudLogRepository;
 import com.pharmaflow.smartfeatures.repositories.fraud.FraudRuleRepository;
 import com.pharmaflow.smartfeatures.util.TextSanitizer;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -28,162 +27,232 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class FraudService {
 
-    private final FraudRuleRepository fraudRuleRepository;
-    private final FraudCheckRepository fraudCheckRepository;
-    private final FraudLogRepository fraudLogRepository;
-    private final FraudMapper fraudMapper;
+  private final FraudRuleRepository fraudRuleRepository;
+  private final FraudCheckRepository fraudCheckRepository;
+  private final FraudLogRepository fraudLogRepository;
+  private final FraudMapper fraudMapper;
+  private final FraudRuleEvaluator fraudRuleEvaluator;
 
-    public FraudService(
-            FraudRuleRepository fraudRuleRepository,
-            FraudCheckRepository fraudCheckRepository,
-            FraudLogRepository fraudLogRepository,
-            FraudMapper fraudMapper) {
-        this.fraudRuleRepository = fraudRuleRepository;
-        this.fraudCheckRepository = fraudCheckRepository;
-        this.fraudLogRepository = fraudLogRepository;
-        this.fraudMapper = fraudMapper;
+  public FraudService(
+      FraudRuleRepository fraudRuleRepository,
+      FraudCheckRepository fraudCheckRepository,
+      FraudLogRepository fraudLogRepository,
+      FraudMapper fraudMapper,
+      FraudRuleEvaluator fraudRuleEvaluator) {
+    this.fraudRuleRepository = fraudRuleRepository;
+    this.fraudCheckRepository = fraudCheckRepository;
+    this.fraudLogRepository = fraudLogRepository;
+    this.fraudMapper = fraudMapper;
+    this.fraudRuleEvaluator = fraudRuleEvaluator;
+  }
+
+  @Transactional(readOnly = true)
+  public List<FraudRuleResponseDto> getRules() {
+    return fraudRuleRepository.findAllByOrderByRuleNameAsc().stream()
+        .map(fraudMapper::toResponseDto)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public FraudRuleResponseDto getRule(Long id) {
+    return fraudMapper.toResponseDto(findRuleById(id));
+  }
+
+  @Transactional
+  public FraudRuleResponseDto createRule(FraudRuleRequestDto requestDto) {
+    ensureRuleNameUnique(TextSanitizer.normalizeKey(requestDto.getRuleName()), null);
+    String ruleCode = sanitizeRuleCode(requestDto.getRuleCode());
+    ensureSupportedRuleCode(ruleCode);
+    ensureRuleCodeUnique(ruleCode, null);
+    FraudRule rule = fraudMapper.toEntity(requestDto);
+    rule.setRuleName(sanitizeRequired(requestDto.getRuleName(), "ruleName"));
+    rule.setRuleCode(ruleCode);
+    rule.setCategory(sanitizeRuleCategory(requestDto.getCategory(), ruleCode));
+    rule.setDescription(TextSanitizer.sanitizeOptionalText(requestDto.getDescription()));
+    return fraudMapper.toResponseDto(fraudRuleRepository.save(rule));
+  }
+
+  @Transactional
+  public FraudRuleResponseDto updateRule(Long id, FraudRuleRequestDto requestDto) {
+    FraudRule rule = findRuleById(id);
+    ensureRuleNameUnique(TextSanitizer.normalizeKey(requestDto.getRuleName()), id);
+    String ruleCode = sanitizeRuleCode(requestDto.getRuleCode());
+    ensureSupportedRuleCode(ruleCode);
+    ensureRuleCodeUnique(ruleCode, id);
+    fraudMapper.updateEntity(requestDto, rule);
+    rule.setRuleName(sanitizeRequired(requestDto.getRuleName(), "ruleName"));
+    rule.setRuleCode(ruleCode);
+    rule.setCategory(sanitizeRuleCategory(requestDto.getCategory(), ruleCode));
+    rule.setDescription(TextSanitizer.sanitizeOptionalText(requestDto.getDescription()));
+    return fraudMapper.toResponseDto(fraudRuleRepository.save(rule));
+  }
+
+  @Transactional
+  public void deleteRule(Long id) {
+    fraudRuleRepository.delete(findRuleById(id));
+  }
+
+  @Transactional
+  public FraudCheckResponseDto createCheck(FraudCheckRequestDto requestDto) {
+    ensureDefaultRulesExist();
+    List<FraudRule> activeRules = fraudRuleRepository.findByIsActiveTrueOrderByRuleNameAsc();
+    FraudRuleEvaluator.FraudEvaluation evaluation =
+        fraudRuleEvaluator.evaluate(requestDto.getOrderId(), activeRules);
+
+    FraudCheck fraudCheck =
+        FraudCheck.builder()
+            .userId(evaluation.userId())
+            .orderId(requestDto.getOrderId())
+            .checkedAt(LocalDateTime.now())
+            .riskScore(Math.min(evaluation.riskScore(), 100.0))
+            .decision(resolveDecision(evaluation.riskScore()))
+            .build();
+    FraudCheck savedCheck = fraudCheckRepository.save(fraudCheck);
+
+    LocalDateTime logTime = LocalDateTime.now();
+    List<FraudLog> logs =
+        evaluation.outcomes().stream()
+            .map(
+                outcome ->
+                    FraudLog.builder()
+                        .fraudCheck(savedCheck)
+                        .fraudRule(outcome.rule())
+                        .eventType(outcome.eventType())
+                        .details(outcome.details())
+                        .scoreContribution(outcome.scoreContribution())
+                        .createdAt(logTime)
+                        .build())
+            .toList();
+
+    fraudLogRepository.saveAll(logs);
+    return fraudMapper.toResponseDto(savedCheck);
+  }
+
+  @Transactional(readOnly = true)
+  public FraudCheckResponseDto getCheck(Long id) {
+    return fraudMapper.toResponseDto(findCheckById(id));
+  }
+
+  @Transactional(readOnly = true)
+  public List<FraudCheckResponseDto> getChecks(Long userId, Long orderId) {
+    List<FraudCheck> checks =
+        userId != null
+            ? fraudCheckRepository.findByUserIdOrderByCheckedAtDesc(userId)
+            : orderId != null
+                ? fraudCheckRepository.findByOrderIdOrderByCheckedAtDesc(orderId)
+                : fraudCheckRepository.findAll();
+    return checks.stream()
+        .sorted(Comparator.comparing(FraudCheck::getCheckedAt).reversed())
+        .map(fraudMapper::toResponseDto)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<FraudLogResponseDto> getLogsByCheck(Long checkId) {
+    findCheckById(checkId);
+    return fraudLogRepository.findByFraudCheckFraudCheckIdOrderByCreatedAtDesc(checkId).stream()
+        .map(fraudMapper::toResponseDto)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<FraudLogResponseDto> getLogsByRule(Long ruleId) {
+    findRuleById(ruleId);
+    return fraudLogRepository.findByFraudRuleRuleIdOrderByCreatedAtDesc(ruleId).stream()
+        .map(fraudMapper::toResponseDto)
+        .toList();
+  }
+
+  private FraudRule findRuleById(Long id) {
+    return fraudRuleRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Fraud rule not found with id: " + id));
+  }
+
+  private FraudCheck findCheckById(Long id) {
+    return fraudCheckRepository
+        .findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Fraud check not found with id: " + id));
+  }
+
+  private void ensureRuleNameUnique(String normalizedRuleName, Long currentId) {
+    boolean duplicateExists =
+        currentId == null
+            ? fraudRuleRepository.existsByNormalizedRuleName(normalizedRuleName)
+            : fraudRuleRepository.existsByNormalizedRuleNameAndRuleIdNot(
+                normalizedRuleName, currentId);
+
+    if (duplicateExists) {
+      throw new DuplicateResourceException("Fraud rule with the same name already exists.");
     }
+  }
 
-    @Transactional(readOnly = true)
-    public List<FraudRuleResponseDto> getRules() {
-        return fraudRuleRepository.findAllByOrderByRuleNameAsc().stream()
-                .map(fraudMapper::toResponseDto)
-                .toList();
+  private void ensureRuleCodeUnique(String ruleCode, Long currentId) {
+    boolean duplicateExists =
+        currentId == null
+            ? fraudRuleRepository.existsByRuleCode(ruleCode)
+            : fraudRuleRepository.existsByRuleCodeAndRuleIdNot(ruleCode, currentId);
+
+    if (duplicateExists) {
+      throw new DuplicateResourceException("Fraud rule with the same code already exists.");
     }
+  }
 
-    @Transactional(readOnly = true)
-    public FraudRuleResponseDto getRule(Long id) {
-        return fraudMapper.toResponseDto(findRuleById(id));
+  private void ensureDefaultRulesExist() {
+    for (FraudRuleCode ruleCode : FraudRuleCode.values()) {
+      if (!fraudRuleRepository.existsByRuleCode(ruleCode.name())) {
+        fraudRuleRepository.save(
+            FraudRule.builder()
+                .ruleName(ruleCode.getDefaultRuleName())
+                .ruleCode(ruleCode.name())
+                .category(ruleCode.getCategory())
+                .description("Default fraud rule: " + ruleCode.getDefaultRuleName())
+                .weight(ruleCode.getDefaultWeight())
+                .isActive(true)
+                .build());
+      }
     }
+  }
 
-    @Transactional
-    public FraudRuleResponseDto createRule(FraudRuleRequestDto requestDto) {
-        ensureRuleNameUnique(TextSanitizer.normalizeKey(requestDto.getRuleName()), null);
-        FraudRule rule = fraudMapper.toEntity(requestDto);
-        rule.setRuleName(sanitizeRequired(requestDto.getRuleName(), "ruleName"));
-        rule.setDescription(TextSanitizer.sanitizeOptionalText(requestDto.getDescription()));
-        return fraudMapper.toResponseDto(fraudRuleRepository.save(rule));
+  private void ensureSupportedRuleCode(String ruleCode) {
+    if (FraudRuleCode.fromCode(ruleCode).isEmpty()) {
+      throw new BadRequestException("ruleCode is not supported by the fraud evaluator.");
     }
+  }
 
-    @Transactional
-    public FraudRuleResponseDto updateRule(Long id, FraudRuleRequestDto requestDto) {
-        FraudRule rule = findRuleById(id);
-        ensureRuleNameUnique(TextSanitizer.normalizeKey(requestDto.getRuleName()), id);
-        fraudMapper.updateEntity(requestDto, rule);
-        rule.setRuleName(sanitizeRequired(requestDto.getRuleName(), "ruleName"));
-        rule.setDescription(TextSanitizer.sanitizeOptionalText(requestDto.getDescription()));
-        return fraudMapper.toResponseDto(fraudRuleRepository.save(rule));
+  private FraudDecision resolveDecision(double riskScore) {
+    if (riskScore >= 70.0) {
+      return FraudDecision.BLOCKED;
     }
-
-    @Transactional
-    public void deleteRule(Long id) {
-        fraudRuleRepository.delete(findRuleById(id));
+    if (riskScore >= 30.0) {
+      return FraudDecision.REVIEW;
     }
+    return FraudDecision.APPROVED;
+  }
 
-    @Transactional
-    public FraudCheckResponseDto createCheck(FraudCheckRequestDto requestDto) {
-        FraudCheck fraudCheck = FraudCheck.builder()
-                .userId(requestDto.getUserId())
-                .orderId(requestDto.getOrderId())
-                .checkedAt(LocalDateTime.now())
-                .riskScore(0.0)
-                .decision(FraudDecision.APPROVED)
-                .build();
-        FraudCheck savedCheck = fraudCheckRepository.save(fraudCheck);
-
-        double riskScore = 0.0;
-        List<FraudLog> logs = new ArrayList<>();
-        for (FraudRule rule : fraudRuleRepository.findByIsActiveTrueOrderByRuleNameAsc()) {
-            boolean triggered = ((requestDto.getUserId() + requestDto.getOrderId() + rule.getRuleId()) % 2) == 0;
-            if (triggered) {
-                riskScore += rule.getWeight();
-            }
-            logs.add(FraudLog.builder()
-                    .fraudCheck(savedCheck)
-                    .fraudRule(rule)
-                    .eventType(triggered ? FraudEventType.TRIGGERED : FraudEventType.CLEARED)
-                    .details(triggered
-                            ? "Rule triggered during deterministic local evaluation."
-                            : "Rule did not trigger during deterministic local evaluation.")
-                    .createdAt(LocalDateTime.now())
-                    .build());
-        }
-
-        fraudLogRepository.saveAll(logs);
-        savedCheck.setRiskScore(Math.min(riskScore, 100.0));
-        savedCheck.setDecision(resolveDecision(savedCheck.getRiskScore()));
-        return fraudMapper.toResponseDto(fraudCheckRepository.save(savedCheck));
+  private String sanitizeRequired(String value, String fieldName) {
+    String sanitized = TextSanitizer.sanitizeRequiredText(value);
+    if (sanitized == null) {
+      throw new BadRequestException(fieldName + " is required.");
     }
+    return sanitized;
+  }
 
-    @Transactional(readOnly = true)
-    public FraudCheckResponseDto getCheck(Long id) {
-        return fraudMapper.toResponseDto(findCheckById(id));
-    }
+  private String sanitizeRuleCode(String value) {
+    String sanitized = sanitizeRequired(value, "ruleCode");
+    return sanitized.replace('-', '_').replace(' ', '_').toUpperCase();
+  }
 
-    @Transactional(readOnly = true)
-    public List<FraudCheckResponseDto> getChecks(Long userId, Long orderId) {
-        List<FraudCheck> checks = userId != null
-                ? fraudCheckRepository.findByUserIdOrderByCheckedAtDesc(userId)
-                : orderId != null
-                        ? fraudCheckRepository.findByOrderIdOrderByCheckedAtDesc(orderId)
-                        : fraudCheckRepository.findAll();
-        return checks.stream()
-                .sorted(Comparator.comparing(FraudCheck::getCheckedAt).reversed())
-                .map(fraudMapper::toResponseDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<FraudLogResponseDto> getLogsByCheck(Long checkId) {
-        findCheckById(checkId);
-        return fraudLogRepository.findByFraudCheckFraudCheckIdOrderByCreatedAtDesc(checkId).stream()
-                .map(fraudMapper::toResponseDto)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<FraudLogResponseDto> getLogsByRule(Long ruleId) {
-        findRuleById(ruleId);
-        return fraudLogRepository.findByFraudRuleRuleIdOrderByCreatedAtDesc(ruleId).stream()
-                .map(fraudMapper::toResponseDto)
-                .toList();
-    }
-
-    private FraudRule findRuleById(Long id) {
-        return fraudRuleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Fraud rule not found with id: " + id));
-    }
-
-    private FraudCheck findCheckById(Long id) {
-        return fraudCheckRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Fraud check not found with id: " + id));
-    }
-
-    private void ensureRuleNameUnique(String normalizedRuleName, Long currentId) {
-        boolean duplicateExists = currentId == null
-                ? fraudRuleRepository.existsByNormalizedRuleName(normalizedRuleName)
-                : fraudRuleRepository.existsByNormalizedRuleNameAndRuleIdNot(normalizedRuleName, currentId);
-
-        if (duplicateExists) {
-            throw new DuplicateResourceException("Fraud rule with the same name already exists.");
-        }
-    }
-
-    private FraudDecision resolveDecision(double riskScore) {
-        if (riskScore >= 70.0) {
-            return FraudDecision.BLOCKED;
-        }
-        if (riskScore >= 30.0) {
-            return FraudDecision.REVIEW;
-        }
-        return FraudDecision.APPROVED;
-    }
-
-    private String sanitizeRequired(String value, String fieldName) {
-        String sanitized = TextSanitizer.sanitizeRequiredText(value);
-        if (sanitized == null) {
-            throw new BadRequestException(fieldName + " is required.");
-        }
-        return sanitized;
-    }
+  private String sanitizeRuleCategory(String category, String ruleCode) {
+    String sanitized = sanitizeRequired(category, "category");
+    FraudRuleCode.fromCode(ruleCode)
+        .ifPresent(
+            code -> {
+              if (!code.getCategory().equalsIgnoreCase(sanitized)) {
+                throw new BadRequestException(
+                    "category must match the supported ruleCode category.");
+              }
+            });
+    return sanitized.replace('-', '_').replace(' ', '_').toUpperCase();
+  }
 }

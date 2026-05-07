@@ -30,36 +30,37 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc(addFilters = false)
 class NotificationControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private NotificationService notificationService;
+  @MockitoBean private NotificationService notificationService;
 
-    private NotificationResponseDto responseDto;
+  private NotificationResponseDto responseDto;
 
-    @BeforeEach
-    void setUp() {
-        responseDto = new NotificationResponseDto();
-        responseDto.setId(1L);
-        responseDto.setTherapyReminderId(7L);
-        responseDto.setUserId(10L);
-        responseDto.setPatientProfileId(20L);
-        responseDto.setType(NotificationType.THERAPY_REMINDER);
-        responseDto.setChannel(NotificationChannel.IN_APP);
-        responseDto.setTitle("Reminder");
-        responseDto.setMessage("Time for therapy");
-        responseDto.setStatus(NotificationStatus.PENDING);
-        responseDto.setCreatedAt(LocalDateTime.now());
-    }
+  @BeforeEach
+  void setUp() {
+    responseDto = new NotificationResponseDto();
+    responseDto.setId(1L);
+    responseDto.setTherapyReminderId(7L);
+    responseDto.setUserId(10L);
+    responseDto.setPatientProfileId(20L);
+    responseDto.setType(NotificationType.THERAPY_REMINDER);
+    responseDto.setChannel(NotificationChannel.IN_APP);
+    responseDto.setTitle("Reminder");
+    responseDto.setMessage("Time for therapy");
+    responseDto.setStatus(NotificationStatus.PENDING);
+    responseDto.setCreatedAt(LocalDateTime.now());
+  }
 
-    @Test
-    void createNotificationShouldReturn201() throws Exception {
-        when(notificationService.createNotification(any())).thenReturn(responseDto);
+  @Test
+  void createNotificationShouldReturn201() throws Exception {
+    when(notificationService.createNotification(any())).thenReturn(responseDto);
 
-        mockMvc.perform(post("/api/notifications")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+    mockMvc
+        .perform(
+            post("/api/notifications")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "therapyReminderId": 7,
                                   "userId": 10,
@@ -70,25 +71,31 @@ class NotificationControllerTest {
                                   "message": "Time for therapy"
                                 }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-    }
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.status").value("PENDING"));
+  }
 
-    @Test
-    void updateDeliveryStatusShouldTranslateServiceBadRequest() throws Exception {
-        when(notificationService.updateDeliveryStatus(any(), any()))
-                .thenThrow(new BadRequestException("Invalid notification status transition from PENDING to DELIVERED."));
+  @Test
+  void updateDeliveryStatusShouldTranslateServiceBadRequest() throws Exception {
+    when(notificationService.updateDeliveryStatus(any(), any()))
+        .thenThrow(
+            new BadRequestException(
+                "Invalid notification status transition from PENDING to DELIVERED."));
 
-        mockMvc.perform(patch("/api/notifications/1/delivery-status")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+    mockMvc
+        .perform(
+            patch("/api/notifications/1/delivery-status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "status": "DELIVERED"
                                 }
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message")
-                        .value("Invalid notification status transition from PENDING to DELIVERED."));
-    }
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.message")
+                .value("Invalid notification status transition from PENDING to DELIVERED."));
+  }
 }

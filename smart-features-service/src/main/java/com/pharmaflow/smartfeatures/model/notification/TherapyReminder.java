@@ -25,9 +25,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents a therapy reminder for a patient profile and product.
- */
+/** Represents a therapy reminder for a patient profile and product. */
 @Entity
 @Table(name = "therapy_reminder")
 @Getter
@@ -37,56 +35,56 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TherapyReminder {
 
-    /** Primary key of the reminder. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "reminder_id", nullable = false, updatable = false)
-    private Long reminderId;
+  /** Primary key of the reminder. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "reminder_id", nullable = false, updatable = false)
+  private Long reminderId;
 
-    /** External reference to the patient profile. */
-    @NotNull
-    @Positive
-    @Column(name = "patient_profile_id", nullable = false)
-    private Long patientProfileId;
+  /** External reference to the patient profile. */
+  @NotNull
+  @Positive
+  @Column(name = "patient_profile_id", nullable = false)
+  private Long patientProfileId;
 
-    /** External reference to the product. */
-    @NotNull
-    @Positive
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
+  /** External reference to the product. */
+  @NotNull
+  @Positive
+  @Column(name = "product_id", nullable = false)
+  private Long productId;
 
-    /** Dosage instructions shown to the user. */
-    @Size(max = 500)
-    @Column(name = "dosage_instruction", length = 500)
-    private String dosageInstruction;
+  /** Dosage instructions shown to the user. */
+  @Size(max = 500)
+  @Column(name = "dosage_instruction", length = 500)
+  private String dosageInstruction;
 
-    /** Number of reminder occurrences planned per day. */
-    @NotNull
-    @Positive
-    @Column(name = "frequency_per_day")
-    private Integer frequencyPerDay;
+  /** Number of reminder occurrences planned per day. */
+  @NotNull
+  @Positive
+  @Column(name = "frequency_per_day")
+  private Integer frequencyPerDay;
 
-    /** Date when the reminder schedule starts. */
-    @NotNull
-    @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+  /** Date when the reminder schedule starts. */
+  @NotNull
+  @Column(name = "start_date", nullable = false)
+  private LocalDate startDate;
 
-    /** Optional date when the reminder schedule ends. */
-    @Column(name = "end_date")
-    private LocalDate endDate;
+  /** Optional date when the reminder schedule ends. */
+  @Column(name = "end_date")
+  private LocalDate endDate;
 
-    /** Timestamp of the next scheduled reminder. */
-    @Column(name = "next_reminder_at")
-    private LocalDateTime nextReminderAt;
+  /** Timestamp of the next scheduled reminder. */
+  @Column(name = "next_reminder_at")
+  private LocalDateTime nextReminderAt;
 
-    /** Current reminder state. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private TherapyReminderStatus status;
+  /** Current reminder state. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false)
+  private TherapyReminderStatus status;
 
-    /** Notifications triggered from this reminder. */
-    @Default
-    @OneToMany(mappedBy = "therapyReminder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Notification> notifications = new ArrayList<>();
+  /** Notifications triggered from this reminder. */
+  @Default
+  @OneToMany(mappedBy = "therapyReminder", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<Notification> notifications = new ArrayList<>();
 }

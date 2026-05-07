@@ -25,36 +25,39 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Symptoms")
 public class SymptomProductMatchController {
 
-    private final SymptomProductMatchService symptomProductMatchService;
+  private final SymptomProductMatchService symptomProductMatchService;
 
-    public SymptomProductMatchController(SymptomProductMatchService symptomProductMatchService) {
-        this.symptomProductMatchService = symptomProductMatchService;
-    }
+  public SymptomProductMatchController(SymptomProductMatchService symptomProductMatchService) {
+    this.symptomProductMatchService = symptomProductMatchService;
+  }
 
-    @GetMapping
-    public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(@PathVariable @Positive Long symptomId) {
-        return ResponseEntity.ok(symptomProductMatchService.getMatchesBySymptom(symptomId));
-    }
+  @GetMapping
+  public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(
+      @PathVariable @Positive Long symptomId) {
+    return ResponseEntity.ok(symptomProductMatchService.getMatchesBySymptom(symptomId));
+  }
 
-    @PostMapping
-    public ResponseEntity<SymptomProductMatchResponseDto> createMatch(
-            @PathVariable @Positive Long symptomId, @Valid @RequestBody SymptomProductMatchRequestDto requestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(symptomProductMatchService.createMatch(symptomId, requestDto));
-    }
+  @PostMapping
+  public ResponseEntity<SymptomProductMatchResponseDto> createMatch(
+      @PathVariable @Positive Long symptomId,
+      @Valid @RequestBody SymptomProductMatchRequestDto requestDto) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(symptomProductMatchService.createMatch(symptomId, requestDto));
+  }
 
-    @PutMapping("/{matchId}")
-    public ResponseEntity<SymptomProductMatchResponseDto> updateMatch(
-            @PathVariable @Positive Long symptomId,
-            @PathVariable @Positive Long matchId,
-            @Valid @RequestBody SymptomProductMatchRequestDto requestDto) {
-        return ResponseEntity.ok(symptomProductMatchService.updateMatch(symptomId, matchId, requestDto));
-    }
+  @PutMapping("/{matchId}")
+  public ResponseEntity<SymptomProductMatchResponseDto> updateMatch(
+      @PathVariable @Positive Long symptomId,
+      @PathVariable @Positive Long matchId,
+      @Valid @RequestBody SymptomProductMatchRequestDto requestDto) {
+    return ResponseEntity.ok(
+        symptomProductMatchService.updateMatch(symptomId, matchId, requestDto));
+  }
 
-    @DeleteMapping("/{matchId}")
-    public ResponseEntity<Void> deleteMatch(
-            @PathVariable @Positive Long symptomId, @PathVariable @Positive Long matchId) {
-        symptomProductMatchService.deleteMatch(symptomId, matchId);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{matchId}")
+  public ResponseEntity<Void> deleteMatch(
+      @PathVariable @Positive Long symptomId, @PathVariable @Positive Long matchId) {
+    symptomProductMatchService.deleteMatch(symptomId, matchId);
+    return ResponseEntity.noContent().build();
+  }
 }

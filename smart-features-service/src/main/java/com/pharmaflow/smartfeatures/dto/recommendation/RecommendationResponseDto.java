@@ -14,14 +14,14 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RecommendationResponseDto {
 
-    private Long id;
-    private Long userId;
-    private Long patientProfileId;
-    private Long productId;
-    private RecommendationType recommendationType;
-    private Double score;
-    private String reasonText;
-    private LocalDateTime generatedAt;
-    private LocalDateTime expiresAt;
-    private RecommendationStatus status;
+  private Long id;
+  private Long userId;
+  private Long patientProfileId;
+  private Long productId;
+  private RecommendationType recommendationType;
+  private Double score;
+  private String reasonText;
+  private LocalDateTime generatedAt;
+  private LocalDateTime expiresAt;
+  private RecommendationStatus status;
 }

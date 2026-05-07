@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FraudLogRepository extends JpaRepository<FraudLog, Long> {
 
-    @EntityGraph(attributePaths = {"fraudCheck", "fraudRule"})
-    List<FraudLog> findByFraudCheckFraudCheckIdOrderByCreatedAtDesc(Long fraudCheckId);
+  @EntityGraph(attributePaths = {"fraudCheck", "fraudRule"})
+  List<FraudLog> findByFraudCheckFraudCheckIdOrderByCreatedAtDesc(Long fraudCheckId);
 
-    @EntityGraph(attributePaths = {"fraudCheck", "fraudRule"})
-    List<FraudLog> findByFraudRuleRuleIdOrderByCreatedAtDesc(Long ruleId);
+  @EntityGraph(attributePaths = {"fraudCheck", "fraudRule"})
+  List<FraudLog> findByFraudRuleRuleIdOrderByCreatedAtDesc(Long ruleId);
 }

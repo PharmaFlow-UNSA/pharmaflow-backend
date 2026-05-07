@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FraudCheckRepository extends JpaRepository<FraudCheck, Long> {
 
-    List<FraudCheck> findByUserIdOrderByCheckedAtDesc(Long userId);
+  List<FraudCheck> findByUserIdOrderByCheckedAtDesc(Long userId);
 
-    List<FraudCheck> findByOrderIdOrderByCheckedAtDesc(Long orderId);
+  List<FraudCheck> findByOrderIdOrderByCheckedAtDesc(Long orderId);
 }

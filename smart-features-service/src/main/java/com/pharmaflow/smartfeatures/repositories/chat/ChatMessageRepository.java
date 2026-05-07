@@ -10,12 +10,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
-    @Query("""
+  @Query(
+      """
             select message
             from ChatMessage message
             join fetch message.session session
             where session.sessionId = :sessionId
             order by message.createdAt asc
             """)
-    List<ChatMessage> findBySessionSessionIdOrderByCreatedAtAsc(@Param("sessionId") Long sessionId);
+  List<ChatMessage> findBySessionSessionIdOrderByCreatedAtAsc(@Param("sessionId") Long sessionId);
 }

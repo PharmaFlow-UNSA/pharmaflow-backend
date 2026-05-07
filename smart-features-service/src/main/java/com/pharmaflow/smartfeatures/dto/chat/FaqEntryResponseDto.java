@@ -14,14 +14,14 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FaqEntryResponseDto {
 
-    private Long id;
-    private String question;
-    private String answer;
-    private FaqCategory category;
-    private String keywords;
+  private Long id;
+  private String question;
+  private String answer;
+  private FaqCategory category;
+  private String keywords;
 
-    @JsonProperty("isActive")
-    private Boolean active;
+  @JsonProperty("isActive")
+  private Boolean active;
 
-    private LocalDateTime updatedAt;
+  private LocalDateTime updatedAt;
 }

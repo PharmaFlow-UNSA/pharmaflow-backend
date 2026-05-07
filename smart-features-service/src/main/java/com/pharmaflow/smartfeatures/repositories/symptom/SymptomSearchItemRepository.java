@@ -10,11 +10,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SymptomSearchItemRepository extends JpaRepository<SymptomSearchItem, Long> {
 
-    @EntityGraph(attributePaths = {"search", "symptom"})
-    List<SymptomSearchItem> findBySearchSearchIdOrderBySearchItemIdAsc(Long searchId);
+  @EntityGraph(attributePaths = {"search", "symptom"})
+  List<SymptomSearchItem> findBySearchSearchIdOrderBySearchItemIdAsc(Long searchId);
 
-    @EntityGraph(attributePaths = {"search", "symptom"})
-    Optional<SymptomSearchItem> findBySearchSearchIdAndSearchItemId(Long searchId, Long searchItemId);
+  @EntityGraph(attributePaths = {"search", "symptom"})
+  Optional<SymptomSearchItem> findBySearchSearchIdAndSearchItemId(Long searchId, Long searchItemId);
 
-    boolean existsBySearchSearchIdAndSymptomSymptomId(Long searchId, Long symptomId);
+  boolean existsBySearchSearchIdAndSymptomSymptomId(Long searchId, Long symptomId);
 }

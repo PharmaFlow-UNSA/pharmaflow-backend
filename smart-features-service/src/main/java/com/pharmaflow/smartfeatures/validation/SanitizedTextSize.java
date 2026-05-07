@@ -12,15 +12,15 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = SanitizedTextSizeValidator.class)
 public @interface SanitizedTextSize {
 
-    String message() default "Invalid text length after sanitization";
+  String message() default "Invalid text length after sanitization";
 
-    Class<?>[] groups() default {};
+  Class<?>[] groups() default {};
 
-    Class<? extends Payload>[] payload() default {};
+  Class<? extends Payload>[] payload() default {};
 
-    int min() default 0;
+  int min() default 0;
 
-    int max();
+  int max();
 
-    boolean allowBlank() default true;
+  boolean allowBlank() default true;
 }

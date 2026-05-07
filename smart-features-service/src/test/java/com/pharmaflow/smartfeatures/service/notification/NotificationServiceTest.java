@@ -34,69 +34,109 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
 
-    @Mock
-    private NotificationRepository notificationRepository;
+  @Mock private NotificationRepository notificationRepository;
 
-    @Mock
-    private NotificationTriggerRepository notificationTriggerRepository;
+  @Mock private NotificationTriggerRepository notificationTriggerRepository;
 
-    @Mock
-    private TherapyReminderRepository therapyReminderRepository;
+  @Mock private TherapyReminderRepository therapyReminderRepository;
 
-    private NotificationService notificationService;
+  private NotificationService notificationService;
 
-    @BeforeEach
-    void setUp() {
-        notificationService = new NotificationService(
-                notificationRepository,
-                notificationTriggerRepository,
-                therapyReminderRepository,
-                new NotificationMapper(new ModelMapperConfig().modelMapper()));
-    }
+  @BeforeEach
+  void setUp() {
+    notificationService =
+        new NotificationService(
+            notificationRepository,
+            notificationTriggerRepository,
+            therapyReminderRepository,
+            new NotificationMapper(new ModelMapperConfig().modelMapper()));
+  }
 
-    @Test
-    void createNotificationShouldDefaultToPendingAndCreateTherapyTrigger() {
-        TherapyReminder reminder = TherapyReminder.builder().reminderId(7L).patientProfileId(20L).productId(30L).build();
-        NotificationRequestDto requestDto = new NotificationRequestDto(
-                7L, 10L, 20L, NotificationType.THERAPY_REMINDER, NotificationChannel.IN_APP, " Reminder ", " Time ");
+  @Test
+  void createNotificationShouldDefaultToPendingAndCreateTherapyTrigger() {
+    TherapyReminder reminder =
+        TherapyReminder.builder().reminderId(7L).patientProfileId(20L).productId(30L).build();
+    NotificationRequestDto requestDto =
+        new NotificationRequestDto(
+            7L,
+            10L,
+            20L,
+            NotificationType.THERAPY_REMINDER,
+            NotificationChannel.IN_APP,
+            " Reminder ",
+            " Time ");
 
-        when(therapyReminderRepository.findById(7L)).thenReturn(Optional.of(reminder));
-        when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> {
-            Notification notification = invocation.getArgument(0);
-            notification.setNotificationId(15L);
-            return notification;
-        });
+    when(therapyReminderRepository.findById(7L)).thenReturn(Optional.of(reminder));
+    when(notificationRepository.save(any(Notification.class)))
+        .thenAnswer(
+            invocation -> {
+              Notification notification = invocation.getArgument(0);
+              notification.setNotificationId(15L);
+              return notification;
+            });
 
-        NotificationResponseDto response = notificationService.createNotification(requestDto);
+    NotificationResponseDto response = notificationService.createNotification(requestDto);
 
-        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
-        verify(notificationRepository).save(notificationCaptor.capture());
-        assertThat(notificationCaptor.getValue().getStatus()).isEqualTo(NotificationStatus.PENDING);
-        assertThat(notificationCaptor.getValue().getTitle()).isEqualTo("Reminder");
-        assertThat(notificationCaptor.getValue().getMessage()).isEqualTo("Time");
-        assertThat(notificationCaptor.getValue().getSentAt()).isNull();
+    ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+    verify(notificationRepository).save(notificationCaptor.capture());
+    assertThat(notificationCaptor.getValue().getStatus()).isEqualTo(NotificationStatus.PENDING);
+    assertThat(notificationCaptor.getValue().getTitle()).isEqualTo("Reminder");
+    assertThat(notificationCaptor.getValue().getMessage()).isEqualTo("Time");
+    assertThat(notificationCaptor.getValue().getSentAt()).isNull();
 
-        ArgumentCaptor<NotificationTrigger> triggerCaptor = ArgumentCaptor.forClass(NotificationTrigger.class);
-        verify(notificationTriggerRepository).save(triggerCaptor.capture());
-        assertThat(triggerCaptor.getValue().getTriggerSource()).isEqualTo(NotificationTriggerSource.THERAPY);
-        assertThat(triggerCaptor.getValue().getSourceEntityId()).isEqualTo(7L);
-        assertThat(response.getId()).isEqualTo(15L);
-        assertThat(response.getStatus()).isEqualTo(NotificationStatus.PENDING);
-    }
+    ArgumentCaptor<NotificationTrigger> triggerCaptor =
+        ArgumentCaptor.forClass(NotificationTrigger.class);
+    verify(notificationTriggerRepository).save(triggerCaptor.capture());
+    assertThat(triggerCaptor.getValue().getTriggerSource())
+        .isEqualTo(NotificationTriggerSource.THERAPY);
+    assertThat(triggerCaptor.getValue().getSourceEntityId()).isEqualTo(7L);
+    assertThat(response.getId()).isEqualTo(15L);
+    assertThat(response.getStatus()).isEqualTo(NotificationStatus.PENDING);
+  }
 
-    @Test
-    void updateDeliveryStatusShouldRejectInvalidTransition() {
-        Notification notification = Notification.builder()
-                .notificationId(3L)
-                .status(NotificationStatus.PENDING)
-                .build();
-        when(notificationRepository.findById(3L)).thenReturn(Optional.of(notification));
+  @Test
+  void createNotificationShouldMapSystemNotificationToSystemTrigger() {
+    NotificationRequestDto requestDto =
+        new NotificationRequestDto(
+            null,
+            10L,
+            null,
+            NotificationType.SYSTEM,
+            NotificationChannel.IN_APP,
+            " System ",
+            " Maintenance ");
 
-        assertThatThrownBy(() -> notificationService.updateDeliveryStatus(
-                        3L, new NotificationDeliveryStatusRequestDto(NotificationStatus.DELIVERED)))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Invalid notification status transition from PENDING to DELIVERED.");
+    when(notificationRepository.save(any(Notification.class)))
+        .thenAnswer(
+            invocation -> {
+              Notification notification = invocation.getArgument(0);
+              notification.setNotificationId(16L);
+              return notification;
+            });
 
-        verify(notificationRepository, never()).save(any(Notification.class));
-    }
+    notificationService.createNotification(requestDto);
+
+    ArgumentCaptor<NotificationTrigger> triggerCaptor =
+        ArgumentCaptor.forClass(NotificationTrigger.class);
+    verify(notificationTriggerRepository).save(triggerCaptor.capture());
+    assertThat(triggerCaptor.getValue().getTriggerSource())
+        .isEqualTo(NotificationTriggerSource.SYSTEM);
+    assertThat(triggerCaptor.getValue().getSourceEntityId()).isNull();
+  }
+
+  @Test
+  void updateDeliveryStatusShouldRejectInvalidTransition() {
+    Notification notification =
+        Notification.builder().notificationId(3L).status(NotificationStatus.PENDING).build();
+    when(notificationRepository.findById(3L)).thenReturn(Optional.of(notification));
+
+    assertThatThrownBy(
+            () ->
+                notificationService.updateDeliveryStatus(
+                    3L, new NotificationDeliveryStatusRequestDto(NotificationStatus.DELIVERED)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("Invalid notification status transition from PENDING to DELIVERED.");
+
+    verify(notificationRepository, never()).save(any(Notification.class));
+  }
 }
