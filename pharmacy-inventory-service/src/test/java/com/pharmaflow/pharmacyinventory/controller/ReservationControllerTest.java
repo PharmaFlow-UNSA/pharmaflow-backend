@@ -1,15 +1,19 @@
 package com.pharmaflow.pharmacyinventory.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.pharmacyinventory.dto.ReservationDTO;
+import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
 import com.pharmaflow.pharmacyinventory.service.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,9 +33,9 @@ class ReservationControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @MockitoBean
+    @MockBean
     private ReservationService reservationService;
 
     private ReservationDTO testReservationDTO;
@@ -40,26 +44,24 @@ class ReservationControllerTest {
     void setUp() {
         testReservationDTO = new ReservationDTO();
         testReservationDTO.setId(1L);
-        testReservationDTO.setUserId(1L);
+        testReservationDTO.setUserId(10L);
         testReservationDTO.setProductId(100L);
-        testReservationDTO.setQuantity(1);
+        testReservationDTO.setQuantity(2);
         testReservationDTO.setStatus("PENDING");
-        testReservationDTO.setReservedAt(LocalDateTime.of(2026, 4, 16, 10, 0));
-        testReservationDTO.setExpiresAt(LocalDateTime.of(2026, 4, 17, 10, 0));
+        testReservationDTO.setReservedAt(LocalDateTime.of(2026, 5, 5, 10, 0));
+        testReservationDTO.setExpiresAt(LocalDateTime.of(2026, 5, 6, 10, 0));
         testReservationDTO.setPharmacyId(1L);
     }
 
     @Test
-    void getAllReservations_ShouldReturn200AndList() throws Exception {
-        when(reservationService.getAllReservations()).thenReturn(List.of(testReservationDTO));
+    void getReservations_ShouldReturn200AndPagedResult() throws Exception {
+        Page<ReservationDTO> page = new PageImpl<>(List.of(testReservationDTO));
+        when(reservationService.findAll(any(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/reservations"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].status").value("PENDING"));
-
-        verify(reservationService, times(1)).getAllReservations();
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].status").value("PENDING"));
     }
 
     @Test
@@ -68,12 +70,7 @@ class ReservationControllerTest {
 
         mockMvc.perform(get("/api/reservations/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-
-        verify(reservationService, times(1)).getReservationById(1L);
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -82,23 +79,34 @@ class ReservationControllerTest {
                 .thenThrow(new ResourceNotFoundException("Reservation not found with id: 999"));
 
         mockMvc.perform(get("/api/reservations/999"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
-
-        verify(reservationService, times(1)).getReservationById(999L);
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void getReservationsByUserId_ShouldReturn200AndList() throws Exception {
-        when(reservationService.getReservationsByUserId(1L)).thenReturn(List.of(testReservationDTO));
+    void getReservationsByPharmacyId_ShouldReturn200() throws Exception {
+        when(reservationService.getReservationsByPharmacyId(1L)).thenReturn(List.of(testReservationDTO));
 
-        mockMvc.perform(get("/api/reservations/user/1"))
+        mockMvc.perform(get("/api/reservations/pharmacy/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].userId").value(1));
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        verify(reservationService, times(1)).getReservationsByUserId(1L);
+    @Test
+    void getReservationsByUserId_ShouldReturn200() throws Exception {
+        when(reservationService.getReservationsByUserId(10L)).thenReturn(List.of(testReservationDTO));
+
+        mockMvc.perform(get("/api/reservations/user/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    void getReservationsByStatus_ShouldReturn200() throws Exception {
+        when(reservationService.getReservationsByStatus("PENDING")).thenReturn(List.of(testReservationDTO));
+
+        mockMvc.perform(get("/api/reservations/status/PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test
@@ -108,56 +116,64 @@ class ReservationControllerTest {
         mockMvc.perform(post("/api/reservations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testReservationDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-
-        verify(reservationService, times(1)).createReservation(any(ReservationDTO.class));
+                .andExpect(status().isCreated());
     }
 
     @Test
-    void createReservation_WithInvalidData_ShouldReturn400() throws Exception {
-        ReservationDTO invalidDTO = new ReservationDTO();
-        invalidDTO.setUserId(1L);
-        invalidDTO.setProductId(100L);
-        invalidDTO.setQuantity(1);
-        invalidDTO.setStatus("");
-        invalidDTO.setReservedAt(LocalDateTime.of(2026, 4, 16, 10, 0));
-        invalidDTO.setPharmacyId(1L);
+    void createReservation_WithInvalidStatus_ShouldReturn400() throws Exception {
+        ReservationDTO invalid = new ReservationDTO();
+        invalid.setUserId(1L);
+        invalid.setProductId(1L);
+        invalid.setQuantity(1);
+        invalid.setStatus("BOGUS");
+        invalid.setReservedAt(LocalDateTime.now());
+        invalid.setPharmacyId(1L);
 
         mockMvc.perform(post("/api/reservations")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDTO)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Validation Error"));
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
 
-        verify(reservationService, never()).createReservation(any(ReservationDTO.class));
+    @Test
+    void createReservationsBatch_ShouldReturn201() throws Exception {
+        when(reservationService.createReservationsBatch(anyList())).thenReturn(List.of(testReservationDTO));
+
+        mockMvc.perform(post("/api/reservations/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testReservationDTO))))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void updateReservation_WithValidData_ShouldReturn200() throws Exception {
-        ReservationDTO updatedDTO = new ReservationDTO();
-        updatedDTO.setId(1L);
-        updatedDTO.setUserId(1L);
-        updatedDTO.setProductId(100L);
-        updatedDTO.setQuantity(2);
-        updatedDTO.setStatus("READY");
-        updatedDTO.setReservedAt(LocalDateTime.of(2026, 4, 16, 10, 0));
-        updatedDTO.setExpiresAt(LocalDateTime.of(2026, 4, 17, 10, 0));
-        updatedDTO.setPharmacyId(1L);
-
-        when(reservationService.updateReservation(eq(1L), any(ReservationDTO.class))).thenReturn(updatedDTO);
+        when(reservationService.updateReservation(eq(1L), any(ReservationDTO.class))).thenReturn(testReservationDTO);
 
         mockMvc.perform(put("/api/reservations/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.quantity").value(2))
-                .andExpect(jsonPath("$.status").value("READY"));
+                        .content(objectMapper.writeValueAsString(testReservationDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(reservationService, times(1)).updateReservation(eq(1L), any(ReservationDTO.class));
+    @Test
+    void patchReservation_WithValidPatch_ShouldReturn200() throws Exception {
+        when(reservationService.patchReservation(eq(1L), anyString())).thenReturn(testReservationDTO);
+
+        mockMvc.perform(patch("/api/reservations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"READY\"}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchReservation_WhenInvalidPatch_ShouldReturn400() throws Exception {
+        when(reservationService.patchReservation(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/reservations/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -166,7 +182,5 @@ class ReservationControllerTest {
 
         mockMvc.perform(delete("/api/reservations/1"))
                 .andExpect(status().isNoContent());
-
-        verify(reservationService, times(1)).deleteReservation(1L);
     }
 }

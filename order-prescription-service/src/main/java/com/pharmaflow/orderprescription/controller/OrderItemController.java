@@ -5,6 +5,10 @@ import com.pharmaflow.orderprescription.service.OrderItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,15 @@ public class OrderItemController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all order items", description = "Retrieves a list of all order items")
-    public ResponseEntity<List<OrderItemDTO>> getAllOrderItems() {
-        return ResponseEntity.ok(orderItemService.getAllOrderItems());
+    @Operation(
+            summary = "Get all order items",
+            description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by orderId and productId."
+    )
+    public ResponseEntity<Page<OrderItemDTO>> getOrderItems(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) Long orderId,
+            @RequestParam(required = false) Long productId) {
+        return ResponseEntity.ok(orderItemService.findAll(orderId, productId, pageable));
     }
 
     @GetMapping("/{id}")
@@ -46,10 +56,24 @@ public class OrderItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderItemService.createOrderItem(orderItemDTO));
     }
 
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create order items", description = "Creates multiple order items in a single transaction")
+    public ResponseEntity<List<OrderItemDTO>> createOrderItemsBatch(
+            @RequestBody @Valid List<@Valid OrderItemDTO> dtos) {
+        return new ResponseEntity<>(orderItemService.createOrderItemsBatch(dtos), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Update order item", description = "Updates an existing order item")
     public ResponseEntity<OrderItemDTO> updateOrderItem(@PathVariable Long id, @Valid @RequestBody OrderItemDTO orderItemDTO) {
         return ResponseEntity.ok(orderItemService.updateOrderItem(id, orderItemDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update order item", description = "Applies JSON Patch operations (RFC 6902) to an order item")
+    public ResponseEntity<OrderItemDTO> patchOrderItem(@PathVariable Long id,
+                                                       @RequestBody String patchDocument) {
+        return ResponseEntity.ok(orderItemService.patchOrderItem(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

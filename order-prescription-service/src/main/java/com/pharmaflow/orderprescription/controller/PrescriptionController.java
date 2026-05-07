@@ -6,6 +6,10 @@ import com.pharmaflow.orderprescription.service.PrescriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +28,15 @@ public class PrescriptionController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all prescriptions", description = "Retrieves a list of all prescriptions")
-    public ResponseEntity<List<PrescriptionDTO>> getAllPrescriptions() {
-        return ResponseEntity.ok(prescriptionService.getAllPrescriptions());
+    @Operation(
+            summary = "Get all prescriptions",
+            description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by userId and status."
+    )
+    public ResponseEntity<Page<PrescriptionDTO>> getPrescriptions(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(prescriptionService.findAll(userId, status, pageable));
     }
 
     @GetMapping("/{id}")
@@ -53,10 +63,24 @@ public class PrescriptionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(prescriptionService.createPrescription(prescriptionCreateDTO));
     }
 
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create prescriptions", description = "Creates multiple prescriptions in a single transaction")
+    public ResponseEntity<List<PrescriptionDTO>> createPrescriptionsBatch(
+            @RequestBody @Valid List<@Valid PrescriptionCreateDTO> dtos) {
+        return new ResponseEntity<>(prescriptionService.createPrescriptionsBatch(dtos), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Update prescription", description = "Updates an existing prescription")
     public ResponseEntity<PrescriptionDTO> updatePrescription(@PathVariable Long id, @Valid @RequestBody PrescriptionDTO prescriptionDTO) {
         return ResponseEntity.ok(prescriptionService.updatePrescription(id, prescriptionDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update prescription", description = "Applies JSON Patch operations (RFC 6902) to a prescription")
+    public ResponseEntity<PrescriptionDTO> patchPrescription(@PathVariable Long id,
+                                                             @RequestBody String patchDocument) {
+        return ResponseEntity.ok(prescriptionService.patchPrescription(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

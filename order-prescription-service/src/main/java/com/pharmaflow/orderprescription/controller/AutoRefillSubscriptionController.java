@@ -5,6 +5,10 @@ import com.pharmaflow.orderprescription.service.AutoRefillSubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,16 @@ public class AutoRefillSubscriptionController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all subscriptions", description = "Retrieves a list of all auto-refill subscriptions")
-    public ResponseEntity<List<AutoRefillSubscriptionDTO>> getAllSubscriptions() {
-        return ResponseEntity.ok(autoRefillSubscriptionService.getAllSubscriptions());
+    @Operation(
+            summary = "Get all subscriptions",
+            description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by userId, status, productId."
+    )
+    public ResponseEntity<Page<AutoRefillSubscriptionDTO>> getSubscriptions(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long productId) {
+        return ResponseEntity.ok(autoRefillSubscriptionService.findAll(userId, status, productId, pageable));
     }
 
     @GetMapping("/{id}")
@@ -52,10 +63,24 @@ public class AutoRefillSubscriptionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(autoRefillSubscriptionService.createSubscription(autoRefillSubscriptionDTO));
     }
 
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create subscriptions", description = "Creates multiple auto-refill subscriptions in a single transaction")
+    public ResponseEntity<List<AutoRefillSubscriptionDTO>> createSubscriptionsBatch(
+            @RequestBody @Valid List<@Valid AutoRefillSubscriptionDTO> dtos) {
+        return new ResponseEntity<>(autoRefillSubscriptionService.createSubscriptionsBatch(dtos), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Update subscription", description = "Updates an existing auto-refill subscription")
     public ResponseEntity<AutoRefillSubscriptionDTO> updateSubscription(@PathVariable Long id, @Valid @RequestBody AutoRefillSubscriptionDTO autoRefillSubscriptionDTO) {
         return ResponseEntity.ok(autoRefillSubscriptionService.updateSubscription(id, autoRefillSubscriptionDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update subscription", description = "Applies JSON Patch operations (RFC 6902) to a subscription")
+    public ResponseEntity<AutoRefillSubscriptionDTO> patchSubscription(@PathVariable Long id,
+                                                                       @RequestBody String patchDocument) {
+        return ResponseEntity.ok(autoRefillSubscriptionService.patchSubscription(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

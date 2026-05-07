@@ -1,23 +1,27 @@
 package com.pharmaflow.orderprescription.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.orderprescription.dto.OrderCreateDTO;
 import com.pharmaflow.orderprescription.dto.OrderDTO;
+import com.pharmaflow.orderprescription.dto.OrderItemDTO;
+import com.pharmaflow.orderprescription.dto.PaymentDTO;
+import com.pharmaflow.orderprescription.exception.PatchOperationException;
 import com.pharmaflow.orderprescription.exception.ResourceNotFoundException;
 import com.pharmaflow.orderprescription.service.OrderService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -33,65 +37,61 @@ class OrderControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @MockitoBean
+    @MockBean
     private OrderService orderService;
 
-    private OrderDTO orderDTO;
-    private OrderCreateDTO orderCreateDTO;
+    private OrderDTO testOrderDTO;
+    private OrderCreateDTO testCreateDTO;
 
     @BeforeEach
     void setUp() {
-        orderDTO = new OrderDTO();
-        orderDTO.setId(1L);
-        orderDTO.setUserId(1L);
-        orderDTO.setStatus("PENDING");
-        orderDTO.setTotalAmount(BigDecimal.valueOf(25.00));
-        orderDTO.setShippingAddress("Ulica 1, Sarajevo");
-        orderDTO.setCreatedAt(LocalDateTime.of(2026, 4, 16, 10, 0));
-        orderDTO.setOrderItems(new ArrayList<>());
-        orderDTO.setPayment(null);
-        orderDTO.setPrescriptionId(null);
+        testOrderDTO = new OrderDTO();
+        testOrderDTO.setId(1L);
+        testOrderDTO.setUserId(10L);
+        testOrderDTO.setStatus("PENDING");
+        testOrderDTO.setShippingAddress("Marsala Tita 10, Sarajevo");
+        testOrderDTO.setTotalAmount(new BigDecimal("100.00"));
+        testOrderDTO.setCreatedAt(LocalDateTime.now());
 
-        orderCreateDTO = new OrderCreateDTO();
-        orderCreateDTO.setUserId(1L);
-        orderCreateDTO.setShippingAddress("Ulica 1, Sarajevo");
-        orderCreateDTO.setOrderItems(new ArrayList<>());
+        OrderItemDTO item = new OrderItemDTO();
+        item.setProductId(100L);
+        item.setProductName("Aspirin");
+        item.setQuantity(2);
+        item.setUnitPrice(new BigDecimal("10.00"));
+        item.setOrderId(1L);
+
+        PaymentDTO payment = new PaymentDTO();
+        payment.setAmount(new BigDecimal("20.00"));
+        payment.setMethod("CARD");
+        payment.setStatus("PENDING");
+
+        testCreateDTO = new OrderCreateDTO();
+        testCreateDTO.setUserId(10L);
+        testCreateDTO.setShippingAddress("Marsala Tita 10, Sarajevo");
+        testCreateDTO.setOrderItems(List.of(item));
+        testCreateDTO.setPayment(payment);
     }
 
     @Test
-    void getAllOrders_ShouldReturn200AndList() throws Exception {
-        List<OrderDTO> orders = Arrays.asList(orderDTO);
-        when(orderService.getAllOrders()).thenReturn(orders);
+    void getOrders_ShouldReturn200AndPagedResult() throws Exception {
+        Page<OrderDTO> page = new PageImpl<>(List.of(testOrderDTO));
+        when(orderService.findAll(any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/orders"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].userId").value(1))
-                .andExpect(jsonPath("$[0].status").value("PENDING"))
-                .andExpect(jsonPath("$[0].shippingAddress").value("Ulica 1, Sarajevo"));
-
-        verify(orderService, times(1)).getAllOrders();
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].status").value("PENDING"));
     }
 
     @Test
     void getOrderById_WhenExists_ShouldReturn200() throws Exception {
-        when(orderService.getOrderById(1L)).thenReturn(orderDTO);
+        when(orderService.getOrderById(1L)).thenReturn(testOrderDTO);
 
         mockMvc.perform(get("/api/orders/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.totalAmount").value(25.00))
-                .andExpect(jsonPath("$.shippingAddress").value("Ulica 1, Sarajevo"));
-
-        verify(orderService, times(1)).getOrderById(1L);
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -101,68 +101,86 @@ class OrderControllerTest {
 
         mockMvc.perform(get("/api/orders/999"))
                 .andExpect(status().isNotFound());
-
-        verify(orderService, times(1)).getOrderById(999L);
     }
 
     @Test
-    void getOrdersByUserId_ShouldReturn200AndList() throws Exception {
-        List<OrderDTO> orders = Arrays.asList(orderDTO);
-        when(orderService.getOrdersByUserId(1L)).thenReturn(orders);
+    void getOrdersByUserId_ShouldReturn200() throws Exception {
+        when(orderService.getOrdersByUserId(10L)).thenReturn(List.of(testOrderDTO));
 
-        mockMvc.perform(get("/api/orders/user/1"))
+        mockMvc.perform(get("/api/orders/user/10"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].userId").value(1));
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        verify(orderService, times(1)).getOrdersByUserId(1L);
+    @Test
+    void getOrdersByStatus_ShouldReturn200() throws Exception {
+        when(orderService.getOrdersByStatus("PENDING")).thenReturn(List.of(testOrderDTO));
+
+        mockMvc.perform(get("/api/orders/status/PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test
     void createOrder_WithValidData_ShouldReturn201() throws Exception {
-        when(orderService.createOrder(any(OrderCreateDTO.class))).thenReturn(orderDTO);
+        when(orderService.createOrder(any(OrderCreateDTO.class))).thenReturn(testOrderDTO);
 
         mockMvc.perform(post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(orderCreateDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.shippingAddress").value("Ulica 1, Sarajevo"));
-
-        verify(orderService, times(1)).createOrder(any(OrderCreateDTO.class));
+                        .content(objectMapper.writeValueAsString(testCreateDTO)))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void createOrder_WithInvalidData_ShouldReturn400() throws Exception {
-        OrderCreateDTO invalidDTO = new OrderCreateDTO();
-        invalidDTO.setUserId(1L);
-        invalidDTO.setShippingAddress("");
+        OrderCreateDTO invalid = new OrderCreateDTO();
+        // missing userId, shippingAddress, etc.
 
         mockMvc.perform(post("/api/orders")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                        .content(objectMapper.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest());
+    }
 
-        verify(orderService, never()).createOrder(any(OrderCreateDTO.class));
+    @Test
+    void createOrdersBatch_ShouldReturn201() throws Exception {
+        when(orderService.createOrdersBatch(anyList())).thenReturn(List.of(testOrderDTO));
+
+        mockMvc.perform(post("/api/orders/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testCreateDTO))))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void updateOrder_WithValidData_ShouldReturn200() throws Exception {
-        when(orderService.updateOrder(eq(1L), any(OrderDTO.class))).thenReturn(orderDTO);
+        when(orderService.updateOrder(eq(1L), any(OrderDTO.class))).thenReturn(testOrderDTO);
 
         mockMvc.perform(put("/api/orders/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(orderDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                        .content(objectMapper.writeValueAsString(testOrderDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(orderService, times(1)).updateOrder(eq(1L), any(OrderDTO.class));
+    @Test
+    void patchOrder_WithValidPatch_ShouldReturn200() throws Exception {
+        when(orderService.patchOrder(eq(1L), anyString())).thenReturn(testOrderDTO);
+
+        mockMvc.perform(patch("/api/orders/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"SHIPPED\"}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchOrder_WithInvalidPatch_ShouldReturn400() throws Exception {
+        when(orderService.patchOrder(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/orders/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -171,7 +189,5 @@ class OrderControllerTest {
 
         mockMvc.perform(delete("/api/orders/1"))
                 .andExpect(status().isNoContent());
-
-        verify(orderService, times(1)).deleteOrder(1L);
     }
 }

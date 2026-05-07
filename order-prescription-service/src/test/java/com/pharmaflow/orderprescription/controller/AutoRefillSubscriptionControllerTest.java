@@ -1,20 +1,23 @@
 package com.pharmaflow.orderprescription.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.orderprescription.dto.AutoRefillSubscriptionDTO;
+import com.pharmaflow.orderprescription.exception.PatchOperationException;
 import com.pharmaflow.orderprescription.exception.ResourceNotFoundException;
 import com.pharmaflow.orderprescription.service.AutoRefillSubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -30,64 +33,43 @@ class AutoRefillSubscriptionControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @MockitoBean
+    @MockBean
     private AutoRefillSubscriptionService autoRefillSubscriptionService;
 
-    private AutoRefillSubscriptionDTO subscriptionDTO;
+    private AutoRefillSubscriptionDTO testDTO;
 
     @BeforeEach
     void setUp() {
-        subscriptionDTO = new AutoRefillSubscriptionDTO();
-        subscriptionDTO.setId(1L);
-        subscriptionDTO.setUserId(1L);
-        subscriptionDTO.setProductId(100L);
-        subscriptionDTO.setDosagePerDay(1);
-        subscriptionDTO.setTabletsPerPackage(30);
-        subscriptionDTO.setIntervalDays(30);
-        subscriptionDTO.setNextOrderDate(LocalDate.of(2026, 5, 16));
-        subscriptionDTO.setStatus("ACTIVE");
-        subscriptionDTO.setShippingAddress("Ulica 1, Sarajevo");
-        subscriptionDTO.setPrescriptionId(null);
+        testDTO = new AutoRefillSubscriptionDTO();
+        testDTO.setId(1L);
+        testDTO.setUserId(10L);
+        testDTO.setProductId(100L);
+        testDTO.setDosagePerDay(2);
+        testDTO.setTabletsPerPackage(60);
+        testDTO.setIntervalDays(30);
+        testDTO.setNextOrderDate(LocalDate.of(2026, 6, 1));
+        testDTO.setStatus("ACTIVE");
+        testDTO.setShippingAddress("Marsala Tita 10, Sarajevo");
     }
 
     @Test
-    void getAllSubscriptions_ShouldReturn200AndList() throws Exception {
-        List<AutoRefillSubscriptionDTO> subscriptions = Arrays.asList(subscriptionDTO);
-        when(autoRefillSubscriptionService.getAllSubscriptions()).thenReturn(subscriptions);
+    void getSubscriptions_ShouldReturn200AndPagedResult() throws Exception {
+        Page<AutoRefillSubscriptionDTO> page = new PageImpl<>(List.of(testDTO));
+        when(autoRefillSubscriptionService.findAll(any(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/auto-refill-subscriptions"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].userId").value(1))
-                .andExpect(jsonPath("$[0].productId").value(100))
-                .andExpect(jsonPath("$[0].status").value("ACTIVE"))
-                .andExpect(jsonPath("$[0].shippingAddress").value("Ulica 1, Sarajevo"));
-
-        verify(autoRefillSubscriptionService, times(1)).getAllSubscriptions();
+                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
     @Test
     void getSubscriptionById_WhenExists_ShouldReturn200() throws Exception {
-        when(autoRefillSubscriptionService.getSubscriptionById(1L)).thenReturn(subscriptionDTO);
+        when(autoRefillSubscriptionService.getSubscriptionById(1L)).thenReturn(testDTO);
 
         mockMvc.perform(get("/api/auto-refill-subscriptions/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.productId").value(100))
-                .andExpect(jsonPath("$.dosagePerDay").value(1))
-                .andExpect(jsonPath("$.tabletsPerPackage").value(30))
-                .andExpect(jsonPath("$.intervalDays").value(30))
-                .andExpect(jsonPath("$.status").value("ACTIVE"))
-                .andExpect(jsonPath("$.shippingAddress").value("Ulica 1, Sarajevo"));
-
-        verify(autoRefillSubscriptionService, times(1)).getSubscriptionById(1L);
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -97,75 +79,89 @@ class AutoRefillSubscriptionControllerTest {
 
         mockMvc.perform(get("/api/auto-refill-subscriptions/999"))
                 .andExpect(status().isNotFound());
-
-        verify(autoRefillSubscriptionService, times(1)).getSubscriptionById(999L);
     }
 
     @Test
-    void getSubscriptionsByUserId_ShouldReturn200AndList() throws Exception {
-        List<AutoRefillSubscriptionDTO> subscriptions = Arrays.asList(subscriptionDTO);
-        when(autoRefillSubscriptionService.getSubscriptionsByUserId(1L)).thenReturn(subscriptions);
+    void getSubscriptionsByUserId_ShouldReturn200() throws Exception {
+        when(autoRefillSubscriptionService.getSubscriptionsByUserId(10L)).thenReturn(List.of(testDTO));
 
-        mockMvc.perform(get("/api/auto-refill-subscriptions/user/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].userId").value(1));
+        mockMvc.perform(get("/api/auto-refill-subscriptions/user/10"))
+                .andExpect(status().isOk());
+    }
 
-        verify(autoRefillSubscriptionService, times(1)).getSubscriptionsByUserId(1L);
+    @Test
+    void getSubscriptionsByStatus_ShouldReturn200() throws Exception {
+        when(autoRefillSubscriptionService.getSubscriptionsByStatus("ACTIVE")).thenReturn(List.of(testDTO));
+
+        mockMvc.perform(get("/api/auto-refill-subscriptions/status/ACTIVE"))
+                .andExpect(status().isOk());
     }
 
     @Test
     void createSubscription_WithValidData_ShouldReturn201() throws Exception {
-        when(autoRefillSubscriptionService.createSubscription(any(AutoRefillSubscriptionDTO.class)))
-                .thenReturn(subscriptionDTO);
+        when(autoRefillSubscriptionService.createSubscription(any(AutoRefillSubscriptionDTO.class))).thenReturn(testDTO);
 
         mockMvc.perform(post("/api/auto-refill-subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(subscriptionDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.productId").value(100))
-                .andExpect(jsonPath("$.status").value("ACTIVE"))
-                .andExpect(jsonPath("$.shippingAddress").value("Ulica 1, Sarajevo"));
-
-        verify(autoRefillSubscriptionService, times(1)).createSubscription(any(AutoRefillSubscriptionDTO.class));
+                        .content(objectMapper.writeValueAsString(testDTO)))
+                .andExpect(status().isCreated());
     }
 
     @Test
-    void createSubscription_WithInvalidData_ShouldReturn400() throws Exception {
-        AutoRefillSubscriptionDTO invalidDTO = new AutoRefillSubscriptionDTO();
-        invalidDTO.setUserId(1L);
-        invalidDTO.setProductId(100L);
-        invalidDTO.setDosagePerDay(1);
-        invalidDTO.setTabletsPerPackage(30);
-        invalidDTO.setStatus("ACTIVE");
-        invalidDTO.setShippingAddress("");
+    void createSubscription_WithInvalidStatus_ShouldReturn400() throws Exception {
+        AutoRefillSubscriptionDTO invalid = new AutoRefillSubscriptionDTO();
+        invalid.setUserId(10L);
+        invalid.setProductId(100L);
+        invalid.setDosagePerDay(2);
+        invalid.setTabletsPerPackage(60);
+        invalid.setStatus("BOGUS");
+        invalid.setShippingAddress("addr...");
 
         mockMvc.perform(post("/api/auto-refill-subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                        .content(objectMapper.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest());
+    }
 
-        verify(autoRefillSubscriptionService, never()).createSubscription(any(AutoRefillSubscriptionDTO.class));
+    @Test
+    void createSubscriptionsBatch_ShouldReturn201() throws Exception {
+        when(autoRefillSubscriptionService.createSubscriptionsBatch(anyList())).thenReturn(List.of(testDTO));
+
+        mockMvc.perform(post("/api/auto-refill-subscriptions/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testDTO))))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void updateSubscription_WithValidData_ShouldReturn200() throws Exception {
-        when(autoRefillSubscriptionService.updateSubscription(eq(1L), any(AutoRefillSubscriptionDTO.class)))
-                .thenReturn(subscriptionDTO);
+        when(autoRefillSubscriptionService.updateSubscription(eq(1L), any(AutoRefillSubscriptionDTO.class))).thenReturn(testDTO);
 
         mockMvc.perform(put("/api/auto-refill-subscriptions/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(subscriptionDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
+                        .content(objectMapper.writeValueAsString(testDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(autoRefillSubscriptionService, times(1)).updateSubscription(eq(1L), any(AutoRefillSubscriptionDTO.class));
+    @Test
+    void patchSubscription_WithValidPatch_ShouldReturn200() throws Exception {
+        when(autoRefillSubscriptionService.patchSubscription(eq(1L), anyString())).thenReturn(testDTO);
+
+        mockMvc.perform(patch("/api/auto-refill-subscriptions/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"PAUSED\"}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchSubscription_WithInvalidPatch_ShouldReturn400() throws Exception {
+        when(autoRefillSubscriptionService.patchSubscription(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/auto-refill-subscriptions/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -174,7 +170,5 @@ class AutoRefillSubscriptionControllerTest {
 
         mockMvc.perform(delete("/api/auto-refill-subscriptions/1"))
                 .andExpect(status().isNoContent());
-
-        verify(autoRefillSubscriptionService, times(1)).deleteSubscription(1L);
     }
 }

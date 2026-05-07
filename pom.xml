@@ -17,6 +17,8 @@
         <module>eureka-server</module>
         <module>config-server</module>
         <module>user-health-service</module>
+        <module>pharmacy-inventory-service</module>
+        <module>order-prescription-service</module>
     </modules>
 
     <properties>
