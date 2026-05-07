@@ -24,306 +24,307 @@ public class DataLoader implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        System.out.println("=== PharmaFlow: Učitavanje inicijalnih podataka ===");
+        System.out.println("=== PharmaFlow: Loading initial data ===");
 
-        // Ako već ima podataka, preskoci seed
         if (categoryRepository.count() > 0) {
-            System.out.println("=== Podaci već postoje, preskačem seed ===");
+            System.out.println("=== Data already exists, skipping seed ===");
             return;
         }
 
-        // ─── 1. KATEGORIJE ───────────────────────────────────────────────
-        Category analgetici = new Category();
-        analgetici.setName("Analgetici i antipiretici");
-        analgetici.setDescription("Lijekovi za ublažavanje boli i snižavanje temperature");
-        categoryRepository.save(analgetici);
+        // ─── 1. CATEGORIES ───────────────────────────────────────────────
 
-        Category antibiotici = new Category();
-        antibiotici.setName("Antibiotici");
-        antibiotici.setDescription("Lijekovi za liječenje bakterijskih infekcija");
-        categoryRepository.save(antibiotici);
+        Category analgesics = new Category();
+        analgesics.setName("Analgesics and Antipyretics");
+        analgesics.setDescription("Medications for pain relief and fever reduction");
+        categoryRepository.save(analgesics);
 
-        Category vitamini = new Category();
-        vitamini.setName("Vitamini i suplementi");
-        vitamini.setDescription("Vitamini, minerali i prehrambeni suplementi");
-        categoryRepository.save(vitamini);
+        Category antibiotics = new Category();
+        antibiotics.setName("Antibiotics");
+        antibiotics.setDescription("Medications for treating bacterial infections");
+        categoryRepository.save(antibiotics);
 
-        Category gastrointestinalni = new Category();
-        gastrointestinalni.setName("Gastrointestinalni lijekovi");
-        gastrointestinalni.setDescription("Lijekovi za probavni sistem");
-        categoryRepository.save(gastrointestinalni);
+        Category vitamins = new Category();
+        vitamins.setName("Vitamins and Supplements");
+        vitamins.setDescription("Vitamins, minerals and dietary supplements");
+        categoryRepository.save(vitamins);
 
-        System.out.println("✓ Kategorije upisane: " + categoryRepository.count());
+        Category gastrointestinal = new Category();
+        gastrointestinal.setName("Gastrointestinal Medications");
+        gastrointestinal.setDescription("Medications for the digestive system");
+        categoryRepository.save(gastrointestinal);
 
-        // ─── 2. SUPSTANCE ────────────────────────────────────────────────
+        System.out.println("✓ Categories saved: " + categoryRepository.count());
+
+        // ─── 2. SUBSTANCES ───────────────────────────────────────────────
+
         Substance ibuprofen = new Substance();
         ibuprofen.setInn("ibuprofen");
         ibuprofen.setCommonName("Ibuprofen");
         ibuprofen.setAtcCode("M01AE01");
-        ibuprofen.setDescription("Nesteroidni protuupalni lijek (NSAID). Djeluje analgetički, antipiretički i protuupalno.");
+        ibuprofen.setDescription("Non-steroidal anti-inflammatory drug (NSAID). Analgesic, antipyretic and anti-inflammatory.");
         substanceRepository.save(ibuprofen);
 
         Substance paracetamol = new Substance();
         paracetamol.setInn("paracetamol");
-        paracetamol.setCommonName("Paracetamol (Acetaminofen)");
+        paracetamol.setCommonName("Paracetamol (Acetaminophen)");
         paracetamol.setAtcCode("N02BE01");
-        paracetamol.setDescription("Analgetik i antipiretik. Ne djeluje protuupalno, pogodan za djecu i trudnice.");
+        paracetamol.setDescription("Analgesic and antipyretic. No anti-inflammatory effect, suitable for children and pregnant women.");
         substanceRepository.save(paracetamol);
 
-        Substance amoksicilin = new Substance();
-        amoksicilin.setInn("amoxicillin");
-        amoksicilin.setCommonName("Amoksicilin");
-        amoksicilin.setAtcCode("J01CA04");
-        amoksicilin.setDescription("Penicilinski antibiotik širokog spektra za bakterijske infekcije.");
-        substanceRepository.save(amoksicilin);
+        Substance amoxicillin = new Substance();
+        amoxicillin.setInn("amoxicillin");
+        amoxicillin.setCommonName("Amoxicillin");
+        amoxicillin.setAtcCode("J01CA04");
+        amoxicillin.setDescription("Broad-spectrum penicillin antibiotic for bacterial infections.");
+        substanceRepository.save(amoxicillin);
 
-        Substance varfarin = new Substance();
-        varfarin.setInn("warfarin");
-        varfarin.setCommonName("Varfarin");
-        varfarin.setAtcCode("B01AA03");
-        varfarin.setDescription("Antikoagulans koji se koristi za prevenciju tromboze i embolije.");
-        substanceRepository.save(varfarin);
+        Substance warfarin = new Substance();
+        warfarin.setInn("warfarin");
+        warfarin.setCommonName("Warfarin");
+        warfarin.setAtcCode("B01AA03");
+        warfarin.setDescription("Anticoagulant used for prevention of thrombosis and embolism.");
+        substanceRepository.save(warfarin);
 
-        Substance omeprazol = new Substance();
-        omeprazol.setInn("omeprazole");
-        omeprazol.setCommonName("Omeprazol");
-        omeprazol.setAtcCode("A02BC01");
-        omeprazol.setDescription("Inhibitor protonske pumpe, smanjuje lučenje kiseline u želucu.");
-        substanceRepository.save(omeprazol);
+        Substance omeprazole = new Substance();
+        omeprazole.setInn("omeprazole");
+        omeprazole.setCommonName("Omeprazole");
+        omeprazole.setAtcCode("A02BC01");
+        omeprazole.setDescription("Proton pump inhibitor, reduces gastric acid secretion.");
+        substanceRepository.save(omeprazole);
 
         Substance vitaminC = new Substance();
         vitaminC.setInn("ascorbic acid");
-        vitaminC.setCommonName("Vitamin C (Askorbinska kiselina)");
+        vitaminC.setCommonName("Vitamin C (Ascorbic Acid)");
         vitaminC.setAtcCode("A11GA01");
-        vitaminC.setDescription("Esencijalni vitamin, antioksidant, neophodan za imunosni sistem.");
+        vitaminC.setDescription("Essential vitamin, antioxidant, necessary for the immune system.");
         substanceRepository.save(vitaminC);
 
-        System.out.println("✓ Supstance upisane: " + substanceRepository.count());
+        System.out.println("✓ Substances saved: " + substanceRepository.count());
 
-        // ─── 3. PROIZVODI ────────────────────────────────────────────────
+        // ─── 3. PRODUCTS ─────────────────────────────────────────────────
 
-        // Brufen 400mg (brendirani ibuprofen)
+        // Branded ibuprofen
         Product brufen = new Product();
-        brufen.setName("Brufen 400mg tablete");
+        brufen.setName("Brufen 400mg tablets");
         brufen.setBarcode("3838989522018");
         brufen.setBrandName("Brufen");
         brufen.setManufacturer("Abbott");
         brufen.setPrice(new BigDecimal("4.50"));
-        brufen.setDescription("Brufen 400mg sadrži ibuprofen. Primjenjuje se za ublažavanje blage do umjerene boli i snižavanje povišene tjelesne temperature.");
-        brufen.setCategory(analgetici);
+        brufen.setDescription("Brufen 400mg contains ibuprofen. Used for relief of mild to moderate pain and reduction of fever.");
+        brufen.setCategory(analgesics);
         brufen.setRequiresPrescription(false);
         brufen.setProductType(Product.ProductType.MEDICATION);
-        brufen.setPackageSize("30 tableta");
+        brufen.setPackageSize("30 tablets");
         brufen.setSubstances(List.of(ibuprofen));
         brufen.setIsActive(true);
         productRepository.save(brufen);
 
-        // Generički ibuprofen (zamjena za Brufen)
+        // Generic ibuprofen (substitute for Brufen)
         Product ibuprofenGeneric = new Product();
-        ibuprofenGeneric.setName("Ibuprofen 400mg tablete");
+        ibuprofenGeneric.setName("Ibuprofen 400mg tablets");
         ibuprofenGeneric.setBarcode("3858881733217");
         ibuprofenGeneric.setBrandName(null);
         ibuprofenGeneric.setManufacturer("Bosnalijek");
         ibuprofenGeneric.setPrice(new BigDecimal("2.80"));
-        ibuprofenGeneric.setDescription("Generički ibuprofen 400mg. Terapijski ekvivalent brendiranom Brufenu po nižoj cijeni.");
-        ibuprofenGeneric.setCategory(analgetici);
+        ibuprofenGeneric.setDescription("Generic ibuprofen 400mg. Therapeutic equivalent of branded Brufen at a lower price.");
+        ibuprofenGeneric.setCategory(analgesics);
         ibuprofenGeneric.setRequiresPrescription(false);
         ibuprofenGeneric.setProductType(Product.ProductType.MEDICATION);
-        ibuprofenGeneric.setPackageSize("30 tableta");
+        ibuprofenGeneric.setPackageSize("30 tablets");
         ibuprofenGeneric.setSubstances(List.of(ibuprofen));
         ibuprofenGeneric.setIsActive(true);
         productRepository.save(ibuprofenGeneric);
 
-        // Panadol (paracetamol)
+        // Panadol
         Product panadol = new Product();
-        panadol.setName("Panadol 500mg tablete");
+        panadol.setName("Panadol 500mg tablets");
         panadol.setBarcode("5000157021718");
         panadol.setBrandName("Panadol");
         panadol.setManufacturer("Haleon");
         panadol.setPrice(new BigDecimal("3.20"));
-        panadol.setDescription("Panadol 500mg sadrži paracetamol. Koristi se za ublažavanje boli i snižavanje temperature. Pogodan za djecu stariju od 12 godina.");
-        panadol.setCategory(analgetici);
+        panadol.setDescription("Panadol 500mg contains paracetamol. Used for pain relief and fever reduction. Suitable for children over 12 years.");
+        panadol.setCategory(analgesics);
         panadol.setRequiresPrescription(false);
         panadol.setProductType(Product.ProductType.MEDICATION);
-        panadol.setPackageSize("20 tableta");
+        panadol.setPackageSize("20 tablets");
         panadol.setSubstances(List.of(paracetamol));
         panadol.setIsActive(true);
         productRepository.save(panadol);
 
-        // Amoksicilin (na recept)
-        Product amoksicilinProduct = new Product();
-        amoksicilinProduct.setName("Amoksicilin 500mg kapsule");
-        amoksicilinProduct.setBarcode("3858881620012");
-        amoksicilinProduct.setBrandName("Amoksicilin");
-        amoksicilinProduct.setManufacturer("Bosnalijek");
-        amoksicilinProduct.setPrice(new BigDecimal("8.90"));
-        amoksicilinProduct.setDescription("Amoksicilin 500mg je antibiotik iz grupe penicilina. Liječi bakterijske infekcije dišnog sistema, urinarnog trakta i uha.");
-        amoksicilinProduct.setCategory(antibiotici);
-        amoksicilinProduct.setRequiresPrescription(true);
-        amoksicilinProduct.setProductType(Product.ProductType.MEDICATION);
-        amoksicilinProduct.setPackageSize("16 kapsula");
-        amoksicilinProduct.setSubstances(List.of(amoksicilin));
-        amoksicilinProduct.setIsActive(true);
-        productRepository.save(amoksicilinProduct);
+        // Amoxicillin (prescription required)
+        Product amoxicillinProduct = new Product();
+        amoxicillinProduct.setName("Amoxicillin 500mg capsules");
+        amoxicillinProduct.setBarcode("3858881620012");
+        amoxicillinProduct.setBrandName("Amoxicillin");
+        amoxicillinProduct.setManufacturer("Bosnalijek");
+        amoxicillinProduct.setPrice(new BigDecimal("8.90"));
+        amoxicillinProduct.setDescription("Amoxicillin 500mg is a penicillin group antibiotic. Treats bacterial infections of the respiratory tract, urinary tract and ear.");
+        amoxicillinProduct.setCategory(antibiotics);
+        amoxicillinProduct.setRequiresPrescription(true);
+        amoxicillinProduct.setProductType(Product.ProductType.MEDICATION);
+        amoxicillinProduct.setPackageSize("16 capsules");
+        amoxicillinProduct.setSubstances(List.of(amoxicillin));
+        amoxicillinProduct.setIsActive(true);
+        productRepository.save(amoxicillinProduct);
 
-        // Warfarin (na recept)
+        // Warfarin (prescription required)
         Product warfarinProduct = new Product();
-        warfarinProduct.setName("Varfarin 5mg tablete");
+        warfarinProduct.setName("Warfarin 5mg tablets");
         warfarinProduct.setBarcode("3858881711215");
-        warfarinProduct.setBrandName("Varfarin");
+        warfarinProduct.setBrandName("Warfarin");
         warfarinProduct.setManufacturer("Bosnalijek");
         warfarinProduct.setPrice(new BigDecimal("6.40"));
-        warfarinProduct.setDescription("Varfarin 5mg je antikoagulans. Koristi se za prevenciju i liječenje tromboze dubokih vena i plućne embolije.");
-        warfarinProduct.setCategory(analgetici);
+        warfarinProduct.setDescription("Warfarin 5mg is an anticoagulant. Used for prevention and treatment of deep vein thrombosis and pulmonary embolism.");
+        warfarinProduct.setCategory(analgesics);
         warfarinProduct.setRequiresPrescription(true);
         warfarinProduct.setProductType(Product.ProductType.MEDICATION);
-        warfarinProduct.setPackageSize("30 tableta");
-        warfarinProduct.setSubstances(List.of(varfarin));
+        warfarinProduct.setPackageSize("30 tablets");
+        warfarinProduct.setSubstances(List.of(warfarin));
         warfarinProduct.setIsActive(true);
         productRepository.save(warfarinProduct);
 
-        // Omeprazol
-        Product omeprazolProduct = new Product();
-        omeprazolProduct.setName("Omeprazol 20mg kapsule");
-        omeprazolProduct.setBarcode("3858889011312");
-        omeprazolProduct.setBrandName("Losec");
-        omeprazolProduct.setManufacturer("AstraZeneca");
-        omeprazolProduct.setPrice(new BigDecimal("7.10"));
-        omeprazolProduct.setDescription("Omeprazol 20mg smanjuje lučenje želučane kiseline. Koristi se za liječenje čira na želucu i gastroezofagealnog refluksa.");
-        omeprazolProduct.setCategory(gastrointestinalni);
-        omeprazolProduct.setRequiresPrescription(false);
-        omeprazolProduct.setProductType(Product.ProductType.MEDICATION);
-        omeprazolProduct.setPackageSize("14 kapsula");
-        omeprazolProduct.setSubstances(List.of(omeprazol));
-        omeprazolProduct.setIsActive(true);
-        productRepository.save(omeprazolProduct);
+        // Omeprazole
+        Product omeprazoleProduct = new Product();
+        omeprazoleProduct.setName("Omeprazole 20mg capsules");
+        omeprazoleProduct.setBarcode("3858889011312");
+        omeprazoleProduct.setBrandName("Losec");
+        omeprazoleProduct.setManufacturer("AstraZeneca");
+        omeprazoleProduct.setPrice(new BigDecimal("7.10"));
+        omeprazoleProduct.setDescription("Omeprazole 20mg reduces gastric acid secretion. Used for treatment of gastric ulcers and gastroesophageal reflux.");
+        omeprazoleProduct.setCategory(gastrointestinal);
+        omeprazoleProduct.setRequiresPrescription(false);
+        omeprazoleProduct.setProductType(Product.ProductType.MEDICATION);
+        omeprazoleProduct.setPackageSize("14 capsules");
+        omeprazoleProduct.setSubstances(List.of(omeprazole));
+        omeprazoleProduct.setIsActive(true);
+        productRepository.save(omeprazoleProduct);
 
         // Vitamin C 1000mg
         Product vitaminCProduct = new Product();
-        vitaminCProduct.setName("Vitamin C 1000mg šumeće tablete");
+        vitaminCProduct.setName("Vitamin C 1000mg effervescent tablets");
         vitaminCProduct.setBarcode("3838957123456");
         vitaminCProduct.setBrandName("Cedevita");
         vitaminCProduct.setManufacturer("Atlantic Grupa");
         vitaminCProduct.setPrice(new BigDecimal("5.60"));
-        vitaminCProduct.setDescription("Vitamin C 1000mg u obliku šumećih tableta. Podržava imunosni sistem, smanjuje umor i doprinosi normalnoj funkciji krvnih žila.");
-        vitaminCProduct.setCategory(vitamini);
+        vitaminCProduct.setDescription("Vitamin C 1000mg in effervescent tablet form. Supports the immune system, reduces fatigue and contributes to normal blood vessel function.");
+        vitaminCProduct.setCategory(vitamins);
         vitaminCProduct.setRequiresPrescription(false);
         vitaminCProduct.setProductType(Product.ProductType.SUPPLEMENT);
-        vitaminCProduct.setPackageSize("20 šumećih tableta");
+        vitaminCProduct.setPackageSize("20 effervescent tablets");
         vitaminCProduct.setSubstances(List.of(vitaminC));
         vitaminCProduct.setIsActive(true);
         productRepository.save(vitaminCProduct);
 
-        System.out.println("✓ Proizvodi upisani: " + productRepository.count());
+        System.out.println("✓ Products saved: " + productRepository.count());
 
-        // ─── 4. INTERAKCIJE LIJEKOVA ─────────────────────────────────────
+        // ─── 4. DRUG INTERACTIONS ─────────────────────────────────────────
 
-        // MAJOR: Ibuprofen + Varfarin → pojačano krvarenje
-        DrugInteraction ibuprofenVarfarin = new DrugInteraction();
-        ibuprofenVarfarin.setSubstanceA(ibuprofen);
-        ibuprofenVarfarin.setSubstanceB(varfarin);
-        ibuprofenVarfarin.setSeverity(DrugInteraction.SeverityLevel.MAJOR);
-        ibuprofenVarfarin.setDescription("Ibuprofen (NSAID) pojačava antikoagulantni učinak varfarina i povećava rizik od gastrointestinalnog krvarenja.");
-        ibuprofenVarfarin.setClinicalRecommendation("Izbjegavati kombinaciju. Ako je neophodna primjena, redovno pratiti INR i znakove krvarenja. Razmotriti paracetamol kao alternativu.");
-        drugInteractionRepository.save(ibuprofenVarfarin);
+        // MAJOR: Ibuprofen + Warfarin → increased bleeding risk
+        DrugInteraction ibuprofenWarfarin = new DrugInteraction();
+        ibuprofenWarfarin.setSubstanceA(ibuprofen);
+        ibuprofenWarfarin.setSubstanceB(warfarin);
+        ibuprofenWarfarin.setSeverity(DrugInteraction.SeverityLevel.MAJOR);
+        ibuprofenWarfarin.setDescription("Ibuprofen (NSAID) enhances the anticoagulant effect of warfarin and increases the risk of gastrointestinal bleeding.");
+        ibuprofenWarfarin.setClinicalRecommendation("Avoid combination. If necessary, regularly monitor INR and signs of bleeding. Consider paracetamol as an alternative.");
+        drugInteractionRepository.save(ibuprofenWarfarin);
 
-        // MODERATE: Omeprazol + Varfarin → povećan antikoagulantni učinak
-        DrugInteraction omeprazolVarfarin = new DrugInteraction();
-        omeprazolVarfarin.setSubstanceA(omeprazol);
-        omeprazolVarfarin.setSubstanceB(varfarin);
-        omeprazolVarfarin.setSeverity(DrugInteraction.SeverityLevel.MODERATE);
-        omeprazolVarfarin.setDescription("Omeprazol može inhibirati metabolizam varfarina putem CYP2C19 enzima, što može povećati antikoagulantni učinak.");
-        omeprazolVarfarin.setClinicalRecommendation("Pratiti INR vrijednosti pri uvođenju ili ukidanju omeprazola. Prilagoditi dozu varfarina prema potrebi.");
-        drugInteractionRepository.save(omeprazolVarfarin);
+        // MODERATE: Omeprazole + Warfarin → increased anticoagulant effect
+        DrugInteraction omeprazoleWarfarin = new DrugInteraction();
+        omeprazoleWarfarin.setSubstanceA(omeprazole);
+        omeprazoleWarfarin.setSubstanceB(warfarin);
+        omeprazoleWarfarin.setSeverity(DrugInteraction.SeverityLevel.MODERATE);
+        omeprazoleWarfarin.setDescription("Omeprazole may inhibit warfarin metabolism via CYP2C19 enzyme, potentially increasing the anticoagulant effect.");
+        omeprazoleWarfarin.setClinicalRecommendation("Monitor INR values when introducing or discontinuing omeprazole. Adjust warfarin dose as needed.");
+        drugInteractionRepository.save(omeprazoleWarfarin);
 
-        // MINOR: Ibuprofen + Amoksicilin (blaga interakcija)
-        DrugInteraction ibuprofenAmoksicilin = new DrugInteraction();
-        ibuprofenAmoksicilin.setSubstanceA(ibuprofen);
-        ibuprofenAmoksicilin.setSubstanceB(amoksicilin);
-        ibuprofenAmoksicilin.setSeverity(DrugInteraction.SeverityLevel.MINOR);
-        ibuprofenAmoksicilin.setDescription("Ibuprofen može blago smanjiti renalnu eliminaciju amoksicilina, ali ova interakcija rijetko ima klinički značaj.");
-        ibuprofenAmoksicilin.setClinicalRecommendation("Kombinacija je generalno sigurna. Pratiti bubrežnu funkciju pri duljoj primjeni.");
-        drugInteractionRepository.save(ibuprofenAmoksicilin);
+        // MINOR: Ibuprofen + Amoxicillin
+        DrugInteraction ibuprofenAmoxicillin = new DrugInteraction();
+        ibuprofenAmoxicillin.setSubstanceA(ibuprofen);
+        ibuprofenAmoxicillin.setSubstanceB(amoxicillin);
+        ibuprofenAmoxicillin.setSeverity(DrugInteraction.SeverityLevel.MINOR);
+        ibuprofenAmoxicillin.setDescription("Ibuprofen may slightly reduce renal elimination of amoxicillin, but this interaction rarely has clinical significance.");
+        ibuprofenAmoxicillin.setClinicalRecommendation("Combination is generally safe. Monitor renal function with prolonged use.");
+        drugInteractionRepository.save(ibuprofenAmoxicillin);
 
-        System.out.println("✓ Interakcije lijekova upisane: " + drugInteractionRepository.count());
+        System.out.println("✓ Drug interactions saved: " + drugInteractionRepository.count());
 
-        // ─── 5. KONTRAINDIKACIJE ─────────────────────────────────────────
+        // ─── 5. CONTRAINDICATIONS ─────────────────────────────────────────
 
-        // Ibuprofen kontraindikovan u trudnoći (3. trimestar)
-        Contraindication ibuprofenTrudnoca = new Contraindication();
-        ibuprofenTrudnoca.setSubstance(ibuprofen);
-        ibuprofenTrudnoca.setType(Contraindication.ContraindicationType.PREGNANCY);
-        ibuprofenTrudnoca.setConditionName("Trudnoća (posebno 3. trimestar)");
-        ibuprofenTrudnoca.setDescription("NSAID lijekovi uključujući ibuprofen mogu uzrokovati prijevremeno zatvaranje ductus arteriosus i bubrežnu disfunkciju fetusa. Apsolutno kontraindikovan od 28. sedmice trudnoće.");
-        ibuprofenTrudnoca.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
-        contraindicationRepository.save(ibuprofenTrudnoca);
+        // Ibuprofen contraindicated in pregnancy (3rd trimester)
+        Contraindication ibuprofenPregnancy = new Contraindication();
+        ibuprofenPregnancy.setSubstance(ibuprofen);
+        ibuprofenPregnancy.setType(Contraindication.ContraindicationType.PREGNANCY);
+        ibuprofenPregnancy.setConditionName("Pregnancy (especially 3rd trimester)");
+        ibuprofenPregnancy.setDescription("NSAIDs including ibuprofen may cause premature closure of ductus arteriosus and fetal renal dysfunction. Absolutely contraindicated from 28th week of pregnancy.");
+        ibuprofenPregnancy.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
+        contraindicationRepository.save(ibuprofenPregnancy);
 
-        // Ibuprofen kontraindikovan kod peptičnog ulkusa
-        Contraindication ibuprofenUlkus = new Contraindication();
-        ibuprofenUlkus.setSubstance(ibuprofen);
-        ibuprofenUlkus.setType(Contraindication.ContraindicationType.DISEASE);
-        ibuprofenUlkus.setConditionName("Aktivni peptički ulkus / gastrointestinalno krvarenje");
-        ibuprofenUlkus.setDescription("Ibuprofen inhibira sintezu prostaglandina koji štite sluznicu želuca, što može pogoršati peptički ulkus i uzrokovati krvarenje.");
-        ibuprofenUlkus.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
-        contraindicationRepository.save(ibuprofenUlkus);
+        // Ibuprofen contraindicated in peptic ulcer
+        Contraindication ibuprofenUlcer = new Contraindication();
+        ibuprofenUlcer.setSubstance(ibuprofen);
+        ibuprofenUlcer.setType(Contraindication.ContraindicationType.DISEASE);
+        ibuprofenUlcer.setConditionName("Active peptic ulcer / gastrointestinal bleeding");
+        ibuprofenUlcer.setDescription("Ibuprofen inhibits prostaglandin synthesis that protects gastric mucosa, which may worsen peptic ulcer and cause bleeding.");
+        ibuprofenUlcer.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
+        contraindicationRepository.save(ibuprofenUlcer);
 
-        // Amoksicilin kontraindikovan kod alergije na penicilin
-        Contraindication amoksicilinAlergija = new Contraindication();
-        amoksicilinAlergija.setSubstance(amoksicilin);
-        amoksicilinAlergija.setType(Contraindication.ContraindicationType.ALLERGY);
-        amoksicilinAlergija.setConditionName("Alergija na peniciline ili cefalosporine");
-        amoksicilinAlergija.setDescription("Pacijenti alergični na peniciline imaju povećan rizik od alergijske reakcije (anafilakse) na amoksicilin. Unakrsna reaktivnost sa cefalosporinima je moguća.");
-        amoksicilinAlergija.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
-        contraindicationRepository.save(amoksicilinAlergija);
+        // Amoxicillin contraindicated in penicillin allergy
+        Contraindication amoxicillinAllergy = new Contraindication();
+        amoxicillinAllergy.setSubstance(amoxicillin);
+        amoxicillinAllergy.setType(Contraindication.ContraindicationType.ALLERGY);
+        amoxicillinAllergy.setConditionName("Allergy to penicillins or cephalosporins");
+        amoxicillinAllergy.setDescription("Patients allergic to penicillins have increased risk of allergic reaction (anaphylaxis) to amoxicillin. Cross-reactivity with cephalosporins is possible.");
+        amoxicillinAllergy.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
+        contraindicationRepository.save(amoxicillinAllergy);
 
-        // Varfarin kontraindikovan kod aktivnog krvarenja
-        Contraindication varfarinKrvarenje = new Contraindication();
-        varfarinKrvarenje.setSubstance(varfarin);
-        varfarinKrvarenje.setType(Contraindication.ContraindicationType.DISEASE);
-        varfarinKrvarenje.setConditionName("Aktivno krvarenje / hemoragijska dijateza");
-        varfarinKrvarenje.setDescription("Varfarin kao antikoagulans apsolutno je kontraindikovan kod svih stanja s aktivnim krvarenjem ili značajno povećanim rizikom od krvarenja.");
-        varfarinKrvarenje.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
-        contraindicationRepository.save(varfarinKrvarenje);
+        // Warfarin contraindicated in active bleeding
+        Contraindication warfarinBleeding = new Contraindication();
+        warfarinBleeding.setSubstance(warfarin);
+        warfarinBleeding.setType(Contraindication.ContraindicationType.DISEASE);
+        warfarinBleeding.setConditionName("Active bleeding / haemorrhagic diathesis");
+        warfarinBleeding.setDescription("Warfarin as an anticoagulant is absolutely contraindicated in all conditions with active bleeding or significantly increased bleeding risk.");
+        warfarinBleeding.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
+        contraindicationRepository.save(warfarinBleeding);
 
-        // Ibuprofen - djeca ispod 3 meseca
-        Contraindication ibuprofenDjeca = new Contraindication();
-        ibuprofenDjeca.setSubstance(ibuprofen);
-        ibuprofenDjeca.setType(Contraindication.ContraindicationType.AGE);
-        ibuprofenDjeca.setConditionName("Djeca ispod 3 mjeseca starosti");
-        ibuprofenDjeca.setDescription("Primjena ibuprofena nije odobrena za dojenčad mlađu od 3 mjeseca. Za ovu dobnu skupinu preporučuje se paracetamol.");
-        ibuprofenDjeca.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
-        contraindicationRepository.save(ibuprofenDjeca);
+        // Ibuprofen contraindicated in children under 3 months
+        Contraindication ibuprofenInfants = new Contraindication();
+        ibuprofenInfants.setSubstance(ibuprofen);
+        ibuprofenInfants.setType(Contraindication.ContraindicationType.AGE);
+        ibuprofenInfants.setConditionName("Children under 3 months of age");
+        ibuprofenInfants.setDescription("Ibuprofen use is not approved for infants under 3 months. Paracetamol is recommended for this age group.");
+        ibuprofenInfants.setSeverityType(Contraindication.SeverityType.ABSOLUTE);
+        contraindicationRepository.save(ibuprofenInfants);
 
-        System.out.println("✓ Kontraindikacije upisane: " + contraindicationRepository.count());
+        System.out.println("✓ Contraindications saved: " + contraindicationRepository.count());
 
-        // ─── 6. ZAMJENSKI LIJEKOVI ───────────────────────────────────────
+        // ─── 6. PRODUCT SUBSTITUTES ───────────────────────────────────────
 
-        // Brufen → Generički Ibuprofen (zamjena generičkom verzijom)
-        ProductSubstitute brufenZamjena = new ProductSubstitute();
-        brufenZamjena.setOriginalProduct(brufen);
-        brufenZamjena.setSubstituteProduct(ibuprofenGeneric);
-        brufenZamjena.setSubstituteType(ProductSubstitute.SubstituteType.GENERIC);
-        brufenZamjena.setIsTherapeuticEquivalent(true);
-        brufenZamjena.setNote("Generički ekvivalent po znatno nižoj cijeni. Ista doza, ista aktivna supstanca.");
-        productSubstituteRepository.save(brufenZamjena);
+        // Brufen → Generic Ibuprofen
+        ProductSubstitute brufenGenericSub = new ProductSubstitute();
+        brufenGenericSub.setOriginalProduct(brufen);
+        brufenGenericSub.setSubstituteProduct(ibuprofenGeneric);
+        brufenGenericSub.setSubstituteType(ProductSubstitute.SubstituteType.GENERIC);
+        brufenGenericSub.setIsTherapeuticEquivalent(true);
+        brufenGenericSub.setNote("Generic equivalent at significantly lower price. Same dose, same active substance.");
+        productSubstituteRepository.save(brufenGenericSub);
 
-        // Brufen → Panadol (terapijska zamjena kada je NSAID kontraindiciran)
-        ProductSubstitute brufenParacetamolZamjena = new ProductSubstitute();
-        brufenParacetamolZamjena.setOriginalProduct(brufen);
-        brufenParacetamolZamjena.setSubstituteProduct(panadol);
-        brufenParacetamolZamjena.setSubstituteType(ProductSubstitute.SubstituteType.THERAPEUTIC);
-        brufenParacetamolZamjena.setIsTherapeuticEquivalent(false);
-        brufenParacetamolZamjena.setNote("Preporučena zamjena za trudnice, pacijente s ulkusom ili na antikoagulantnoj terapiji.");
-        productSubstituteRepository.save(brufenParacetamolZamjena);
+        // Brufen → Panadol (therapeutic substitute when NSAID is contraindicated)
+        ProductSubstitute brufenParacetamolSub = new ProductSubstitute();
+        brufenParacetamolSub.setOriginalProduct(brufen);
+        brufenParacetamolSub.setSubstituteProduct(panadol);
+        brufenParacetamolSub.setSubstituteType(ProductSubstitute.SubstituteType.THERAPEUTIC);
+        brufenParacetamolSub.setIsTherapeuticEquivalent(false);
+        brufenParacetamolSub.setNote("Recommended substitute for pregnant women, patients with ulcers or on anticoagulant therapy.");
+        productSubstituteRepository.save(brufenParacetamolSub);
 
-        System.out.println("✓ Zamjenski lijekovi upisani: " + productSubstituteRepository.count());
+        System.out.println("✓ Substitutes saved: " + productSubstituteRepository.count());
 
-        System.out.println("=== Inicijalni podaci uspješno učitani! ===");
-        System.out.println("    Kategorije  : " + categoryRepository.count());
-        System.out.println("    Supstance   : " + substanceRepository.count());
-        System.out.println("    Proizvodi   : " + productRepository.count());
-        System.out.println("    Interakcije : " + drugInteractionRepository.count());
-        System.out.println("    Kontrai.    : " + contraindicationRepository.count());
-        System.out.println("    Zamjene     : " + productSubstituteRepository.count());
+        System.out.println("=== Initial data loaded successfully! ===");
+        System.out.println("    Categories  : " + categoryRepository.count());
+        System.out.println("    Substances  : " + substanceRepository.count());
+        System.out.println("    Products    : " + productRepository.count());
+        System.out.println("    Interactions: " + drugInteractionRepository.count());
+        System.out.println("    Contraind.  : " + contraindicationRepository.count());
+        System.out.println("    Substitutes : " + productSubstituteRepository.count());
     }
 }

@@ -12,25 +12,25 @@ public class ProductSubstituteDTO {
 
     private Long id;
 
-    @NotNull(message = "ID originalnog proizvoda je obavezan")
-    @Positive(message = "ID originalnog proizvoda mora biti pozitivan broj")
+    @NotNull(message = "Original product ID is required")
+    @Positive(message = "Original product ID must be a positive number")
     private Long originalProductId;
 
-    @NotNull(message = "ID zamjenskog proizvoda je obavezan")
-    @Positive(message = "ID zamjenskog proizvoda mora biti pozitivan broj")
+    @NotNull(message = "Substitute product ID is required")
+    @Positive(message = "Substitute product ID must be a positive number")
     private Long substituteProductId;
 
     private String originalProductName;
     private String substituteProductName;
 
-    @NotBlank(message = "Tip zamjene je obavezan")
+    @NotBlank(message = "Substitute type is required")
     @Pattern(regexp = "^(GENERIC|THERAPEUTIC|BIOSIMILAR)$",
-             message = "Tip zamjene mora biti jedan od: GENERIC, THERAPEUTIC, BIOSIMILAR")
+             message = "Substitute type must be one of: GENERIC, THERAPEUTIC, BIOSIMILAR")
     private String substituteType;
 
-    @NotNull(message = "Obavezno je naznačiti da li je terapijski ekvivalent")
+    @NotNull(message = "Therapeutic equivalent flag is required")
     private Boolean isTherapeuticEquivalent;
 
-    @Size(max = 500, message = "Napomena ne smije biti duža od 500 karaktera")
+    @Size(max = 500, message = "Note must not exceed 500 characters")
     private String note;
 }

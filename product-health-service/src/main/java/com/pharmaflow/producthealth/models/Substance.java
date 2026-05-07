@@ -1,5 +1,6 @@
 package com.pharmaflow.producthealth.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -34,6 +35,7 @@ public class Substance {
     @Column(name = "atc_code")
     private String atcCode;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "substances", fetch = FetchType.LAZY)
     private List<Product> products;
 }

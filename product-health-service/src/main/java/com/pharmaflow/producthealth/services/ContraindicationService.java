@@ -27,20 +27,20 @@ public class ContraindicationService {
     @Transactional(readOnly = true)
     public ContraindicationDTO getContraindicationById(Long id) {
         return toDTO(contraindicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kontraindikacija sa ID " + id + " nije pronađena.")));
+                .orElseThrow(() -> new ResourceNotFoundException("Contraindication with ID " + id + " not found.")));
     }
 
     @Transactional(readOnly = true)
     public List<ContraindicationDTO> getBySubstance(Long substanceId) {
         if (!substanceRepository.existsById(substanceId))
-            throw new ResourceNotFoundException("Supstanca sa ID " + substanceId + " nije pronađena.");
+            throw new ResourceNotFoundException("Substance with ID " + substanceId + " not found.");
         return contraindicationRepository.findBySubstanceIdWithDetails(substanceId).stream().map(this::toDTO).toList();
     }
 
     @Transactional
     public ContraindicationDTO createContraindication(ContraindicationDTO dto) {
         Substance substance = substanceRepository.findById(dto.getSubstanceId())
-                .orElseThrow(() -> new ResourceNotFoundException("Supstanca sa ID " + dto.getSubstanceId() + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substance with ID " + dto.getSubstanceId() + " not found."));
         Contraindication c = new Contraindication();
         c.setSubstance(substance);
         c.setType(Contraindication.ContraindicationType.valueOf(dto.getType()));
@@ -53,9 +53,9 @@ public class ContraindicationService {
     @Transactional
     public ContraindicationDTO updateContraindication(Long id, ContraindicationDTO dto) {
         Contraindication c = contraindicationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Kontraindikacija sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Contraindication with ID " + id + " not found."));
         Substance substance = substanceRepository.findById(dto.getSubstanceId())
-                .orElseThrow(() -> new ResourceNotFoundException("Supstanca sa ID " + dto.getSubstanceId() + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substance with ID " + dto.getSubstanceId() + " not found."));
         c.setSubstance(substance);
         c.setType(Contraindication.ContraindicationType.valueOf(dto.getType()));
         c.setConditionName(dto.getConditionName());
@@ -67,7 +67,7 @@ public class ContraindicationService {
     @Transactional
     public void deleteContraindication(Long id) {
         if (!contraindicationRepository.existsById(id))
-            throw new ResourceNotFoundException("Kontraindikacija sa ID " + id + " nije pronađena.");
+            throw new ResourceNotFoundException("Contraindication with ID " + id + " not found.");
         contraindicationRepository.deleteById(id);
     }
 

@@ -13,25 +13,25 @@ public class ContraindicationDTO {
     private Long id;
 
     @NotNull(message = "ID supstance je obavezan")
-    @Positive(message = "ID supstance mora biti pozitivan broj")
+    @Positive(message = "Substance ID must be a positive number")
     private Long substanceId;
 
     private String substanceName;
 
-    @NotBlank(message = "Tip kontraindikacije je obavezan")
+    @NotBlank(message = "Contraindication type is required")
     @Pattern(regexp = "^(DISEASE|ALLERGY|AGE|PREGNANCY|BREASTFEEDING|CONDITION)$",
-             message = "Tip mora biti jedan od: DISEASE, ALLERGY, AGE, PREGNANCY, BREASTFEEDING, CONDITION")
+             message = "Type must be one of: DISEASE, ALLERGY, AGE, PREGNANCY, BREASTFEEDING, CONDITION")
     private String type;
 
-    @NotBlank(message = "Naziv stanja je obavezan")
-    @Size(min = 2, max = 200, message = "Naziv stanja mora biti između 2 i 200 karaktera")
+    @NotBlank(message = "Condition name is required")
+    @Size(min = 2, max = 200, message = "Condition name must be between 2 and 200 characters")
     private String conditionName;
 
-    @Size(max = 2000, message = "Opis ne smije biti duži od 2000 karaktera")
+    @Size(max = 2000, message = "Description must not exceed 2000 characters")
     private String description;
 
-    @NotBlank(message = "Tip ozbiljnosti je obavezan")
+    @NotBlank(message = "Severity type is required")
     @Pattern(regexp = "^(ABSOLUTE|RELATIVE)$",
-             message = "Tip ozbiljnosti mora biti jedan od: ABSOLUTE, RELATIVE")
+             message = "Severity type must be one of: ABSOLUTE, RELATIVE")
     private String severityType;
 }

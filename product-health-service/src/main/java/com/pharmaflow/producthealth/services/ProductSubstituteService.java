@@ -28,27 +28,27 @@ public class ProductSubstituteService {
     @Transactional(readOnly = true)
     public ProductSubstituteDTO getSubstituteById(Long id) {
         return toDTO(substituteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Zamjena sa ID " + id + " nije pronađena.")));
+                .orElseThrow(() -> new ResourceNotFoundException("Substitute with ID " + id + " not found.")));
     }
 
     @Transactional(readOnly = true)
     public List<ProductSubstituteDTO> getSubstitutesByProduct(Long productId) {
         if (!productRepository.existsById(productId))
-            throw new ResourceNotFoundException("Proizvod sa ID " + productId + " nije pronađen.");
+            throw new ResourceNotFoundException("Product with ID " + productId + " not found.");
         return substituteRepository.findByOriginalProductIdWithDetails(productId).stream().map(this::toDTO).toList();
     }
 
     @Transactional
     public ProductSubstituteDTO createSubstitute(ProductSubstituteDTO dto) {
         if (dto.getOriginalProductId().equals(dto.getSubstituteProductId()))
-            throw new IllegalArgumentException("Proizvod ne može biti zamjena za samog sebe.");
+            throw new IllegalArgumentException("A product cannot be a substitute for itself.");
         if (substituteRepository.existsByOriginalProductIdAndSubstituteProductId(
                 dto.getOriginalProductId(), dto.getSubstituteProductId()))
-            throw new DuplicateResourceException("Ova zamjena između proizvoda već postoji.");
+            throw new DuplicateResourceException("This product substitute relationship already exists.");
         Product original = productRepository.findById(dto.getOriginalProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proizvod sa ID " + dto.getOriginalProductId() + " nije pronađen."));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + dto.getOriginalProductId() + " not found."));
         Product substitute = productRepository.findById(dto.getSubstituteProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proizvod sa ID " + dto.getSubstituteProductId() + " nije pronađen."));
+                .orElseThrow(() -> new ResourceNotFoundException("Product with ID " + dto.getSubstituteProductId() + " not found."));
         ProductSubstitute entity = new ProductSubstitute();
         entity.setOriginalProduct(original);
         entity.setSubstituteProduct(substitute);
@@ -61,7 +61,7 @@ public class ProductSubstituteService {
     @Transactional
     public ProductSubstituteDTO updateSubstitute(Long id, ProductSubstituteDTO dto) {
         ProductSubstitute entity = substituteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Zamjena sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substitute with ID " + id + " not found."));
         entity.setSubstituteType(ProductSubstitute.SubstituteType.valueOf(dto.getSubstituteType()));
         entity.setIsTherapeuticEquivalent(dto.getIsTherapeuticEquivalent());
         entity.setNote(dto.getNote());
@@ -71,7 +71,7 @@ public class ProductSubstituteService {
     @Transactional
     public void deleteSubstitute(Long id) {
         if (!substituteRepository.existsById(id))
-            throw new ResourceNotFoundException("Zamjena sa ID " + id + " nije pronađena.");
+            throw new ResourceNotFoundException("Substitute with ID " + id + " not found.");
         substituteRepository.deleteById(id);
     }
 

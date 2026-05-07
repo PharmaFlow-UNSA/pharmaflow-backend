@@ -15,38 +15,38 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
-@Tag(name = "Categories", description = "API za upravljanje kategorijama proizvoda")
+@Tag(name = "Categories", description = "API for managing product categories")
 public class CategoryController {
 
     private final CategoryService categoryService;
 
     @GetMapping
-    @Operation(summary = "Dohvati sve kategorije")
+    @Operation(summary = "Get all categories")
     public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Dohvati kategoriju po ID-u")
+    @Operation(summary = "Get category by ID")
     public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
     @PostMapping
-    @Operation(summary = "Kreiraj novu kategoriju")
+    @Operation(summary = "Create a new category")
     public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO dto) {
         return new ResponseEntity<>(categoryService.createCategory(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Ažuriraj kategoriju")
+    @Operation(summary = "Update category")
     public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id,
-                                                       @Valid @RequestBody CategoryDTO dto) {
+                                                      @Valid @RequestBody CategoryDTO dto) {
         return ResponseEntity.ok(categoryService.updateCategory(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Obriši kategoriju")
+    @Operation(summary = "Delete category")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();

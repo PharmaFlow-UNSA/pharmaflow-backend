@@ -37,13 +37,13 @@ class DrugInteractionControllerTest {
     @BeforeEach
     void setUp() {
         testDTO = new DrugInteractionDTO(1L, 1L, 2L, "Ibuprofen", "Varfarin",
-                "MAJOR", "Pojačano krvarenje pri kombinovanju ibuprofena i varfarina", "Izbjegavati kombinaciju");
+                "MAJOR", "Increased bleeding risk when combining ibuprofen and warfarin", "Avoid combination");
 
         validCreateDTO = new DrugInteractionDTO();
         validCreateDTO.setSubstanceAId(1L);
         validCreateDTO.setSubstanceBId(2L);
         validCreateDTO.setSeverity("MAJOR");
-        validCreateDTO.setDescription("Opis interakcije između dvije supstance dužine preko deset karaktera");
+        validCreateDTO.setDescription("Description of drug interaction between two substances over ten characters");
     }
 
     @Test
@@ -70,7 +70,7 @@ class DrugInteractionControllerTest {
     @Test
     void getInteractionById_whenNotExists_shouldReturn404() throws Exception {
         when(drugInteractionService.getInteractionById(999L))
-                .thenThrow(new ResourceNotFoundException("Interakcija sa ID 999 nije pronađena."));
+                .thenThrow(new ResourceNotFoundException("Drug interaction with ID 999 not found."));
 
         mockMvc.perform(get("/api/interactions/999"))
                 .andExpect(status().isNotFound())
@@ -118,7 +118,7 @@ class DrugInteractionControllerTest {
 
     @Test
     void deleteInteraction_whenNotExists_shouldReturn404() throws Exception {
-        doThrow(new ResourceNotFoundException("Interakcija sa ID 999 nije pronađena."))
+        doThrow(new ResourceNotFoundException("Drug interaction with ID 999 not found."))
                 .when(drugInteractionService).deleteInteraction(999L);
 
         mockMvc.perform(delete("/api/interactions/999"))

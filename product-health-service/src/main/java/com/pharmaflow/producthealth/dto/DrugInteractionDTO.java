@@ -12,27 +12,27 @@ public class DrugInteractionDTO {
 
     private Long id;
 
-    @NotNull(message = "ID supstance A je obavezan")
-    @Positive(message = "ID supstance A mora biti pozitivan broj")
+    @NotNull(message = "Substance A ID is required")
+    @Positive(message = "Substance A ID must be a positive number")
     private Long substanceAId;
 
-    @NotNull(message = "ID supstance B je obavezan")
-    @Positive(message = "ID supstance B mora biti pozitivan broj")
+    @NotNull(message = "Substance B ID is required")
+    @Positive(message = "Substance B ID must be a positive number")
     private Long substanceBId;
 
-    // Samo za response - radi čitljivosti
+    // Response only - for readability
     private String substanceAName;
     private String substanceBName;
 
-    @NotBlank(message = "Nivo ozbiljnosti je obavezan")
+    @NotBlank(message = "Severity level is required")
     @Pattern(regexp = "^(MINOR|MODERATE|MAJOR|CONTRAINDICATED)$",
-             message = "Severity mora biti jedan od: MINOR, MODERATE, MAJOR, CONTRAINDICATED")
+             message = "Severity must be one of: MINOR, MODERATE, MAJOR, CONTRAINDICATED")
     private String severity;
 
-    @NotBlank(message = "Opis interakcije je obavezan")
-    @Size(min = 10, max = 2000, message = "Opis mora biti između 10 i 2000 karaktera")
+    @NotBlank(message = "Interaction description is required")
+    @Size(min = 10, max = 2000, message = "Description must be between 10 and 2000 characters")
     private String description;
 
-    @Size(max = 2000, message = "Klinička preporuka ne smije biti duža od 2000 karaktera")
+    @Size(max = 2000, message = "Clinical recommendation must not exceed 2000 characters")
     private String clinicalRecommendation;
 }

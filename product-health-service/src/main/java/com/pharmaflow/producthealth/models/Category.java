@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class Category {
     @Column(name = "parent_category_id")
     private Long parentCategoryId;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products;
 }

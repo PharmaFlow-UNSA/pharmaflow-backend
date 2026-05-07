@@ -1,5 +1,6 @@
 package com.pharmaflow.producthealth.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -37,7 +38,7 @@ public class Product {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    // Brend naziv (npr. "Brufen") vs generički (npr. "Ibuprofen 400mg")
+    // Brand name (e.g. "Brufen") vs generic (e.g. "Ibuprofen 400mg")
     @Column(name = "brand_name")
     private String brandName;
 
@@ -59,7 +60,7 @@ public class Product {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    // Veličina pakovanja (npr. "20 tableta", "200ml")
+    // Package size (e.g. "20 tablets", "200ml")
     @Column(name = "package_size")
     private String packageSize;
 
@@ -77,6 +78,7 @@ public class Product {
     private List<Substance> substances;
 
     // Zamjenski lijekovi (self-referencing)
+    @JsonIgnore
     @OneToMany(mappedBy = "originalProduct", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ProductSubstitute> substitutes;
 
@@ -84,7 +86,7 @@ public class Product {
         MEDICATION,       // Lijek (sa ili bez recepta)
         SUPPLEMENT,       // Vitamini, suplementi
         COSMETIC,         // Kozmetika
-        MEDICAL_DEVICE,   // Medicinski uređaj
+        MEDICAL_DEVICE,   // Medical device
         OTHER
     }
 }

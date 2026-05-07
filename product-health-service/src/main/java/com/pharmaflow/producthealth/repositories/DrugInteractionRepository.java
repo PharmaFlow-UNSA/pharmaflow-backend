@@ -2,6 +2,7 @@ package com.pharmaflow.producthealth.repositories;
 
 import com.pharmaflow.producthealth.models.DrugInteraction;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -9,9 +10,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface DrugInteractionRepository extends JpaRepository<DrugInteraction, Long> {
+public interface DrugInteractionRepository extends JpaRepository<DrugInteraction, Long>, JpaSpecificationExecutor<DrugInteraction> {
 
-    // JOIN FETCH oba substanca - sprječava N+1
+    // JOIN FETCH both substances - prevents N+1
     @Query("SELECT d FROM DrugInteraction d JOIN FETCH d.substanceA JOIN FETCH d.substanceB")
     List<DrugInteraction> findAllWithSubstances();
 

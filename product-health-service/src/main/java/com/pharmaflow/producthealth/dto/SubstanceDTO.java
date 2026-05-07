@@ -14,17 +14,17 @@ public class SubstanceDTO {
 
     private Long id;
 
-    @NotBlank(message = "INN (International Nonproprietary Name) je obavezan")
-    @Size(min = 2, max = 100, message = "INN mora biti između 2 i 100 karaktera")
+    @NotBlank(message = "INN (International Nonproprietary Name) is required")
+    @Size(min = 2, max = 100, message = "INN must be between 2 and 100 characters")
     private String inn;
 
-    @Size(max = 150, message = "Uobičajeni naziv ne smije biti duži od 150 karaktera")
+    @Size(max = 150, message = "Common name must not exceed 150 characters")
     private String commonName;
 
-    @Size(max = 1000, message = "Opis ne smije biti duži od 1000 karaktera")
+    @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;
 
     @Pattern(regexp = "^[A-Z][0-9]{2}[A-Z]{2}[0-9]{2}$|^$",
-             message = "ATC kod mora biti u formatu: slovo + 2 broja + 2 slova + 2 broja (npr. N02BE01)")
+             message = "ATC code must follow the format: letter + 2 digits + 2 letters + 2 digits (e.g. N02BE01)")
     private String atcCode;
 }

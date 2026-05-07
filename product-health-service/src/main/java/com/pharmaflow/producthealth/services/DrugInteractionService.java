@@ -28,13 +28,13 @@ public class DrugInteractionService {
     @Transactional(readOnly = true)
     public DrugInteractionDTO getInteractionById(Long id) {
         return toDTO(interactionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Interakcija sa ID " + id + " nije pronađena.")));
+                .orElseThrow(() -> new ResourceNotFoundException("Drug interaction with ID " + id + " not found.")));
     }
 
     @Transactional(readOnly = true)
     public List<DrugInteractionDTO> getInteractionsForSubstance(Long substanceId) {
         if (!substanceRepository.existsById(substanceId))
-            throw new ResourceNotFoundException("Supstanca sa ID " + substanceId + " nije pronađena.");
+            throw new ResourceNotFoundException("Substance with ID " + substanceId + " not found.");
         return interactionRepository.findAllBySubstanceId(substanceId).stream().map(this::toDTO).toList();
     }
 
@@ -47,15 +47,15 @@ public class DrugInteractionService {
     public DrugInteractionDTO createInteraction(DrugInteractionDTO dto) {
         if (interactionRepository.existsBySubstanceAIdAndSubstanceBId(dto.getSubstanceAId(), dto.getSubstanceBId()) ||
             interactionRepository.existsBySubstanceAIdAndSubstanceBId(dto.getSubstanceBId(), dto.getSubstanceAId()))
-            throw new DuplicateResourceException("Interakcija između supstanci " + dto.getSubstanceAId() + " i " + dto.getSubstanceBId() + " već postoji.");
+            throw new DuplicateResourceException("Interaction between substances " + dto.getSubstanceAId() + " and " + dto.getSubstanceBId() + " already exists.");
 
         if (dto.getSubstanceAId().equals(dto.getSubstanceBId()))
-            throw new IllegalArgumentException("Supstanca ne može imati interakciju sa samom sobom.");
+            throw new IllegalArgumentException("A substance cannot interact with itself.");
 
         Substance substanceA = substanceRepository.findById(dto.getSubstanceAId())
-                .orElseThrow(() -> new ResourceNotFoundException("Supstanca sa ID " + dto.getSubstanceAId() + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substance with ID " + dto.getSubstanceAId() + " not found."));
         Substance substanceB = substanceRepository.findById(dto.getSubstanceBId())
-                .orElseThrow(() -> new ResourceNotFoundException("Supstanca sa ID " + dto.getSubstanceBId() + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Substance with ID " + dto.getSubstanceBId() + " not found."));
 
         DrugInteraction interaction = new DrugInteraction();
         interaction.setSubstanceA(substanceA);
@@ -69,7 +69,7 @@ public class DrugInteractionService {
     @Transactional
     public DrugInteractionDTO updateInteraction(Long id, DrugInteractionDTO dto) {
         DrugInteraction interaction = interactionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Interakcija sa ID " + id + " nije pronađena."));
+                .orElseThrow(() -> new ResourceNotFoundException("Drug interaction with ID " + id + " not found."));
         interaction.setSeverity(DrugInteraction.SeverityLevel.valueOf(dto.getSeverity()));
         interaction.setDescription(dto.getDescription());
         interaction.setClinicalRecommendation(dto.getClinicalRecommendation());
@@ -79,7 +79,7 @@ public class DrugInteractionService {
     @Transactional
     public void deleteInteraction(Long id) {
         if (!interactionRepository.existsById(id))
-            throw new ResourceNotFoundException("Interakcija sa ID " + id + " nije pronađena.");
+            throw new ResourceNotFoundException("Drug interaction with ID " + id + " not found.");
         interactionRepository.deleteById(id);
     }
 
