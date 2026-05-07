@@ -1,5 +1,6 @@
 package com.pharmaflow.userhealth.models;
 
+import com.pharmaflow.userhealth.models.enums.Severity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,7 +20,9 @@ public class Allergy {
     @Column(nullable = false)
     private String allergen;
 
-    private String severity;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private Severity severity;
 
     private String activeSubstance;
 }

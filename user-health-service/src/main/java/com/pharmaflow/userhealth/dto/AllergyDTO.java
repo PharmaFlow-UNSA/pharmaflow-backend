@@ -1,5 +1,6 @@
 package com.pharmaflow.userhealth.dto;
 
+import com.pharmaflow.userhealth.models.enums.Severity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -20,10 +21,7 @@ public class AllergyDTO {
              message = "Allergen can only contain letters, numbers, spaces, commas, dots and hyphens")
     private String allergen;
 
-    @Pattern(regexp = "^(Low|Moderate|High|Severe|Life-Threatening)?$",
-             message = "Severity must be one of: Low, Moderate, High, Severe, Life-Threatening")
-    @Size(max = 50, message = "Severity must not exceed 50 characters")
-    private String severity;
+    private Severity severity;
 
     @Size(max = 100, message = "Active substance must not exceed 100 characters")
     @Pattern(regexp = "^[A-Za-z0-9À-ÿ\\s,.-]*$",

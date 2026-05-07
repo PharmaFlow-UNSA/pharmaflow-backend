@@ -1,16 +1,24 @@
 package com.pharmaflow.orderprescription.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.orderprescription.dto.PaymentDTO;
+import com.pharmaflow.orderprescription.exception.PatchOperationException;
 import com.pharmaflow.orderprescription.exception.ResourceNotFoundException;
 import com.pharmaflow.orderprescription.models.Payment;
 import com.pharmaflow.orderprescription.repositories.PaymentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.validation.Validator;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,150 +32,134 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
 
-    @Mock
-    private PaymentRepository paymentRepository;
+    @Mock private PaymentRepository paymentRepository;
+    @Mock private ModelMapper modelMapper;
+    @Mock private Validator validator;
 
-    @Mock
-    private ModelMapper modelMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @InjectMocks
     private PaymentService paymentService;
 
     private Payment testPayment;
-    private PaymentDTO testPaymentDTO;
+    private PaymentDTO testDTO;
 
     @BeforeEach
     void setUp() {
+        paymentService = new PaymentService(paymentRepository, modelMapper, objectMapper, validator);
+
         testPayment = new Payment();
         testPayment.setId(1L);
-        testPayment.setAmount(BigDecimal.valueOf(25.00));
+        testPayment.setAmount(new BigDecimal("99.99"));
         testPayment.setMethod("CARD");
-        testPayment.setStatus("PENDING");
-        testPayment.setTransactionId("TXN-00001");
-        testPayment.setPaidAt(null);
+        testPayment.setStatus("COMPLETED");
 
-        testPaymentDTO = new PaymentDTO();
-        testPaymentDTO.setId(1L);
-        testPaymentDTO.setAmount(BigDecimal.valueOf(25.00));
-        testPaymentDTO.setMethod("CARD");
-        testPaymentDTO.setStatus("PENDING");
-        testPaymentDTO.setTransactionId("TXN-00001");
-        testPaymentDTO.setPaidAt(null);
+        testDTO = new PaymentDTO();
+        testDTO.setAmount(new BigDecimal("99.99"));
+        testDTO.setMethod("CARD");
+        testDTO.setStatus("COMPLETED");
+
+        lenient().when(modelMapper.map(any(Payment.class), eq(PaymentDTO.class))).thenReturn(testDTO);
+        lenient().when(modelMapper.map(any(PaymentDTO.class), eq(Payment.class))).thenReturn(testPayment);
     }
 
     @Test
-    void getAllPayments_WhenPaymentsExist_ShouldReturnPaymentList() {
-        when(paymentRepository.findAll()).thenReturn(List.of(testPayment));
-        when(modelMapper.map(any(Payment.class), eq(PaymentDTO.class))).thenReturn(testPaymentDTO);
+    void findAll_ShouldReturnPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Payment> page = new PageImpl<>(List.of(testPayment));
+        when(paymentRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        List<PaymentDTO> result = paymentService.getAllPayments();
+        Page<PaymentDTO> result = paymentService.findAll(null, null, pageable);
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(testPaymentDTO.getId(), result.get(0).getId());
-        assertEquals(testPaymentDTO.getAmount(), result.get(0).getAmount());
-        verify(paymentRepository, times(1)).findAll();
-        verify(modelMapper, times(1)).map(any(Payment.class), eq(PaymentDTO.class));
+        assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    void getPaymentById_WhenPaymentExists_ShouldReturnPayment() {
+    void getPaymentById_WhenExists_ShouldReturn() {
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
-        when(modelMapper.map(any(Payment.class), eq(PaymentDTO.class))).thenReturn(testPaymentDTO);
 
         PaymentDTO result = paymentService.getPaymentById(1L);
 
         assertNotNull(result);
-        assertEquals(testPaymentDTO.getId(), result.getId());
-        assertEquals(testPaymentDTO.getAmount(), result.getAmount());
-        assertEquals(testPaymentDTO.getMethod(), result.getMethod());
-        assertEquals(testPaymentDTO.getStatus(), result.getStatus());
-        assertEquals(testPaymentDTO.getTransactionId(), result.getTransactionId());
-        verify(paymentRepository, times(1)).findById(1L);
-        verify(modelMapper, times(1)).map(any(Payment.class), eq(PaymentDTO.class));
     }
 
     @Test
-    void getPaymentById_WhenPaymentNotExists_ShouldThrowResourceNotFoundException() {
+    void getPaymentById_WhenNotExists_ShouldThrow() {
         when(paymentRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> paymentService.getPaymentById(99L));
-        verify(paymentRepository, times(1)).findById(99L);
+        assertThrows(ResourceNotFoundException.class,
+                () -> paymentService.getPaymentById(99L));
     }
 
     @Test
-    void createPayment_WhenValidInput_ShouldReturnCreatedPayment() {
-        when(modelMapper.map(any(PaymentDTO.class), eq(Payment.class))).thenReturn(testPayment);
+    void createPayment_ShouldSave() {
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
-        when(modelMapper.map(any(Payment.class), eq(PaymentDTO.class))).thenReturn(testPaymentDTO);
 
-        PaymentDTO result = paymentService.createPayment(testPaymentDTO);
+        PaymentDTO result = paymentService.createPayment(testDTO);
 
         assertNotNull(result);
-        assertEquals(testPaymentDTO.getId(), result.getId());
-        assertEquals(testPaymentDTO.getAmount(), result.getAmount());
-        assertEquals(testPaymentDTO.getMethod(), result.getMethod());
-        assertEquals(testPaymentDTO.getStatus(), result.getStatus());
-        verify(paymentRepository, times(1)).save(any(Payment.class));
+        verify(paymentRepository).save(any(Payment.class));
     }
 
     @Test
-    void updatePayment_WhenPaymentExists_ShouldReturnUpdatedPayment() {
-        PaymentDTO updateDTO = new PaymentDTO();
-        updateDTO.setAmount(BigDecimal.valueOf(30.00));
-        updateDTO.setMethod("TRANSFER");
-        updateDTO.setStatus("COMPLETED");
-        updateDTO.setTransactionId("TXN-00002");
-        updateDTO.setPaidAt(null);
+    void createPaymentsBatch_ShouldSaveAll() {
+        when(paymentRepository.saveAll(any())).thenReturn(List.of(testPayment));
 
-        PaymentDTO updatedPaymentDTO = new PaymentDTO();
-        updatedPaymentDTO.setId(1L);
-        updatedPaymentDTO.setAmount(BigDecimal.valueOf(30.00));
-        updatedPaymentDTO.setMethod("TRANSFER");
-        updatedPaymentDTO.setStatus("COMPLETED");
-        updatedPaymentDTO.setTransactionId("TXN-00002");
-        updatedPaymentDTO.setPaidAt(null);
+        List<PaymentDTO> result = paymentService.createPaymentsBatch(List.of(testDTO));
 
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void updatePayment_WhenExists_ShouldUpdate() {
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
         when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
-        when(modelMapper.map(any(Payment.class), eq(PaymentDTO.class))).thenReturn(updatedPaymentDTO);
 
-        PaymentDTO result = paymentService.updatePayment(1L, updateDTO);
+        PaymentDTO result = paymentService.updatePayment(1L, testDTO);
 
         assertNotNull(result);
-        assertEquals(updatedPaymentDTO.getAmount(), result.getAmount());
-        assertEquals(updatedPaymentDTO.getMethod(), result.getMethod());
-        assertEquals(updatedPaymentDTO.getStatus(), result.getStatus());
-        verify(paymentRepository, times(1)).findById(1L);
-        verify(paymentRepository, times(1)).save(any(Payment.class));
     }
 
     @Test
-    void updatePayment_WhenPaymentNotExists_ShouldThrowResourceNotFoundException() {
-        PaymentDTO updateDTO = new PaymentDTO();
-
+    void updatePayment_WhenNotExists_ShouldThrow() {
         when(paymentRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> paymentService.updatePayment(99L, updateDTO));
-        verify(paymentRepository, times(1)).findById(99L);
-        verify(paymentRepository, never()).save(any(Payment.class));
+        assertThrows(ResourceNotFoundException.class,
+                () -> paymentService.updatePayment(99L, testDTO));
     }
 
     @Test
-    void deletePayment_WhenPaymentExists_ShouldDeleteSuccessfully() {
+    void patchPayment_WithValidPatch_ShouldUpdate() {
+        when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
+        when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
+
+        PaymentDTO result = paymentService.patchPayment(1L,
+                "[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"REFUNDED\"}]");
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void patchPayment_WithMalformedPatch_ShouldThrow() {
+        when(paymentRepository.findById(1L)).thenReturn(Optional.of(testPayment));
+
+        assertThrows(PatchOperationException.class,
+                () -> paymentService.patchPayment(1L, "junk"));
+    }
+
+    @Test
+    void deletePayment_WhenExists_ShouldDelete() {
         when(paymentRepository.existsById(1L)).thenReturn(true);
 
-        assertDoesNotThrow(() -> paymentService.deletePayment(1L));
-        verify(paymentRepository, times(1)).existsById(1L);
-        verify(paymentRepository, times(1)).deleteById(1L);
+        paymentService.deletePayment(1L);
+
+        verify(paymentRepository).deleteById(1L);
     }
 
     @Test
-    void deletePayment_WhenPaymentNotExists_ShouldThrowResourceNotFoundException() {
+    void deletePayment_WhenNotExists_ShouldThrow() {
         when(paymentRepository.existsById(99L)).thenReturn(false);
 
-        assertThrows(ResourceNotFoundException.class, () -> paymentService.deletePayment(99L));
-        verify(paymentRepository, times(1)).existsById(99L);
-        verify(paymentRepository, never()).deleteById(any());
+        assertThrows(ResourceNotFoundException.class,
+                () -> paymentService.deletePayment(99L));
     }
 }

@@ -1,10 +1,14 @@
 package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.dto.AllergyDTO;
+import com.pharmaflow.userhealth.models.enums.Severity;
 import com.pharmaflow.userhealth.service.AllergyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,15 @@ public class AllergyController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all allergies", description = "Retrieves a list of all allergies")
-    public ResponseEntity<List<AllergyDTO>> getAllAllergies() {
-        return ResponseEntity.ok(allergyService.getAllAllergies());
+    @Operation(
+        summary = "Get all allergies",
+        description = "Supports pagination (?page=0&size=20&sort=allergen,asc) and optional filtering by severity (LOW, MODERATE, HIGH, SEVERE, LIFE_THREATENING) or allergen name."
+    )
+    public ResponseEntity<Page<AllergyDTO>> getAllergies(
+            @PageableDefault(size = 20, sort = "allergen") Pageable pageable,
+            @RequestParam(required = false) Severity severity,
+            @RequestParam(required = false) String allergen) {
+        return ResponseEntity.ok(allergyService.findAll(severity, allergen, pageable));
     }
 
     @GetMapping("/{id}")
@@ -35,10 +45,18 @@ public class AllergyController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new allergy", description = "Creates a new allergy record")
+    @Operation(summary = "Create an allergy", description = "Creates a new allergy record")
     public ResponseEntity<AllergyDTO> createAllergy(@Valid @RequestBody AllergyDTO allergyDTO) {
         AllergyDTO createdAllergy = allergyService.createAllergy(allergyDTO);
         return new ResponseEntity<>(createdAllergy, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create allergies", description = "Creates multiple allergy records in a single transaction")
+    public ResponseEntity<List<AllergyDTO>> createAllergiesBatch(
+            @RequestBody @Valid List<@Valid AllergyDTO> allergyDTOs) {
+        List<AllergyDTO> createdAllergies = allergyService.createAllergiesBatch(allergyDTOs);
+        return new ResponseEntity<>(createdAllergies, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -46,6 +64,13 @@ public class AllergyController {
     public ResponseEntity<AllergyDTO> updateAllergy(@PathVariable Long id,
                                                     @Valid @RequestBody AllergyDTO allergyDTO) {
         return ResponseEntity.ok(allergyService.updateAllergy(id, allergyDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update allergy", description = "Applies JSON Patch operations to an allergy")
+    public ResponseEntity<AllergyDTO> patchAllergy(@PathVariable Long id,
+                                                   @RequestBody String patchDocument) {
+        return ResponseEntity.ok(allergyService.patchAllergy(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

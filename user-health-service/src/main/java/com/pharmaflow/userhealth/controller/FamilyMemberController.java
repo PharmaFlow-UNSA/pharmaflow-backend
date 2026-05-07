@@ -2,10 +2,14 @@ package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.dto.FamilyMemberCreateDTO;
 import com.pharmaflow.userhealth.dto.FamilyMemberDTO;
+import com.pharmaflow.userhealth.models.enums.Relationship;
 import com.pharmaflow.userhealth.service.FamilyMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +28,14 @@ public class FamilyMemberController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all family members", description = "Retrieves a list of all family members")
-    public ResponseEntity<List<FamilyMemberDTO>> getAllFamilyMembers() {
-        return ResponseEntity.ok(familyMemberService.getAllFamilyMembers());
+    @Operation(
+        summary = "Get all family members",
+        description = "Supports pagination (?page=0&size=20&sort=firstName,asc) and optional filtering by relationship type (SPOUSE, CHILD, PARENT, SIBLING, GRANDPARENT, GRANDCHILD, OTHER)."
+    )
+    public ResponseEntity<Page<FamilyMemberDTO>> getFamilyMembers(
+            @PageableDefault(size = 20, sort = "firstName") Pageable pageable,
+            @RequestParam(required = false) Relationship relationship) {
+        return ResponseEntity.ok(familyMemberService.findAll(relationship, pageable));
     }
 
     @GetMapping("/{id}")
@@ -42,10 +51,18 @@ public class FamilyMemberController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new family member", description = "Creates a new family member with patient profile")
+    @Operation(summary = "Create a family member", description = "Creates a new family member with patient profile")
     public ResponseEntity<FamilyMemberDTO> createFamilyMember(@Valid @RequestBody FamilyMemberCreateDTO createDTO) {
         FamilyMemberDTO createdMember = familyMemberService.createFamilyMember(createDTO);
         return new ResponseEntity<>(createdMember, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create family members", description = "Creates multiple family members in a single transaction")
+    public ResponseEntity<List<FamilyMemberDTO>> createFamilyMembersBatch(
+            @RequestBody @Valid List<@Valid FamilyMemberCreateDTO> createDTOs) {
+        List<FamilyMemberDTO> createdMembers = familyMemberService.createFamilyMembersBatch(createDTOs);
+        return new ResponseEntity<>(createdMembers, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -53,6 +70,13 @@ public class FamilyMemberController {
     public ResponseEntity<FamilyMemberDTO> updateFamilyMember(@PathVariable Long id,
                                                               @Valid @RequestBody FamilyMemberCreateDTO updateDTO) {
         return ResponseEntity.ok(familyMemberService.updateFamilyMember(id, updateDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update family member", description = "Applies JSON Patch operations to a family member")
+    public ResponseEntity<FamilyMemberDTO> patchFamilyMember(@PathVariable Long id,
+                                                             @RequestBody String patchDocument) {
+        return ResponseEntity.ok(familyMemberService.patchFamilyMember(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

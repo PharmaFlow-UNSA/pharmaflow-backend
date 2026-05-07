@@ -1,5 +1,7 @@
 package com.pharmaflow.userhealth.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.pharmaflow.userhealth.models.enums.Relationship;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,8 +21,9 @@ public class FamilyMember {
     @Column(nullable = false)
     private String firstName;
 
-    @Column(nullable = false)
-    private String relationship;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private Relationship relationship;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "patient_profile_id", referencedColumnName = "id")
@@ -28,5 +31,6 @@ public class FamilyMember {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonBackReference
     private User user;
 }

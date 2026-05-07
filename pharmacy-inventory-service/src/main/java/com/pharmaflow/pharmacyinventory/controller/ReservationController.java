@@ -5,6 +5,10 @@ import com.pharmaflow.pharmacyinventory.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,16 @@ public class ReservationController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all reservations", description = "Retrieves a list of all reservations")
-    public ResponseEntity<List<ReservationDTO>> getAllReservations() {
-        return ResponseEntity.ok(reservationService.getAllReservations());
+    @Operation(
+            summary = "Get all reservations",
+            description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by status, userId, pharmacyId."
+    )
+    public ResponseEntity<Page<ReservationDTO>> getReservations(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Long pharmacyId) {
+        return ResponseEntity.ok(reservationService.findAll(status, userId, pharmacyId, pageable));
     }
 
     @GetMapping("/{id}")
@@ -58,11 +69,25 @@ public class ReservationController {
         return new ResponseEntity<>(reservationService.createReservation(reservationDTO), HttpStatus.CREATED);
     }
 
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create reservations", description = "Creates multiple reservations in a single transaction")
+    public ResponseEntity<List<ReservationDTO>> createReservationsBatch(
+            @RequestBody @Valid List<@Valid ReservationDTO> dtos) {
+        return new ResponseEntity<>(reservationService.createReservationsBatch(dtos), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Update reservation", description = "Updates an existing reservation")
     public ResponseEntity<ReservationDTO> updateReservation(@PathVariable Long id,
                                                             @Valid @RequestBody ReservationDTO reservationDTO) {
         return ResponseEntity.ok(reservationService.updateReservation(id, reservationDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update reservation", description = "Applies JSON Patch operations (RFC 6902) to a reservation")
+    public ResponseEntity<ReservationDTO> patchReservation(@PathVariable Long id,
+                                                           @RequestBody String patchDocument) {
+        return ResponseEntity.ok(reservationService.patchReservation(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

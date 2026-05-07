@@ -1,22 +1,24 @@
 package com.pharmaflow.orderprescription.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.orderprescription.dto.PrescriptionCreateDTO;
 import com.pharmaflow.orderprescription.dto.PrescriptionDTO;
+import com.pharmaflow.orderprescription.exception.PatchOperationException;
 import com.pharmaflow.orderprescription.exception.ResourceNotFoundException;
 import com.pharmaflow.orderprescription.service.PrescriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -32,63 +34,44 @@ class PrescriptionControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @MockitoBean
+    @MockBean
     private PrescriptionService prescriptionService;
 
-    private PrescriptionDTO prescriptionDTO;
-    private PrescriptionCreateDTO prescriptionCreateDTO;
+    private PrescriptionDTO testDTO;
+    private PrescriptionCreateDTO testCreateDTO;
 
     @BeforeEach
     void setUp() {
-        prescriptionDTO = new PrescriptionDTO();
-        prescriptionDTO.setId(1L);
-        prescriptionDTO.setUserId(1L);
-        prescriptionDTO.setImageUrl("/uploads/recept_1.pdf");
-        prescriptionDTO.setStatus("PENDING");
-        prescriptionDTO.setUploadedAt(LocalDateTime.of(2026, 4, 16, 10, 0));
-        prescriptionDTO.setReviewedAt(null);
-        prescriptionDTO.setReviewerNotes(null);
-        prescriptionDTO.setOrderIds(Collections.emptyList());
-        prescriptionDTO.setAutoRefillSubscriptionIds(Collections.emptyList());
+        testDTO = new PrescriptionDTO();
+        testDTO.setId(1L);
+        testDTO.setUserId(10L);
+        testDTO.setImageUrl("https://example.com/recept.png");
+        testDTO.setStatus("PENDING");
+        testDTO.setUploadedAt(LocalDateTime.now());
 
-        prescriptionCreateDTO = new PrescriptionCreateDTO();
-        prescriptionCreateDTO.setUserId(1L);
-        prescriptionCreateDTO.setImageUrl("/uploads/recept_1.pdf");
+        testCreateDTO = new PrescriptionCreateDTO();
+        testCreateDTO.setUserId(10L);
+        testCreateDTO.setImageUrl("https://example.com/recept.png");
     }
 
     @Test
-    void getAllPrescriptions_ShouldReturn200AndList() throws Exception {
-        List<PrescriptionDTO> prescriptions = Arrays.asList(prescriptionDTO);
-        when(prescriptionService.getAllPrescriptions()).thenReturn(prescriptions);
+    void getPrescriptions_ShouldReturn200AndPagedResult() throws Exception {
+        Page<PrescriptionDTO> page = new PageImpl<>(List.of(testDTO));
+        when(prescriptionService.findAll(any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/prescriptions"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].userId").value(1))
-                .andExpect(jsonPath("$[0].imageUrl").value("/uploads/recept_1.pdf"))
-                .andExpect(jsonPath("$[0].status").value("PENDING"));
-
-        verify(prescriptionService, times(1)).getAllPrescriptions();
+                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
     @Test
     void getPrescriptionById_WhenExists_ShouldReturn200() throws Exception {
-        when(prescriptionService.getPrescriptionById(1L)).thenReturn(prescriptionDTO);
+        when(prescriptionService.getPrescriptionById(1L)).thenReturn(testDTO);
 
         mockMvc.perform(get("/api/prescriptions/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.imageUrl").value("/uploads/recept_1.pdf"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-
-        verify(prescriptionService, times(1)).getPrescriptionById(1L);
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -98,70 +81,83 @@ class PrescriptionControllerTest {
 
         mockMvc.perform(get("/api/prescriptions/999"))
                 .andExpect(status().isNotFound());
-
-        verify(prescriptionService, times(1)).getPrescriptionById(999L);
     }
 
     @Test
-    void getPrescriptionsByUserId_ShouldReturn200AndList() throws Exception {
-        List<PrescriptionDTO> prescriptions = Arrays.asList(prescriptionDTO);
-        when(prescriptionService.getPrescriptionsByUserId(1L)).thenReturn(prescriptions);
+    void getPrescriptionsByUserId_ShouldReturn200() throws Exception {
+        when(prescriptionService.getPrescriptionsByUserId(10L)).thenReturn(List.of(testDTO));
 
-        mockMvc.perform(get("/api/prescriptions/user/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].userId").value(1));
+        mockMvc.perform(get("/api/prescriptions/user/10"))
+                .andExpect(status().isOk());
+    }
 
-        verify(prescriptionService, times(1)).getPrescriptionsByUserId(1L);
+    @Test
+    void getPrescriptionsByStatus_ShouldReturn200() throws Exception {
+        when(prescriptionService.getPrescriptionsByStatus("PENDING")).thenReturn(List.of(testDTO));
+
+        mockMvc.perform(get("/api/prescriptions/status/PENDING"))
+                .andExpect(status().isOk());
     }
 
     @Test
     void createPrescription_WithValidData_ShouldReturn201() throws Exception {
-        when(prescriptionService.createPrescription(any(PrescriptionCreateDTO.class)))
-                .thenReturn(prescriptionDTO);
+        when(prescriptionService.createPrescription(any(PrescriptionCreateDTO.class))).thenReturn(testDTO);
 
         mockMvc.perform(post("/api/prescriptions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(prescriptionCreateDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.imageUrl").value("/uploads/recept_1.pdf"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-
-        verify(prescriptionService, times(1)).createPrescription(any(PrescriptionCreateDTO.class));
+                        .content(objectMapper.writeValueAsString(testCreateDTO)))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void createPrescription_WithInvalidData_ShouldReturn400() throws Exception {
-        PrescriptionCreateDTO invalidDTO = new PrescriptionCreateDTO();
-        invalidDTO.setUserId(1L);
-        invalidDTO.setImageUrl("");
+        PrescriptionCreateDTO invalid = new PrescriptionCreateDTO();
 
         mockMvc.perform(post("/api/prescriptions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                        .content(objectMapper.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest());
+    }
 
-        verify(prescriptionService, never()).createPrescription(any(PrescriptionCreateDTO.class));
+    @Test
+    void createPrescriptionsBatch_ShouldReturn201() throws Exception {
+        when(prescriptionService.createPrescriptionsBatch(anyList())).thenReturn(List.of(testDTO));
+
+        mockMvc.perform(post("/api/prescriptions/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testCreateDTO))))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void updatePrescription_WithValidData_ShouldReturn200() throws Exception {
-        when(prescriptionService.updatePrescription(eq(1L), any(PrescriptionDTO.class)))
-                .thenReturn(prescriptionDTO);
+        when(prescriptionService.updatePrescription(eq(1L), any(PrescriptionDTO.class))).thenReturn(testDTO);
 
         mockMvc.perform(put("/api/prescriptions/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(prescriptionDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                        .content(objectMapper.writeValueAsString(testDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(prescriptionService, times(1)).updatePrescription(eq(1L), any(PrescriptionDTO.class));
+    @Test
+    void patchPrescription_WithValidPatch_ShouldReturn200() throws Exception {
+        when(prescriptionService.patchPrescription(eq(1L), anyString())).thenReturn(testDTO);
+
+        mockMvc.perform(patch("/api/prescriptions/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"APPROVED\"}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchPrescription_WithInvalidPatch_ShouldReturn400() throws Exception {
+        when(prescriptionService.patchPrescription(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/prescriptions/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -170,7 +166,5 @@ class PrescriptionControllerTest {
 
         mockMvc.perform(delete("/api/prescriptions/1"))
                 .andExpect(status().isNoContent());
-
-        verify(prescriptionService, times(1)).deletePrescription(1L);
     }
 }

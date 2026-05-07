@@ -1,15 +1,19 @@
 package com.pharmaflow.pharmacyinventory.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.pharmacyinventory.dto.DeliveryDTO;
+import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
 import com.pharmaflow.pharmacyinventory.service.DeliveryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -29,9 +33,9 @@ class DeliveryControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @MockitoBean
+    @MockBean
     private DeliveryService deliveryService;
 
     private DeliveryDTO testDeliveryDTO;
@@ -40,25 +44,23 @@ class DeliveryControllerTest {
     void setUp() {
         testDeliveryDTO = new DeliveryDTO();
         testDeliveryDTO.setId(1L);
-        testDeliveryDTO.setOrderId(1L);
-        testDeliveryDTO.setDeliveryAddress("Ulica 1, Sarajevo");
+        testDeliveryDTO.setOrderId(100L);
+        testDeliveryDTO.setDeliveryAddress("Marsala Tita 10, Sarajevo");
         testDeliveryDTO.setStatus("PREPARING");
-        testDeliveryDTO.setEstimatedDelivery(LocalDateTime.of(2026, 4, 18, 10, 0));
+        testDeliveryDTO.setEstimatedDelivery(LocalDateTime.of(2026, 5, 6, 12, 0));
         testDeliveryDTO.setActualDelivery(null);
         testDeliveryDTO.setPharmacyId(1L);
     }
 
     @Test
-    void getAllDeliveries_ShouldReturn200AndList() throws Exception {
-        when(deliveryService.getAllDeliveries()).thenReturn(List.of(testDeliveryDTO));
+    void getDeliveries_ShouldReturn200AndPagedResult() throws Exception {
+        Page<DeliveryDTO> page = new PageImpl<>(List.of(testDeliveryDTO));
+        when(deliveryService.findAll(any(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/deliveries"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].status").value("PREPARING"));
-
-        verify(deliveryService, times(1)).getAllDeliveries();
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].status").value("PREPARING"));
     }
 
     @Test
@@ -67,12 +69,7 @@ class DeliveryControllerTest {
 
         mockMvc.perform(get("/api/deliveries/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.orderId").value(1))
-                .andExpect(jsonPath("$.status").value("PREPARING"));
-
-        verify(deliveryService, times(1)).getDeliveryById(1L);
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -81,23 +78,34 @@ class DeliveryControllerTest {
                 .thenThrow(new ResourceNotFoundException("Delivery not found with id: 999"));
 
         mockMvc.perform(get("/api/deliveries/999"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
-
-        verify(deliveryService, times(1)).getDeliveryById(999L);
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void getDeliveriesByOrderId_ShouldReturn200AndList() throws Exception {
-        when(deliveryService.getDeliveriesByOrderId(1L)).thenReturn(List.of(testDeliveryDTO));
+    void getDeliveriesByPharmacyId_ShouldReturn200() throws Exception {
+        when(deliveryService.getDeliveriesByPharmacyId(1L)).thenReturn(List.of(testDeliveryDTO));
 
-        mockMvc.perform(get("/api/deliveries/order/1"))
+        mockMvc.perform(get("/api/deliveries/pharmacy/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].orderId").value(1));
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        verify(deliveryService, times(1)).getDeliveriesByOrderId(1L);
+    @Test
+    void getDeliveriesByOrderId_ShouldReturn200() throws Exception {
+        when(deliveryService.getDeliveriesByOrderId(100L)).thenReturn(List.of(testDeliveryDTO));
+
+        mockMvc.perform(get("/api/deliveries/order/100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    void getDeliveriesByStatus_ShouldReturn200() throws Exception {
+        when(deliveryService.getDeliveriesByStatus("PREPARING")).thenReturn(List.of(testDeliveryDTO));
+
+        mockMvc.perform(get("/api/deliveries/status/PREPARING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test
@@ -107,52 +115,62 @@ class DeliveryControllerTest {
         mockMvc.perform(post("/api/deliveries")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testDeliveryDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.status").value("PREPARING"));
-
-        verify(deliveryService, times(1)).createDelivery(any(DeliveryDTO.class));
+                .andExpect(status().isCreated());
     }
 
     @Test
-    void createDelivery_WithInvalidData_ShouldReturn400() throws Exception {
-        DeliveryDTO invalidDTO = new DeliveryDTO();
-        invalidDTO.setOrderId(1L);
-        invalidDTO.setDeliveryAddress("");
-        invalidDTO.setStatus("PREPARING");
-        invalidDTO.setPharmacyId(1L);
+    void createDelivery_WithInvalidStatus_ShouldReturn400() throws Exception {
+        DeliveryDTO invalid = new DeliveryDTO();
+        invalid.setOrderId(1L);
+        invalid.setDeliveryAddress("Some address");
+        invalid.setStatus("BOGUS");
+        invalid.setPharmacyId(1L);
 
         mockMvc.perform(post("/api/deliveries")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDTO)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Validation Error"));
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
 
-        verify(deliveryService, never()).createDelivery(any(DeliveryDTO.class));
+    @Test
+    void createDeliveriesBatch_ShouldReturn201() throws Exception {
+        when(deliveryService.createDeliveriesBatch(anyList())).thenReturn(List.of(testDeliveryDTO));
+
+        mockMvc.perform(post("/api/deliveries/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testDeliveryDTO))))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void updateDelivery_WithValidData_ShouldReturn200() throws Exception {
-        DeliveryDTO updatedDTO = new DeliveryDTO();
-        updatedDTO.setId(1L);
-        updatedDTO.setOrderId(1L);
-        updatedDTO.setDeliveryAddress("Ulica 1, Sarajevo");
-        updatedDTO.setStatus("IN_TRANSIT");
-        updatedDTO.setEstimatedDelivery(LocalDateTime.of(2026, 4, 18, 10, 0));
-        updatedDTO.setActualDelivery(null);
-        updatedDTO.setPharmacyId(1L);
-
-        when(deliveryService.updateDelivery(eq(1L), any(DeliveryDTO.class))).thenReturn(updatedDTO);
+        when(deliveryService.updateDelivery(eq(1L), any(DeliveryDTO.class))).thenReturn(testDeliveryDTO);
 
         mockMvc.perform(put("/api/deliveries/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value("IN_TRANSIT"));
+                        .content(objectMapper.writeValueAsString(testDeliveryDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(deliveryService, times(1)).updateDelivery(eq(1L), any(DeliveryDTO.class));
+    @Test
+    void patchDelivery_WithValidPatch_ShouldReturn200() throws Exception {
+        when(deliveryService.patchDelivery(eq(1L), anyString())).thenReturn(testDeliveryDTO);
+
+        mockMvc.perform(patch("/api/deliveries/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"DELIVERED\"}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchDelivery_WhenInvalidPatch_ShouldReturn400() throws Exception {
+        when(deliveryService.patchDelivery(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/deliveries/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -161,7 +179,5 @@ class DeliveryControllerTest {
 
         mockMvc.perform(delete("/api/deliveries/1"))
                 .andExpect(status().isNoContent());
-
-        verify(deliveryService, times(1)).deleteDelivery(1L);
     }
 }

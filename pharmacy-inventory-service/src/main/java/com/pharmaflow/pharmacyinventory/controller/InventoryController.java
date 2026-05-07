@@ -5,6 +5,10 @@ import com.pharmaflow.pharmacyinventory.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,16 @@ public class InventoryController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all inventory items", description = "Retrieves a list of all inventory items")
-    public ResponseEntity<List<InventoryDTO>> getAllInventoryItems() {
-        return ResponseEntity.ok(inventoryService.getAllInventoryItems());
+    @Operation(
+            summary = "Get all inventory items",
+            description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by pharmacyId, productId, minQuantity."
+    )
+    public ResponseEntity<Page<InventoryDTO>> getInventory(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) Long pharmacyId,
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Integer minQuantity) {
+        return ResponseEntity.ok(inventoryService.findAll(pharmacyId, productId, minQuantity, pageable));
     }
 
     @GetMapping("/{id}")
@@ -52,11 +63,25 @@ public class InventoryController {
         return new ResponseEntity<>(inventoryService.createInventory(inventoryDTO), HttpStatus.CREATED);
     }
 
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create inventory items", description = "Creates multiple inventory items in a single transaction")
+    public ResponseEntity<List<InventoryDTO>> createInventoriesBatch(
+            @RequestBody @Valid List<@Valid InventoryDTO> dtos) {
+        return new ResponseEntity<>(inventoryService.createInventoriesBatch(dtos), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Update inventory item", description = "Updates an existing inventory item")
     public ResponseEntity<InventoryDTO> updateInventory(@PathVariable Long id,
                                                         @Valid @RequestBody InventoryDTO inventoryDTO) {
         return ResponseEntity.ok(inventoryService.updateInventory(id, inventoryDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update inventory", description = "Applies JSON Patch operations (RFC 6902) to an inventory item")
+    public ResponseEntity<InventoryDTO> patchInventory(@PathVariable Long id,
+                                                       @RequestBody String patchDocument) {
+        return ResponseEntity.ok(inventoryService.patchInventory(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

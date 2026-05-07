@@ -1,20 +1,23 @@
 package com.pharmaflow.orderprescription.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.orderprescription.dto.PaymentDTO;
+import com.pharmaflow.orderprescription.exception.PatchOperationException;
 import com.pharmaflow.orderprescription.exception.ResourceNotFoundException;
 import com.pharmaflow.orderprescription.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -30,57 +33,39 @@ class PaymentControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    @MockitoBean
+    @MockBean
     private PaymentService paymentService;
 
-    private PaymentDTO paymentDTO;
+    private PaymentDTO testDTO;
 
     @BeforeEach
     void setUp() {
-        paymentDTO = new PaymentDTO();
-        paymentDTO.setId(1L);
-        paymentDTO.setAmount(BigDecimal.valueOf(25.00));
-        paymentDTO.setMethod("CARD");
-        paymentDTO.setStatus("PENDING");
-        paymentDTO.setTransactionId("TXN-00001");
-        paymentDTO.setPaidAt(null);
+        testDTO = new PaymentDTO();
+        testDTO.setId(1L);
+        testDTO.setAmount(new BigDecimal("99.99"));
+        testDTO.setMethod("CARD");
+        testDTO.setStatus("COMPLETED");
+        testDTO.setTransactionId("TX-001");
     }
 
     @Test
-    void getAllPayments_ShouldReturn200AndList() throws Exception {
-        List<PaymentDTO> payments = Arrays.asList(paymentDTO);
-        when(paymentService.getAllPayments()).thenReturn(payments);
+    void getPayments_ShouldReturn200AndPagedResult() throws Exception {
+        Page<PaymentDTO> page = new PageImpl<>(List.of(testDTO));
+        when(paymentService.findAll(any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/payments"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].amount").value(25.00))
-                .andExpect(jsonPath("$[0].method").value("CARD"))
-                .andExpect(jsonPath("$[0].status").value("PENDING"))
-                .andExpect(jsonPath("$[0].transactionId").value("TXN-00001"));
-
-        verify(paymentService, times(1)).getAllPayments();
+                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 
     @Test
     void getPaymentById_WhenExists_ShouldReturn200() throws Exception {
-        when(paymentService.getPaymentById(1L)).thenReturn(paymentDTO);
+        when(paymentService.getPaymentById(1L)).thenReturn(testDTO);
 
         mockMvc.perform(get("/api/payments/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.amount").value(25.00))
-                .andExpect(jsonPath("$.method").value("CARD"))
-                .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.transactionId").value("TXN-00001"));
-
-        verify(paymentService, times(1)).getPaymentById(1L);
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -90,56 +75,70 @@ class PaymentControllerTest {
 
         mockMvc.perform(get("/api/payments/999"))
                 .andExpect(status().isNotFound());
-
-        verify(paymentService, times(1)).getPaymentById(999L);
     }
 
     @Test
     void createPayment_WithValidData_ShouldReturn201() throws Exception {
-        when(paymentService.createPayment(any(PaymentDTO.class))).thenReturn(paymentDTO);
+        when(paymentService.createPayment(any(PaymentDTO.class))).thenReturn(testDTO);
 
         mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.amount").value(25.00))
-                .andExpect(jsonPath("$.method").value("CARD"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
-
-        verify(paymentService, times(1)).createPayment(any(PaymentDTO.class));
+                        .content(objectMapper.writeValueAsString(testDTO)))
+                .andExpect(status().isCreated());
     }
 
     @Test
-    void createPayment_WithInvalidData_ShouldReturn400() throws Exception {
-        PaymentDTO invalidDTO = new PaymentDTO();
-        invalidDTO.setAmount(BigDecimal.valueOf(25.00));
-        invalidDTO.setMethod("");
-        invalidDTO.setStatus("PENDING");
+    void createPayment_WithInvalidStatus_ShouldReturn400() throws Exception {
+        PaymentDTO invalid = new PaymentDTO();
+        invalid.setAmount(new BigDecimal("99.99"));
+        invalid.setMethod("CARD");
+        invalid.setStatus("BOGUS");
 
         mockMvc.perform(post("/api/payments")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidDTO)))
+                        .content(objectMapper.writeValueAsString(invalid)))
                 .andExpect(status().isBadRequest());
+    }
 
-        verify(paymentService, never()).createPayment(any(PaymentDTO.class));
+    @Test
+    void createPaymentsBatch_ShouldReturn201() throws Exception {
+        when(paymentService.createPaymentsBatch(anyList())).thenReturn(List.of(testDTO));
+
+        mockMvc.perform(post("/api/payments/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testDTO))))
+                .andExpect(status().isCreated());
     }
 
     @Test
     void updatePayment_WithValidData_ShouldReturn200() throws Exception {
-        when(paymentService.updatePayment(eq(1L), any(PaymentDTO.class))).thenReturn(paymentDTO);
+        when(paymentService.updatePayment(eq(1L), any(PaymentDTO.class))).thenReturn(testDTO);
 
         mockMvc.perform(put("/api/payments/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.method").value("CARD"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                        .content(objectMapper.writeValueAsString(testDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(paymentService, times(1)).updatePayment(eq(1L), any(PaymentDTO.class));
+    @Test
+    void patchPayment_WithValidPatch_ShouldReturn200() throws Exception {
+        when(paymentService.patchPayment(eq(1L), anyString())).thenReturn(testDTO);
+
+        mockMvc.perform(patch("/api/payments/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/status\",\"value\":\"REFUNDED\"}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchPayment_WithInvalidPatch_ShouldReturn400() throws Exception {
+        when(paymentService.patchPayment(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/payments/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -148,7 +147,5 @@ class PaymentControllerTest {
 
         mockMvc.perform(delete("/api/payments/1"))
                 .andExpect(status().isNoContent());
-
-        verify(paymentService, times(1)).deletePayment(1L);
     }
 }

@@ -6,6 +6,10 @@ import com.pharmaflow.orderprescription.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +28,15 @@ public class OrderController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all orders", description = "Retrieves a list of all orders")
-    public ResponseEntity<List<OrderDTO>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+    @Operation(
+            summary = "Get all orders",
+            description = "Supports pagination (?page=0&size=10&sort=id,asc) and optional filtering by userId and status."
+    )
+    public ResponseEntity<Page<OrderDTO>> getOrders(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(orderService.findAll(userId, status, pageable));
     }
 
     @GetMapping("/{id}")
@@ -53,10 +63,24 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(orderCreateDTO));
     }
 
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create orders", description = "Creates multiple orders in a single transaction")
+    public ResponseEntity<List<OrderDTO>> createOrdersBatch(
+            @RequestBody @Valid List<@Valid OrderCreateDTO> dtos) {
+        return new ResponseEntity<>(orderService.createOrdersBatch(dtos), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Update order", description = "Updates an existing order")
     public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long id, @Valid @RequestBody OrderDTO orderDTO) {
         return ResponseEntity.ok(orderService.updateOrder(id, orderDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update order", description = "Applies JSON Patch operations (RFC 6902) to an order")
+    public ResponseEntity<OrderDTO> patchOrder(@PathVariable Long id,
+                                               @RequestBody String patchDocument) {
+        return ResponseEntity.ok(orderService.patchOrder(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")

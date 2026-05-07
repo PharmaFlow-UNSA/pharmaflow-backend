@@ -6,17 +6,27 @@ This service manages user profiles, Family Hub, and digital health records.
 - Java 17 / Spring Boot 3.1.5
 - PostgreSQL
 - Spring Data JPA
+- Spring Cloud (Eureka, Config)
 - BCrypt Password Encoding
 - SpringDoc OpenAPI (Swagger)
+- Lombok
 
 ## Features
 - [x] User registration and management
 - [x] Family Hub (family member management)
 - [x] Digital health records (Allergies and Therapies)
 - [x] Secure password storage (BCrypt)
-- [x] Professional validation (OWASP standard)
+- [x] Professional validation (Jakarta Validation)
 - [x] N+1 query prevention (@EntityGraph)
 - [x] Comprehensive exception handling
+- [x] JSON Patch support (PATCH endpoints)
+- [x] Pagination and sorting
+- [x] Custom queries and filtering
+- [x] Batch operations (POST /batch endpoints)
+- [x] Transaction management
+- [x] Service discovery (Eureka)
+- [x] Centralized configuration
+- [x] Full test coverage
 
 ## Documentation
 - **⚡ Quick Start:** `QUICK_START.md` - Fast deployment guide

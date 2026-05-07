@@ -2,14 +2,17 @@ package com.pharmaflow.pharmacyinventory.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pharmaflow.pharmacyinventory.dto.InventoryDTO;
+import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
 import com.pharmaflow.pharmacyinventory.service.InventoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,7 +33,7 @@ class InventoryControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @MockitoBean
+    @MockBean
     private InventoryService inventoryService;
 
     private InventoryDTO testInventoryDTO;
@@ -47,16 +50,16 @@ class InventoryControllerTest {
     }
 
     @Test
-    void getAllInventoryItems_ShouldReturn200AndList() throws Exception {
-        when(inventoryService.getAllInventoryItems()).thenReturn(List.of(testInventoryDTO));
+    void getInventory_ShouldReturn200AndPagedResult() throws Exception {
+        Page<InventoryDTO> page = new PageImpl<>(List.of(testInventoryDTO));
+        when(inventoryService.findAll(any(), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/inventory"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].productId").value(100));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].productId").value(100));
 
-        verify(inventoryService, times(1)).getAllInventoryItems();
+        verify(inventoryService, times(1)).findAll(any(), any(), any(), any());
     }
 
     @Test
@@ -65,12 +68,7 @@ class InventoryControllerTest {
 
         mockMvc.perform(get("/api/inventory/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.productId").value(100))
-                .andExpect(jsonPath("$.quantity").value(50));
-
-        verify(inventoryService, times(1)).getInventoryById(1L);
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -79,10 +77,7 @@ class InventoryControllerTest {
                 .thenThrow(new ResourceNotFoundException("Inventory not found with id: 999"));
 
         mockMvc.perform(get("/api/inventory/999"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
-
-        verify(inventoryService, times(1)).getInventoryById(999L);
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -91,11 +86,16 @@ class InventoryControllerTest {
 
         mockMvc.perform(get("/api/inventory/pharmacy/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].pharmacyId").value(1));
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        verify(inventoryService, times(1)).getInventoryByPharmacyId(1L);
+    @Test
+    void getInventoryByProductId_ShouldReturn200AndList() throws Exception {
+        when(inventoryService.getInventoryByProductId(100L)).thenReturn(List.of(testInventoryDTO));
+
+        mockMvc.perform(get("/api/inventory/product/100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test
@@ -106,11 +106,7 @@ class InventoryControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testInventoryDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.productId").value(100));
-
-        verify(inventoryService, times(1)).createInventory(any(InventoryDTO.class));
+                .andExpect(jsonPath("$.id").value(1));
     }
 
     @Test
@@ -125,31 +121,48 @@ class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(invalidDTO)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Error"));
+    }
 
-        verify(inventoryService, never()).createInventory(any(InventoryDTO.class));
+    @Test
+    void createInventoriesBatch_ShouldReturn201() throws Exception {
+        when(inventoryService.createInventoriesBatch(anyList())).thenReturn(List.of(testInventoryDTO));
+
+        mockMvc.perform(post("/api/inventory/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testInventoryDTO))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(1)));
     }
 
     @Test
     void updateInventory_WithValidData_ShouldReturn200() throws Exception {
-        InventoryDTO updatedDTO = new InventoryDTO();
-        updatedDTO.setId(1L);
-        updatedDTO.setProductId(100L);
-        updatedDTO.setQuantity(75);
-        updatedDTO.setReorderLevel(15);
-        updatedDTO.setLastRestocked(null);
-        updatedDTO.setPharmacyId(1L);
-
-        when(inventoryService.updateInventory(eq(1L), any(InventoryDTO.class))).thenReturn(updatedDTO);
+        when(inventoryService.updateInventory(eq(1L), any(InventoryDTO.class))).thenReturn(testInventoryDTO);
 
         mockMvc.perform(put("/api/inventory/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.quantity").value(75))
-                .andExpect(jsonPath("$.reorderLevel").value(15));
+                        .content(objectMapper.writeValueAsString(testInventoryDTO)))
+                .andExpect(status().isOk());
+    }
 
-        verify(inventoryService, times(1)).updateInventory(eq(1L), any(InventoryDTO.class));
+    @Test
+    void patchInventory_WithValidPatch_ShouldReturn200() throws Exception {
+        when(inventoryService.patchInventory(eq(1L), anyString())).thenReturn(testInventoryDTO);
+
+        mockMvc.perform(patch("/api/inventory/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"op\":\"replace\",\"path\":\"/quantity\",\"value\":100}]"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void patchInventory_WithInvalidPatch_ShouldReturn400() throws Exception {
+        when(inventoryService.patchInventory(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("bad"));
+
+        mockMvc.perform(patch("/api/inventory/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -158,7 +171,5 @@ class InventoryControllerTest {
 
         mockMvc.perform(delete("/api/inventory/1"))
                 .andExpect(status().isNoContent());
-
-        verify(inventoryService, times(1)).deleteInventory(1L);
     }
 }

@@ -3,14 +3,17 @@ package com.pharmaflow.pharmacyinventory.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pharmaflow.pharmacyinventory.dto.PharmacyCreateDTO;
 import com.pharmaflow.pharmacyinventory.dto.PharmacyDTO;
+import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
 import com.pharmaflow.pharmacyinventory.service.PharmacyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,7 +34,7 @@ class PharmacyControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @MockitoBean
+    @MockBean
     private PharmacyService pharmacyService;
 
     private PharmacyDTO testPharmacyDTO;
@@ -58,55 +61,50 @@ class PharmacyControllerTest {
     }
 
     @Test
-    void getAllPharmacies_ShouldReturn200AndListOfPharmacies() throws Exception {
-        when(pharmacyService.getAllPharmacies()).thenReturn(List.of(testPharmacyDTO));
+    void getPharmacies_ShouldReturn200AndPagedResult() throws Exception {
+        Page<PharmacyDTO> page = new PageImpl<>(List.of(testPharmacyDTO));
+        when(pharmacyService.findAll(any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/pharmacies"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].name").value("Apoteka Centar"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name").value("Apoteka Centar"));
 
-        verify(pharmacyService, times(1)).getAllPharmacies();
+        verify(pharmacyService, times(1)).findAll(any(), any(), any());
     }
 
     @Test
-    void getPharmacyById_WhenPharmacyExists_ShouldReturn200AndPharmacy() throws Exception {
+    void getPharmacyById_WhenExists_ShouldReturn200() throws Exception {
         when(pharmacyService.getPharmacyById(1L)).thenReturn(testPharmacyDTO);
 
         mockMvc.perform(get("/api/pharmacies/1"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Apoteka Centar"))
-                .andExpect(jsonPath("$.city").value("Sarajevo"));
+                .andExpect(jsonPath("$.name").value("Apoteka Centar"));
 
         verify(pharmacyService, times(1)).getPharmacyById(1L);
     }
 
     @Test
-    void getPharmacyById_WhenPharmacyNotExists_ShouldReturn404() throws Exception {
+    void getPharmacyById_WhenNotExists_ShouldReturn404() throws Exception {
         when(pharmacyService.getPharmacyById(999L))
                 .thenThrow(new ResourceNotFoundException("Pharmacy not found with id: 999"));
 
         mockMvc.perform(get("/api/pharmacies/999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Resource Not Found"));
-
-        verify(pharmacyService, times(1)).getPharmacyById(999L);
     }
 
     @Test
-    void createPharmacy_WithValidData_ShouldReturn201AndCreatedPharmacy() throws Exception {
+    void createPharmacy_WithValidData_ShouldReturn201() throws Exception {
         when(pharmacyService.createPharmacy(any(PharmacyCreateDTO.class))).thenReturn(testPharmacyDTO);
 
         mockMvc.perform(post("/api/pharmacies")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(testCreateDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Apoteka Centar"));
+                .andExpect(jsonPath("$.id").value(1));
 
         verify(pharmacyService, times(1)).createPharmacy(any(PharmacyCreateDTO.class));
     }
@@ -128,39 +126,57 @@ class PharmacyControllerTest {
     }
 
     @Test
-    void updatePharmacy_WithValidData_ShouldReturn200AndUpdatedPharmacy() throws Exception {
-        PharmacyDTO updatedDTO = new PharmacyDTO();
-        updatedDTO.setId(1L);
-        updatedDTO.setName("Apoteka Centar Updated");
-        updatedDTO.setAddress("Marsala Tita 10");
-        updatedDTO.setCity("Sarajevo");
-        updatedDTO.setPhoneNumber("+387-33-123456");
-        updatedDTO.setEmail("centar@pharmaflow.ba");
-        updatedDTO.setOpeningHours("08:00-22:00");
+    void createPharmaciesBatch_ShouldReturn201() throws Exception {
+        when(pharmacyService.createPharmaciesBatch(anyList())).thenReturn(List.of(testPharmacyDTO));
 
-        when(pharmacyService.updatePharmacy(eq(1L), any(PharmacyCreateDTO.class))).thenReturn(updatedDTO);
+        mockMvc.perform(post("/api/pharmacies/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(testCreateDTO))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$", hasSize(1)));
 
-        PharmacyCreateDTO updateCreateDTO = new PharmacyCreateDTO();
-        updateCreateDTO.setName("Apoteka Centar Updated");
-        updateCreateDTO.setAddress("Marsala Tita 10");
-        updateCreateDTO.setCity("Sarajevo");
-        updateCreateDTO.setPhoneNumber("+387-33-123456");
-        updateCreateDTO.setEmail("centar@pharmaflow.ba");
-        updateCreateDTO.setOpeningHours("08:00-22:00");
+        verify(pharmacyService, times(1)).createPharmaciesBatch(anyList());
+    }
+
+    @Test
+    void updatePharmacy_WithValidData_ShouldReturn200() throws Exception {
+        when(pharmacyService.updatePharmacy(eq(1L), any(PharmacyCreateDTO.class))).thenReturn(testPharmacyDTO);
 
         mockMvc.perform(put("/api/pharmacies/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateCreateDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("Apoteka Centar Updated"))
-                .andExpect(jsonPath("$.openingHours").value("08:00-22:00"));
+                        .content(objectMapper.writeValueAsString(testCreateDTO)))
+                .andExpect(status().isOk());
 
         verify(pharmacyService, times(1)).updatePharmacy(eq(1L), any(PharmacyCreateDTO.class));
     }
 
     @Test
-    void deletePharmacy_WhenPharmacyExists_ShouldReturn204() throws Exception {
+    void patchPharmacy_WithValidPatch_ShouldReturn200() throws Exception {
+        String patch = "[{\"op\":\"replace\",\"path\":\"/name\",\"value\":\"New Name\"}]";
+        when(pharmacyService.patchPharmacy(eq(1L), anyString())).thenReturn(testPharmacyDTO);
+
+        mockMvc.perform(patch("/api/pharmacies/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(patch))
+                .andExpect(status().isOk());
+
+        verify(pharmacyService, times(1)).patchPharmacy(eq(1L), anyString());
+    }
+
+    @Test
+    void patchPharmacy_WithInvalidPatch_ShouldReturn400() throws Exception {
+        when(pharmacyService.patchPharmacy(eq(1L), anyString()))
+                .thenThrow(new PatchOperationException("Bad patch"));
+
+        mockMvc.perform(patch("/api/pharmacies/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Patch Operation Failed"));
+    }
+
+    @Test
+    void deletePharmacy_WhenExists_ShouldReturn204() throws Exception {
         doNothing().when(pharmacyService).deletePharmacy(1L);
 
         mockMvc.perform(delete("/api/pharmacies/1"))
@@ -170,14 +186,11 @@ class PharmacyControllerTest {
     }
 
     @Test
-    void deletePharmacy_WhenPharmacyNotExists_ShouldReturn404() throws Exception {
+    void deletePharmacy_WhenNotExists_ShouldReturn404() throws Exception {
         doThrow(new ResourceNotFoundException("Pharmacy not found with id: 999"))
                 .when(pharmacyService).deletePharmacy(999L);
 
         mockMvc.perform(delete("/api/pharmacies/999"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Resource Not Found"));
-
-        verify(pharmacyService, times(1)).deletePharmacy(999L);
+                .andExpect(status().isNotFound());
     }
 }

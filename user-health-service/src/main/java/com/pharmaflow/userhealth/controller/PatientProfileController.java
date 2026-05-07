@@ -1,10 +1,14 @@
 package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.dto.PatientProfileDTO;
+import com.pharmaflow.userhealth.models.enums.BloodType;
 import com.pharmaflow.userhealth.service.PatientProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +27,16 @@ public class PatientProfileController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all patient profiles", description = "Retrieves a list of all patient profiles")
-    public ResponseEntity<List<PatientProfileDTO>> getAllPatientProfiles() {
-        return ResponseEntity.ok(patientProfileService.getAllPatientProfiles());
+    @Operation(
+        summary = "Get all patient profiles",
+        description = "Supports pagination (?page=0&size=20&sort=id,asc) and optional filtering by blood type (A_POSITIVE, A_NEGATIVE, B_POSITIVE, B_NEGATIVE, AB_POSITIVE, AB_NEGATIVE, O_POSITIVE, O_NEGATIVE) or BMI range (?minBMI=18&maxBMI=25)."
+    )
+    public ResponseEntity<Page<PatientProfileDTO>> getPatientProfiles(
+            @PageableDefault(size = 20, sort = "id") Pageable pageable,
+            @RequestParam(required = false) BloodType bloodType,
+            @RequestParam(required = false) Double minBMI,
+            @RequestParam(required = false) Double maxBMI) {
+        return ResponseEntity.ok(patientProfileService.findAll(bloodType, minBMI, maxBMI, pageable));
     }
 
     @GetMapping("/{id}")
@@ -35,10 +46,18 @@ public class PatientProfileController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new patient profile", description = "Creates a new patient profile")
+    @Operation(summary = "Create a patient profile", description = "Creates a new patient profile")
     public ResponseEntity<PatientProfileDTO> createPatientProfile(@Valid @RequestBody PatientProfileDTO profileDTO) {
         PatientProfileDTO createdProfile = patientProfileService.createPatientProfile(profileDTO);
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/batch")
+    @Operation(summary = "Batch create patient profiles", description = "Creates multiple patient profiles in a single transaction")
+    public ResponseEntity<List<PatientProfileDTO>> createPatientProfilesBatch(
+            @RequestBody @Valid List<@Valid PatientProfileDTO> profileDTOs) {
+        List<PatientProfileDTO> createdProfiles = patientProfileService.createPatientProfilesBatch(profileDTOs);
+        return new ResponseEntity<>(createdProfiles, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -46,6 +65,13 @@ public class PatientProfileController {
     public ResponseEntity<PatientProfileDTO> updatePatientProfile(@PathVariable Long id,
                                                                   @Valid @RequestBody PatientProfileDTO profileDTO) {
         return ResponseEntity.ok(patientProfileService.updatePatientProfile(id, profileDTO));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Partially update patient profile", description = "Applies JSON Patch operations to a patient profile")
+    public ResponseEntity<PatientProfileDTO> patchPatientProfile(@PathVariable Long id,
+                                                                 @RequestBody String patchDocument) {
+        return ResponseEntity.ok(patientProfileService.patchPatientProfile(id, patchDocument));
     }
 
     @DeleteMapping("/{id}")
