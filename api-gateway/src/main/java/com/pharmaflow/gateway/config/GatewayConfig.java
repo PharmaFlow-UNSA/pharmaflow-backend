@@ -5,10 +5,16 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
+
 /**
  * Programmatic gateway route configuration.
  * Routes are also defined in application.properties —
- * this class adds additional filters (e.g. rate limiting, retries) per route.
+ * this class adds additional filters for resilience and fault tolerance:
+ * - Retry: Automatic retry on transient failures
+ * - Custom Headers: Gateway identification
+ *
+ * Note: Circuit Breaker configuration is handled via application.properties
  */
 @Configuration
 public class GatewayConfig {
@@ -24,7 +30,10 @@ public class GatewayConfig {
                               "/api/therapies/**", "/api/patient-profiles/**")
                         .filters(f -> f
                                 .addRequestHeader("X-Gateway", "pharmaflow-gateway")
-                                .retry(config -> config.setRetries(2)))
+                                .retry(config -> config
+                                        .setRetries(2)
+                                        .setMethods(org.springframework.http.HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, false)))
                         .uri("lb://USER-HEALTH-SERVICE"))
 
                 // Product & Medical Service
@@ -34,7 +43,10 @@ public class GatewayConfig {
                               "/api/contraindications/**", "/api/substitutes/**")
                         .filters(f -> f
                                 .addRequestHeader("X-Gateway", "pharmaflow-gateway")
-                                .retry(config -> config.setRetries(2)))
+                                .retry(config -> config
+                                        .setRetries(2)
+                                        .setMethods(org.springframework.http.HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, false)))
                         .uri("lb://PRODUCT-HEALTH-SERVICE"))
 
                 // Order & Prescription Service
@@ -42,7 +54,10 @@ public class GatewayConfig {
                         .path("/api/orders/**", "/api/prescriptions/**", "/api/payments/**")
                         .filters(f -> f
                                 .addRequestHeader("X-Gateway", "pharmaflow-gateway")
-                                .retry(config -> config.setRetries(2)))
+                                .retry(config -> config
+                                        .setRetries(2)
+                                        .setMethods(org.springframework.http.HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, false)))
                         .uri("lb://ORDER-PRESCRIPTION-SERVICE"))
 
                 // Pharmacy & Inventory Service
@@ -50,7 +65,10 @@ public class GatewayConfig {
                         .path("/api/pharmacies/**", "/api/inventory/**", "/api/reservations/**")
                         .filters(f -> f
                                 .addRequestHeader("X-Gateway", "pharmaflow-gateway")
-                                .retry(config -> config.setRetries(2)))
+                                .retry(config -> config
+                                        .setRetries(2)
+                                        .setMethods(org.springframework.http.HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, false)))
                         .uri("lb://PHARMACY-INVENTORY-SERVICE"))
 
                 // Smart Features Service
@@ -59,7 +77,10 @@ public class GatewayConfig {
                               "/api/notifications/**", "/api/fraud/**")
                         .filters(f -> f
                                 .addRequestHeader("X-Gateway", "pharmaflow-gateway")
-                                .retry(config -> config.setRetries(2)))
+                                .retry(config -> config
+                                        .setRetries(2)
+                                        .setMethods(org.springframework.http.HttpMethod.GET)
+                                        .setBackoff(Duration.ofMillis(100), Duration.ofMillis(1000), 2, false)))
                         .uri("lb://SMART-FEATURES-SERVICE"))
 
                 .build();

@@ -2,12 +2,11 @@ package com.pharmaflow.userhealth.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class JwtUtil {
     @Value("${jwt.expiration:86400000}")
     private long expiration;
 
-    private Key getSigningKey() {
+    private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
@@ -31,11 +30,11 @@ public class JwtUtil {
      */
     public String generateToken(String email, List<String> roles) {
         return Jwts.builder()
-                .setSubject(email)
+                .subject(email)
                 .claim("roles", roles)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
                 .compact();
     }
 
@@ -43,14 +42,38 @@ public class JwtUtil {
      * Validate token and return claims.
      */
     public Claims validateToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public String extractEmail(String token) {
         return validateToken(token).getSubject();
+    }
+
+    /**
+     * Extract roles from JWT token.
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        Claims claims = validateToken(token);
+        Object roles = claims.get("roles");
+        if (roles instanceof List) {
+            return (List<String>) roles;
+        }
+        return List.of();
+    }
+
+    /**
+     * Get remaining time until token expiration (in milliseconds).
+     * Used for blacklisting tokens.
+     */
+    public long getExpirationTime(String token) {
+        Claims claims = validateToken(token);
+        Date expiration = claims.getExpiration();
+        Date now = new Date();
+        return Math.max(0, expiration.getTime() - now.getTime());
     }
 }
