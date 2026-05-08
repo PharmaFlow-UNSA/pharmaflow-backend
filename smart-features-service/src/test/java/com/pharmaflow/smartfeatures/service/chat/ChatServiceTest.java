@@ -36,107 +36,167 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ChatServiceTest {
 
-    @Mock
-    private ChatSessionRepository chatSessionRepository;
+  @Mock private ChatSessionRepository chatSessionRepository;
 
-    @Mock
-    private ChatMessageRepository chatMessageRepository;
+  @Mock private ChatMessageRepository chatMessageRepository;
 
-    @Mock
-    private ChatIntentMatchRepository chatIntentMatchRepository;
+  @Mock private ChatIntentMatchRepository chatIntentMatchRepository;
 
-    @Mock
-    private FaqEntryRepository faqEntryRepository;
+  @Mock private FaqEntryRepository faqEntryRepository;
 
-    private ChatService chatService;
+  private ChatService chatService;
 
-    @BeforeEach
-    void setUp() {
-        chatService = new ChatService(
-                chatSessionRepository,
-                chatMessageRepository,
-                chatIntentMatchRepository,
-                faqEntryRepository,
-                new ChatMapper(new ModelMapperConfig().modelMapper()));
-    }
+  @BeforeEach
+  void setUp() {
+    chatService =
+        new ChatService(
+            chatSessionRepository,
+            chatMessageRepository,
+            chatIntentMatchRepository,
+            faqEntryRepository,
+            new ChatMapper(new ModelMapperConfig().modelMapper()));
+  }
 
-    @Test
-    void createMessageShouldRejectClosedSession() {
-        ChatSession closedSession = ChatSession.builder()
-                .sessionId(1L)
-                .status(ChatSessionStatus.CLOSED)
-                .sessionType(ChatSessionType.FAQ_BOT)
-                .userId(10L)
-                .build();
-        when(chatSessionRepository.findById(1L)).thenReturn(Optional.of(closedSession));
+  @Test
+  void createMessageShouldRejectClosedSession() {
+    ChatSession closedSession =
+        ChatSession.builder()
+            .sessionId(1L)
+            .status(ChatSessionStatus.CLOSED)
+            .sessionType(ChatSessionType.FAQ_BOT)
+            .userId(10L)
+            .build();
+    when(chatSessionRepository.findById(1L)).thenReturn(Optional.of(closedSession));
 
-        assertThatThrownBy(() -> chatService.createMessage(
-                        1L, new ChatMessageRequestDto(ChatSenderType.USER, 10L, "Need help", null)))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("Cannot add a message to a closed chat session.");
+    assertThatThrownBy(
+            () ->
+                chatService.createMessage(
+                    1L, new ChatMessageRequestDto(ChatSenderType.USER, 10L, "Need help", null)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("Cannot add a message to a closed chat session.");
 
-        verify(chatMessageRepository, never()).save(any(ChatMessage.class));
-    }
+    verify(chatMessageRepository, never()).save(any(ChatMessage.class));
+  }
 
-    @Test
-    void createMessageShouldCreateIntentMatchForBestFaqCandidate() {
-        ChatSession session = ChatSession.builder()
-                .sessionId(2L)
-                .status(ChatSessionStatus.OPEN)
-                .sessionType(ChatSessionType.FAQ_BOT)
-                .userId(10L)
-                .build();
-        FaqEntry faqEntry = FaqEntry.builder()
-                .faqId(5L)
-                .question("How to pay?")
-                .answer("Use card or cash.")
-                .keywords("payment,pay")
-                .category(FaqCategory.PAYMENTS)
-                .isActive(true)
-                .build();
+  @Test
+  void createMessageShouldCreateIntentMatchForBestFaqCandidate() {
+    ChatSession session =
+        ChatSession.builder()
+            .sessionId(2L)
+            .status(ChatSessionStatus.OPEN)
+            .sessionType(ChatSessionType.FAQ_BOT)
+            .userId(10L)
+            .build();
+    FaqEntry faqEntry =
+        FaqEntry.builder()
+            .faqId(5L)
+            .question("How to pay?")
+            .answer("Use card or cash.")
+            .keywords("payment,pay")
+            .category(FaqCategory.PAYMENTS)
+            .isActive(true)
+            .build();
 
-        when(chatSessionRepository.findById(2L)).thenReturn(Optional.of(session));
-        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> {
-            ChatMessage message = invocation.getArgument(0);
-            message.setMessageId(9L);
-            return message;
-        });
-        when(faqEntryRepository.searchActive("How to pay?")).thenReturn(List.of(faqEntry));
-        when(chatIntentMatchRepository.save(any(ChatIntentMatch.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(chatSessionRepository.findById(2L)).thenReturn(Optional.of(session));
+    when(chatMessageRepository.save(any(ChatMessage.class)))
+        .thenAnswer(
+            invocation -> {
+              ChatMessage message = invocation.getArgument(0);
+              message.setMessageId(9L);
+              return message;
+            });
+    when(faqEntryRepository.searchActive("How to pay?")).thenReturn(List.of(faqEntry));
+    when(chatIntentMatchRepository.save(any(ChatIntentMatch.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessageResponseDto response = chatService.createMessage(
-                2L,
-                new ChatMessageRequestDto(
-                        ChatSenderType.USER, 10L, "  How to pay?  ", "  https://example.com/info  "));
+    ChatMessageResponseDto response =
+        chatService.createMessage(
+            2L,
+            new ChatMessageRequestDto(
+                ChatSenderType.USER, 10L, "  How to pay?  ", "  https://example.com/info  "));
 
-        ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
-        verify(chatMessageRepository).save(messageCaptor.capture());
-        assertThat(messageCaptor.getValue().getMessageText()).isEqualTo("How to pay?");
-        assertThat(messageCaptor.getValue().getAttachmentUrl()).isEqualTo("https://example.com/info");
+    ArgumentCaptor<ChatMessage> messageCaptor = ArgumentCaptor.forClass(ChatMessage.class);
+    verify(chatMessageRepository).save(messageCaptor.capture());
+    assertThat(messageCaptor.getValue().getMessageText()).isEqualTo("How to pay?");
+    assertThat(messageCaptor.getValue().getAttachmentUrl()).isEqualTo("https://example.com/info");
 
-        ArgumentCaptor<ChatIntentMatch> intentCaptor = ArgumentCaptor.forClass(ChatIntentMatch.class);
-        verify(chatIntentMatchRepository).save(intentCaptor.capture());
-        assertThat(intentCaptor.getValue().getDetectedIntent()).isEqualTo("PAYMENTS");
-        assertThat(intentCaptor.getValue().getFaqEntry().getFaqId()).isEqualTo(5L);
-        assertThat(response.getId()).isEqualTo(9L);
-        assertThat(response.getSessionId()).isEqualTo(2L);
-    }
+    ArgumentCaptor<ChatIntentMatch> intentCaptor = ArgumentCaptor.forClass(ChatIntentMatch.class);
+    verify(chatIntentMatchRepository).save(intentCaptor.capture());
+    assertThat(intentCaptor.getValue().getDetectedIntent()).isEqualTo("PAYMENTS");
+    assertThat(intentCaptor.getValue().getFaqEntry().getFaqId()).isEqualTo(5L);
+    assertThat(intentCaptor.getValue().getConfidenceScore()).isEqualTo(1.0);
+    assertThat(response.getId()).isEqualTo(9L);
+    assertThat(response.getSessionId()).isEqualTo(2L);
+  }
 
-    @Test
-    void createMessageShouldRejectBotWithSenderId() {
-        ChatSession session = ChatSession.builder()
-                .sessionId(3L)
-                .status(ChatSessionStatus.OPEN)
-                .sessionType(ChatSessionType.PHARMACIST_CHAT)
-                .userId(10L)
-                .build();
-        when(chatSessionRepository.findById(3L)).thenReturn(Optional.of(session));
+  @Test
+  void createMessageShouldScoreFaqMatchFromEvidenceInsteadOfFixedBaseline() {
+    ChatSession session =
+        ChatSession.builder()
+            .sessionId(4L)
+            .status(ChatSessionStatus.OPEN)
+            .sessionType(ChatSessionType.FAQ_BOT)
+            .userId(10L)
+            .build();
+    FaqEntry answerOnlyMatch =
+        FaqEntry.builder()
+            .faqId(11L)
+            .question("Which payment methods are accepted?")
+            .answer("Refunds are processed to the original method.")
+            .category(FaqCategory.PAYMENTS)
+            .isActive(true)
+            .build();
+    FaqEntry questionMatch =
+        FaqEntry.builder()
+            .faqId(12L)
+            .question("How do refunds work?")
+            .answer("We review the order first.")
+            .category(FaqCategory.ORDERS)
+            .isActive(true)
+            .build();
 
-        assertThatThrownBy(() -> chatService.createMessage(
-                        3L, new ChatMessageRequestDto(ChatSenderType.BOT, 22L, "Automated", null)))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessage("senderId must not be provided for BOT or SYSTEM senders.");
+    when(chatSessionRepository.findById(4L)).thenReturn(Optional.of(session));
+    when(chatMessageRepository.save(any(ChatMessage.class)))
+        .thenAnswer(
+            invocation -> {
+              ChatMessage message = invocation.getArgument(0);
+              message.setMessageId(15L);
+              return message;
+            });
+    when(faqEntryRepository.searchActive("refund"))
+        .thenReturn(List.of(answerOnlyMatch, questionMatch));
+    when(chatIntentMatchRepository.save(any(ChatIntentMatch.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-        verify(chatMessageRepository, never()).save(any(ChatMessage.class));
-    }
+    chatService.createMessage(
+        4L, new ChatMessageRequestDto(ChatSenderType.USER, 10L, "refund", null));
+
+    ArgumentCaptor<ChatIntentMatch> intentCaptor = ArgumentCaptor.forClass(ChatIntentMatch.class);
+    verify(chatIntentMatchRepository).save(intentCaptor.capture());
+    assertThat(intentCaptor.getValue().getFaqEntry().getFaqId())
+        .isEqualTo(questionMatch.getFaqId());
+    assertThat(intentCaptor.getValue().getDetectedIntent()).isEqualTo("ORDERS");
+    assertThat(intentCaptor.getValue().getConfidenceScore()).isEqualTo(0.55);
+  }
+
+  @Test
+  void createMessageShouldRejectBotWithSenderId() {
+    ChatSession session =
+        ChatSession.builder()
+            .sessionId(3L)
+            .status(ChatSessionStatus.OPEN)
+            .sessionType(ChatSessionType.PHARMACIST_CHAT)
+            .userId(10L)
+            .build();
+    when(chatSessionRepository.findById(3L)).thenReturn(Optional.of(session));
+
+    assertThatThrownBy(
+            () ->
+                chatService.createMessage(
+                    3L, new ChatMessageRequestDto(ChatSenderType.BOT, 22L, "Automated", null)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("senderId must not be provided for BOT or SYSTEM senders.");
+
+    verify(chatMessageRepository, never()).save(any(ChatMessage.class));
+  }
 }

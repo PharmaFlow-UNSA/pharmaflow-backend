@@ -9,11 +9,11 @@ import lombok.Getter;
 @Builder
 public class ApiErrorResponse {
 
-    private final LocalDateTime timestamp;
-    private final int status;
-    private final String error;
-    private final String errorCode;
-    private final String message;
-    private final String path;
-    private final Map<String, String> errors;
+  private final LocalDateTime timestamp;
+  private final int status;
+  private final String error;
+  private final String errorCode;
+  private final String message;
+  private final String path;
+  private final Map<String, String> errors;
 }

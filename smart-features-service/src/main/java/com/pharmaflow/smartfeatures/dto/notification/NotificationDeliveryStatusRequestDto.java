@@ -13,6 +13,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class NotificationDeliveryStatusRequestDto {
 
-    @NotNull(message = "status is required")
-    private NotificationStatus status;
+  @NotNull(message = "status is required")
+  private NotificationStatus status;
 }

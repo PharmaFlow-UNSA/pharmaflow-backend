@@ -11,9 +11,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class ChatIntentMatchResponseDto {
 
-    private Long id;
-    private Long messageId;
-    private Long faqId;
-    private String detectedIntent;
-    private Double confidenceScore;
+  private Long id;
+  private Long messageId;
+  private Long faqId;
+  private String detectedIntent;
+  private Double confidenceScore;
 }

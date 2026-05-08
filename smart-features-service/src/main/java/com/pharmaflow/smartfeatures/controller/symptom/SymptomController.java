@@ -28,45 +28,47 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Symptoms")
 public class SymptomController {
 
-    private final SymptomService symptomService;
+  private final SymptomService symptomService;
 
-    public SymptomController(SymptomService symptomService) {
-        this.symptomService = symptomService;
-    }
+  public SymptomController(SymptomService symptomService) {
+    this.symptomService = symptomService;
+  }
 
-    @GetMapping
-    public ResponseEntity<List<SymptomResponseDto>> getAllSymptoms() {
-        return ResponseEntity.ok(symptomService.getAllSymptoms());
-    }
+  @GetMapping
+  public ResponseEntity<List<SymptomResponseDto>> getAllSymptoms() {
+    return ResponseEntity.ok(symptomService.getAllSymptoms());
+  }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<SymptomResponseDto> getSymptomById(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(symptomService.getSymptomById(id));
-    }
+  @GetMapping("/{id}")
+  public ResponseEntity<SymptomResponseDto> getSymptomById(@PathVariable @Positive Long id) {
+    return ResponseEntity.ok(symptomService.getSymptomById(id));
+  }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<SymptomResponseDto>> searchSymptoms(
-            @RequestParam @NotBlank(message = "Query is required")
-                    @Size(min = 2, max = 100, message = "Query must be between 2 and 100 characters")
-                    String query) {
-        return ResponseEntity.ok(symptomService.searchSymptoms(query));
-    }
+  @GetMapping("/search")
+  public ResponseEntity<List<SymptomResponseDto>> searchSymptoms(
+      @RequestParam
+          @NotBlank(message = "Query is required")
+          @Size(min = 2, max = 100, message = "Query must be between 2 and 100 characters")
+          String query) {
+    return ResponseEntity.ok(symptomService.searchSymptoms(query));
+  }
 
-    @PostMapping
-    public ResponseEntity<SymptomResponseDto> createSymptom(@Valid @RequestBody SymptomRequestDto requestDto) {
-        SymptomResponseDto createdSymptom = symptomService.createSymptom(requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdSymptom);
-    }
+  @PostMapping
+  public ResponseEntity<SymptomResponseDto> createSymptom(
+      @Valid @RequestBody SymptomRequestDto requestDto) {
+    SymptomResponseDto createdSymptom = symptomService.createSymptom(requestDto);
+    return ResponseEntity.status(HttpStatus.CREATED).body(createdSymptom);
+  }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<SymptomResponseDto> updateSymptom(
-            @PathVariable @Positive Long id, @Valid @RequestBody SymptomRequestDto requestDto) {
-        return ResponseEntity.ok(symptomService.updateSymptom(id, requestDto));
-    }
+  @PutMapping("/{id}")
+  public ResponseEntity<SymptomResponseDto> updateSymptom(
+      @PathVariable @Positive Long id, @Valid @RequestBody SymptomRequestDto requestDto) {
+    return ResponseEntity.ok(symptomService.updateSymptom(id, requestDto));
+  }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSymptom(@PathVariable @Positive Long id) {
-        symptomService.deleteSymptom(id);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteSymptom(@PathVariable @Positive Long id) {
+    symptomService.deleteSymptom(id);
+    return ResponseEntity.noContent().build();
+  }
 }

@@ -8,9 +8,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SymptomSearchRepository extends JpaRepository<SymptomSearch, Long> {
 
-    List<SymptomSearch> findAllByOrderBySearchedAtDesc();
+  List<SymptomSearch> findAllByOrderBySearchedAtDesc();
 
-    List<SymptomSearch> findByUserIdOrderBySearchedAtDesc(Long userId);
+  List<SymptomSearch> findByUserIdOrderBySearchedAtDesc(Long userId);
 
-    List<SymptomSearch> findByPatientProfileIdOrderBySearchedAtDesc(Long patientProfileId);
+  List<SymptomSearch> findByPatientProfileIdOrderBySearchedAtDesc(Long patientProfileId);
 }

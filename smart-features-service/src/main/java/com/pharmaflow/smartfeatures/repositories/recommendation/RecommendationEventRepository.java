@@ -9,6 +9,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RecommendationEventRepository extends JpaRepository<RecommendationEvent, Long> {
 
-    @EntityGraph(attributePaths = "recommendation")
-    List<RecommendationEvent> findByRecommendationRecommendationIdOrderByEventTimeDesc(Long recommendationId);
+  @EntityGraph(attributePaths = "recommendation")
+  List<RecommendationEvent> findByRecommendationRecommendationIdOrderByEventTimeDesc(
+      Long recommendationId);
+
+  @EntityGraph(attributePaths = "recommendation")
+  List<RecommendationEvent> findByRecommendationUserIdOrderByEventTimeDesc(Long userId);
 }

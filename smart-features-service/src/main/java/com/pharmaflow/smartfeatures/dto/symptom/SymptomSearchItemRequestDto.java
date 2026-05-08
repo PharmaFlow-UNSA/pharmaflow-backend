@@ -13,7 +13,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomSearchItemRequestDto {
 
-    @NotNull(message = "symptomId is required")
-    @Positive(message = "symptomId must be positive")
-    private Long symptomId;
+  @NotNull(message = "symptomId is required")
+  @Positive(message = "symptomId must be positive")
+  private Long symptomId;
 }

@@ -10,9 +10,10 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SymptomRepository extends JpaRepository<Symptom, Long> {
 
-    List<Symptom> findAllByIsActiveTrueOrderByNameAsc();
+  List<Symptom> findAllByIsActiveTrueOrderByNameAsc();
 
-    @Query("""
+  @Query(
+      """
             select s
             from Symptom s
             where s.isActive = true
@@ -22,9 +23,9 @@ public interface SymptomRepository extends JpaRepository<Symptom, Long> {
               )
             order by s.name asc
             """)
-    List<Symptom> searchActiveSymptoms(@Param("query") String query);
+  List<Symptom> searchActiveSymptoms(@Param("query") String query);
 
-    boolean existsByNormalizedName(String normalizedName);
+  boolean existsByNormalizedName(String normalizedName);
 
-    boolean existsByNormalizedNameAndSymptomIdNot(String normalizedName, Long symptomId);
+  boolean existsByNormalizedNameAndSymptomIdNot(String normalizedName, Long symptomId);
 }

@@ -15,27 +15,27 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FaqEntryRequestDto {
 
-    @SanitizedTextSize(
-            min = 5,
-            max = 200,
-            allowBlank = false,
-            message = "question must be between 5 and 200 characters after trimming")
-    private String question;
+  @SanitizedTextSize(
+      min = 5,
+      max = 200,
+      allowBlank = false,
+      message = "question must be between 5 and 200 characters after trimming")
+  private String question;
 
-    @SanitizedTextSize(
-            min = 5,
-            max = 2000,
-            allowBlank = false,
-            message = "answer must be between 5 and 2000 characters after trimming")
-    private String answer;
+  @SanitizedTextSize(
+      min = 5,
+      max = 2000,
+      allowBlank = false,
+      message = "answer must be between 5 and 2000 characters after trimming")
+  private String answer;
 
-    @NotNull(message = "category is required")
-    private FaqCategory category;
+  @NotNull(message = "category is required")
+  private FaqCategory category;
 
-    @SanitizedTextSize(max = 500, message = "keywords must not exceed 500 characters")
-    private String keywords;
+  @SanitizedTextSize(max = 500, message = "keywords must not exceed 500 characters")
+  private String keywords;
 
-    @JsonProperty("isActive")
-    @NotNull(message = "isActive is required")
-    private Boolean active;
+  @JsonProperty("isActive")
+  @NotNull(message = "isActive is required")
+  private Boolean active;
 }

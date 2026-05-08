@@ -15,16 +15,16 @@ import lombok.Setter;
 @AllArgsConstructor
 public class NotificationResponseDto {
 
-    private Long id;
-    private Long therapyReminderId;
-    private Long userId;
-    private Long patientProfileId;
-    private NotificationType type;
-    private String title;
-    private String message;
-    private NotificationChannel channel;
-    private NotificationStatus status;
-    private LocalDateTime createdAt;
-    private LocalDateTime sentAt;
-    private LocalDateTime readAt;
+  private Long id;
+  private Long therapyReminderId;
+  private Long userId;
+  private Long patientProfileId;
+  private NotificationType type;
+  private String title;
+  private String message;
+  private NotificationChannel channel;
+  private NotificationStatus status;
+  private LocalDateTime createdAt;
+  private LocalDateTime sentAt;
+  private LocalDateTime readAt;
 }

@@ -14,13 +14,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TherapyReminderResponseDto {
 
-    private Long id;
-    private Long patientProfileId;
-    private Long productId;
-    private String dosageInstruction;
-    private Integer frequencyPerDay;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private LocalDateTime nextReminderAt;
-    private TherapyReminderStatus status;
+  private Long id;
+  private Long patientProfileId;
+  private Long productId;
+  private String dosageInstruction;
+  private Integer frequencyPerDay;
+  private LocalDate startDate;
+  private LocalDate endDate;
+  private LocalDateTime nextReminderAt;
+  private TherapyReminderStatus status;
 }

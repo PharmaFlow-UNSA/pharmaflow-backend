@@ -27,50 +27,53 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc(addFilters = false)
 class SymptomSearchControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private SymptomSearchService symptomSearchService;
+  @MockitoBean private SymptomSearchService symptomSearchService;
 
-    private SymptomSearchResponseDto responseDto;
+  private SymptomSearchResponseDto responseDto;
 
-    @BeforeEach
-    void setUp() {
-        responseDto = new SymptomSearchResponseDto();
-        responseDto.setId(1L);
-        responseDto.setUserId(10L);
-        responseDto.setPatientProfileId(20L);
-        responseDto.setSearchQuery("dry cough");
-        responseDto.setSearchedAt(LocalDateTime.now());
-    }
+  @BeforeEach
+  void setUp() {
+    responseDto = new SymptomSearchResponseDto();
+    responseDto.setId(1L);
+    responseDto.setUserId(10L);
+    responseDto.setPatientProfileId(20L);
+    responseDto.setSearchQuery("dry cough");
+    responseDto.setSearchedAt(LocalDateTime.now());
+  }
 
-    @Test
-    void createSearchShouldReturn201() throws Exception {
-        when(symptomSearchService.createSearch(any())).thenReturn(responseDto);
+  @Test
+  void createSearchShouldReturn201() throws Exception {
+    when(symptomSearchService.createSearch(any())).thenReturn(responseDto);
 
-        mockMvc.perform(post("/api/symptom-searches")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+    mockMvc
+        .perform(
+            post("/api/symptom-searches")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
                                 {
                                   "userId": 10,
                                   "patientProfileId": 20,
                                   "searchQuery": "dry cough"
                                 }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.searchQuery").value("dry cough"));
-    }
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.searchQuery").value("dry cough"));
+  }
 
-    @Test
-    void addItemShouldRejectMissingSymptomId() throws Exception {
-        mockMvc.perform(post("/api/symptom-searches/1/items")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+  @Test
+  void addItemShouldRejectMissingSymptomId() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/symptom-searches/1/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
-        verify(symptomSearchService, never()).addItem(any(), any());
-    }
+    verify(symptomSearchService, never()).addItem(any(), any());
+  }
 }

@@ -12,11 +12,11 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = AtLeastOneOfValidator.class)
 public @interface AtLeastOneOf {
 
-    String message() default "At least one field must be provided";
+  String message() default "At least one field must be provided";
 
-    Class<?>[] groups() default {};
+  Class<?>[] groups() default {};
 
-    Class<? extends Payload>[] payload() default {};
+  Class<? extends Payload>[] payload() default {};
 
-    String[] fields();
+  String[] fields();
 }

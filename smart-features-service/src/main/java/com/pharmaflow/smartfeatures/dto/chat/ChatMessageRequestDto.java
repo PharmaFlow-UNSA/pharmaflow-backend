@@ -12,25 +12,25 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @AtLeastOneOf(
-        fields = {"messageText", "attachmentUrl"},
-        message = "Either messageText or attachmentUrl must be provided")
+    fields = {"messageText", "attachmentUrl"},
+    message = "Either messageText or attachmentUrl must be provided")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageRequestDto {
 
-    @NotNull(message = "senderType is required")
-    private ChatSenderType senderType;
+  @NotNull(message = "senderType is required")
+  private ChatSenderType senderType;
 
-    @NullablePositive(message = "senderId must be positive")
-    private Long senderId;
+  @NullablePositive(message = "senderId must be positive")
+  private Long senderId;
 
-    @SanitizedTextSize(max = 2000, message = "messageText must not exceed 2000 characters")
-    private String messageText;
+  @SanitizedTextSize(max = 2000, message = "messageText must not exceed 2000 characters")
+  private String messageText;
 
-    @Pattern(
-            regexp = "^(https?://\\S+)?$",
-            message = "attachmentUrl must be a valid http or https URL")
-    private String attachmentUrl;
+  @Pattern(
+      regexp = "^(https?://\\S+)?$",
+      message = "attachmentUrl must be a valid http or https URL")
+  private String attachmentUrl;
 }

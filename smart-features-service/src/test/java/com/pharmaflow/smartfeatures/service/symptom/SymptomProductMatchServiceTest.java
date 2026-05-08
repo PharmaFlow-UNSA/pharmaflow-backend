@@ -21,74 +21,81 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class SymptomProductMatchServiceTest {
 
-    @Mock
-    private SymptomProductMatchRepository symptomProductMatchRepository;
+  @Mock private SymptomProductMatchRepository symptomProductMatchRepository;
 
-    @Mock
-    private SymptomRepository symptomRepository;
+  @Mock private SymptomRepository symptomRepository;
 
-    private SymptomProductMatchService symptomProductMatchService;
+  private SymptomProductMatchService symptomProductMatchService;
 
-    @BeforeEach
-    void setUp() {
-        symptomProductMatchService = new SymptomProductMatchService(
-                symptomProductMatchRepository,
-                symptomRepository,
-                new SymptomProductMatchMapper(new ModelMapperConfig().modelMapper()));
-    }
+  @BeforeEach
+  void setUp() {
+    symptomProductMatchService =
+        new SymptomProductMatchService(
+            symptomProductMatchRepository,
+            symptomRepository,
+            new SymptomProductMatchMapper(new ModelMapperConfig().modelMapper()));
+  }
 
-    @Test
-    void createMatchShouldRejectDuplicateProduct() {
-        Symptom symptom = Symptom.builder()
-                .symptomId(1L)
-                .name("Dry Cough")
-                .severityLevel(SymptomSeverityLevel.MEDIUM)
-                .isActive(true)
-                .build();
-        when(symptomRepository.findById(1L)).thenReturn(Optional.of(symptom));
-        when(symptomProductMatchRepository.existsBySymptomSymptomIdAndProductId(1L, 300L)).thenReturn(true);
+  @Test
+  void createMatchShouldRejectDuplicateProduct() {
+    Symptom symptom =
+        Symptom.builder()
+            .symptomId(1L)
+            .name("Dry Cough")
+            .severityLevel(SymptomSeverityLevel.MEDIUM)
+            .isActive(true)
+            .build();
+    when(symptomRepository.findById(1L)).thenReturn(Optional.of(symptom));
+    when(symptomProductMatchRepository.existsBySymptomSymptomIdAndProductId(1L, 300L))
+        .thenReturn(true);
 
-        assertThatThrownBy(() -> symptomProductMatchService.createMatch(
-                        1L, new SymptomProductMatchRequestDto(300L, 0.9, "Helpful")))
-                .isInstanceOf(DuplicateResourceException.class)
-                .hasMessage("Product is already matched to this symptom.");
+    assertThatThrownBy(
+            () ->
+                symptomProductMatchService.createMatch(
+                    1L, new SymptomProductMatchRequestDto(300L, 0.9, "Helpful")))
+        .isInstanceOf(DuplicateResourceException.class)
+        .hasMessage("Product is already matched to this symptom.");
 
-        verify(symptomProductMatchRepository, never()).save(any(SymptomProductMatch.class));
-    }
+    verify(symptomProductMatchRepository, never()).save(any(SymptomProductMatch.class));
+  }
 
-    @Test
-    void updateMatchShouldTrimMatchReasonAndReturnMappedDto() {
-        Symptom symptom = Symptom.builder()
-                .symptomId(1L)
-                .name("Dry Cough")
-                .severityLevel(SymptomSeverityLevel.MEDIUM)
-                .isActive(true)
-                .build();
-        SymptomProductMatch match = SymptomProductMatch.builder()
-                .matchId(5L)
-                .symptom(symptom)
-                .productId(300L)
-                .matchReason("Old")
-                .build();
-        when(symptomRepository.findById(1L)).thenReturn(Optional.of(symptom));
-        when(symptomProductMatchRepository.findBySymptomSymptomIdAndMatchId(1L, 5L)).thenReturn(Optional.of(match));
-        when(symptomProductMatchRepository.existsBySymptomSymptomIdAndProductIdAndMatchIdNot(1L, 301L, 5L))
-                .thenReturn(false);
-        when(symptomProductMatchRepository.save(match)).thenReturn(match);
+  @Test
+  void updateMatchShouldTrimMatchReasonAndReturnMappedDto() {
+    Symptom symptom =
+        Symptom.builder()
+            .symptomId(1L)
+            .name("Dry Cough")
+            .severityLevel(SymptomSeverityLevel.MEDIUM)
+            .isActive(true)
+            .build();
+    SymptomProductMatch match =
+        SymptomProductMatch.builder()
+            .matchId(5L)
+            .symptom(symptom)
+            .productId(300L)
+            .matchReason("Old")
+            .build();
+    when(symptomRepository.findById(1L)).thenReturn(Optional.of(symptom));
+    when(symptomProductMatchRepository.findBySymptomSymptomIdAndMatchId(1L, 5L))
+        .thenReturn(Optional.of(match));
+    when(symptomProductMatchRepository.existsBySymptomSymptomIdAndProductIdAndMatchIdNot(
+            1L, 301L, 5L))
+        .thenReturn(false);
+    when(symptomProductMatchRepository.save(match)).thenReturn(match);
 
-        SymptomProductMatchResponseDto response = symptomProductMatchService.updateMatch(
-                1L, 5L, new SymptomProductMatchRequestDto(301L, 0.8, "  Night relief  "));
+    SymptomProductMatchResponseDto response =
+        symptomProductMatchService.updateMatch(
+            1L, 5L, new SymptomProductMatchRequestDto(301L, 0.8, "  Night relief  "));
 
-        assertThat(match.getProductId()).isEqualTo(301L);
-        assertThat(match.getMatchReason()).isEqualTo("Night relief");
-        assertThat(response.getId()).isEqualTo(5L);
-        assertThat(response.getSymptomId()).isEqualTo(1L);
-    }
+    assertThat(match.getProductId()).isEqualTo(301L);
+    assertThat(match.getMatchReason()).isEqualTo("Night relief");
+    assertThat(response.getId()).isEqualTo(5L);
+    assertThat(response.getSymptomId()).isEqualTo(1L);
+  }
 }

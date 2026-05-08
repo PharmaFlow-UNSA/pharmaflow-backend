@@ -20,9 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents the cause that triggered a notification.
- */
+/** Represents the cause that triggered a notification. */
 @Entity
 @Table(name = "notification_trigger")
 @Getter
@@ -32,31 +30,31 @@ import lombok.Setter;
 @AllArgsConstructor
 public class NotificationTrigger {
 
-    /** Primary key of the trigger record. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "trigger_id", nullable = false, updatable = false)
-    private Long triggerId;
+  /** Primary key of the trigger record. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "trigger_id", nullable = false, updatable = false)
+  private Long triggerId;
 
-    /** Notification associated with this trigger. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "notification_id", nullable = false)
-    private Notification notification;
+  /** Notification associated with this trigger. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "notification_id", nullable = false)
+  private Notification notification;
 
-    /** Source type that caused the notification. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "trigger_source", nullable = false)
-    private NotificationTriggerSource triggerSource;
+  /** Source type that caused the notification. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "trigger_source", nullable = false)
+  private NotificationTriggerSource triggerSource;
 
-    /** External reference to the source record when available. */
-    @Positive
-    @Column(name = "source_entity_id")
-    private Long sourceEntityId;
+  /** External reference to the source record when available. */
+  @Positive
+  @Column(name = "source_entity_id")
+  private Long sourceEntityId;
 
-    /** Timestamp when the notification was triggered. */
-    @NotNull
-    @Column(name = "triggered_at", nullable = false)
-    private LocalDateTime triggeredAt;
+  /** Timestamp when the notification was triggered. */
+  @NotNull
+  @Column(name = "triggered_at", nullable = false)
+  private LocalDateTime triggeredAt;
 }

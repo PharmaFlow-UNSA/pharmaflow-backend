@@ -10,25 +10,26 @@ import org.springframework.stereotype.Component;
 @Component
 public class SymptomProductMatchMapper {
 
-    private final ModelMapper modelMapper;
+  private final ModelMapper modelMapper;
 
-    public SymptomProductMatchMapper(ModelMapper modelMapper) {
-        this.modelMapper = modelMapper;
-    }
+  public SymptomProductMatchMapper(ModelMapper modelMapper) {
+    this.modelMapper = modelMapper;
+  }
 
-    public SymptomProductMatch toEntity(SymptomProductMatchRequestDto requestDto) {
-        return modelMapper.map(requestDto, SymptomProductMatch.class);
-    }
+  public SymptomProductMatch toEntity(SymptomProductMatchRequestDto requestDto) {
+    return modelMapper.map(requestDto, SymptomProductMatch.class);
+  }
 
-    public void updateEntity(SymptomProductMatchRequestDto requestDto, SymptomProductMatch match) {
-        modelMapper.map(requestDto, match);
-    }
+  public void updateEntity(SymptomProductMatchRequestDto requestDto, SymptomProductMatch match) {
+    modelMapper.map(requestDto, match);
+  }
 
-    public SymptomProductMatchResponseDto toResponseDto(SymptomProductMatch match) {
-        SymptomProductMatchResponseDto response = modelMapper.map(match, SymptomProductMatchResponseDto.class);
-        response.setId(match.getMatchId());
-        response.setSymptomId(match.getSymptom().getSymptomId());
-        response.setMatchedSymptomIds(List.of(match.getSymptom().getSymptomId()));
-        return response;
-    }
+  public SymptomProductMatchResponseDto toResponseDto(SymptomProductMatch match) {
+    SymptomProductMatchResponseDto response =
+        modelMapper.map(match, SymptomProductMatchResponseDto.class);
+    response.setId(match.getMatchId());
+    response.setSymptomId(match.getSymptom().getSymptomId());
+    response.setMatchedSymptomIds(List.of(match.getSymptom().getSymptomId()));
+    return response;
+  }
 }

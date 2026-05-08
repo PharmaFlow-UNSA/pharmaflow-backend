@@ -12,11 +12,13 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FraudRuleResponseDto {
 
-    private Long id;
-    private String ruleName;
-    private String description;
-    private Double weight;
+  private Long id;
+  private String ruleName;
+  private String ruleCode;
+  private String category;
+  private String description;
+  private Double weight;
 
-    @JsonProperty("isActive")
-    private Boolean active;
+  @JsonProperty("isActive")
+  private Boolean active;
 }

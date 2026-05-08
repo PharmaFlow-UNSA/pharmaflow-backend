@@ -12,13 +12,13 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = SanitizedNameSizeValidator.class)
 public @interface SanitizedNameSize {
 
-    String message() default "Invalid sanitized name length";
+  String message() default "Invalid sanitized name length";
 
-    Class<?>[] groups() default {};
+  Class<?>[] groups() default {};
 
-    Class<? extends Payload>[] payload() default {};
+  Class<? extends Payload>[] payload() default {};
 
-    int min();
+  int min();
 
-    int max();
+  int max();
 }

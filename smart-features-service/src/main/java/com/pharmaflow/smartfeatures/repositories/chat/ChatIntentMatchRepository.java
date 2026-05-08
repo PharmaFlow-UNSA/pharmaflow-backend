@@ -9,6 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ChatIntentMatchRepository extends JpaRepository<ChatIntentMatch, Long> {
 
-    @EntityGraph(attributePaths = {"message", "faqEntry"})
-    Optional<ChatIntentMatch> findByMessageMessageId(Long messageId);
+  @EntityGraph(attributePaths = {"message", "faqEntry"})
+  Optional<ChatIntentMatch> findByMessageMessageId(Long messageId);
 }

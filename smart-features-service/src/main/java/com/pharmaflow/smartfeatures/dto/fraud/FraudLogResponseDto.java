@@ -13,10 +13,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FraudLogResponseDto {
 
-    private Long id;
-    private Long fraudCheckId;
-    private Long fraudRuleId;
-    private FraudEventType eventType;
-    private String details;
-    private LocalDateTime createdAt;
+  private Long id;
+  private Long fraudCheckId;
+  private Long fraudRuleId;
+  private FraudEventType eventType;
+  private String details;
+  private Double scoreContribution;
+  private LocalDateTime createdAt;
 }

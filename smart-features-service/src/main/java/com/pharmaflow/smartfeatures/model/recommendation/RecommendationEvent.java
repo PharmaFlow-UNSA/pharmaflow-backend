@@ -19,9 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents a user or system interaction with a recommendation.
- */
+/** Represents a user or system interaction with a recommendation. */
 @Entity
 @Table(name = "recommendation_event")
 @Getter
@@ -31,26 +29,26 @@ import lombok.Setter;
 @AllArgsConstructor
 public class RecommendationEvent {
 
-    /** Primary key of the recommendation event. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "event_id", nullable = false, updatable = false)
-    private Long eventId;
+  /** Primary key of the recommendation event. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "event_id", nullable = false, updatable = false)
+  private Long eventId;
 
-    /** Parent recommendation that this event belongs to. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "recommendation_id", nullable = false)
-    private Recommendation recommendation;
+  /** Parent recommendation that this event belongs to. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "recommendation_id", nullable = false)
+  private Recommendation recommendation;
 
-    /** Type of recorded interaction. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false)
-    private RecommendationEventType eventType;
+  /** Type of recorded interaction. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "event_type", nullable = false)
+  private RecommendationEventType eventType;
 
-    /** Timestamp when the event occurred. */
-    @NotNull
-    @Column(name = "event_time", nullable = false)
-    private LocalDateTime eventTime;
+  /** Timestamp when the event occurred. */
+  @NotNull
+  @Column(name = "event_time", nullable = false)
+  private LocalDateTime eventTime;
 }

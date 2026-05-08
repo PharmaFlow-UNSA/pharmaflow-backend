@@ -11,8 +11,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomSearchItemResponseDto {
 
-    private Long id;
-    private Long searchId;
-    private Long symptomId;
-    private String symptomName;
+  private Long id;
+  private Long searchId;
+  private Long symptomId;
+  private String symptomName;
 }

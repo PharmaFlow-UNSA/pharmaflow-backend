@@ -22,9 +22,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents a symptom search action performed by a user.
- */
+/** Represents a symptom search action performed by a user. */
 @Entity
 @Table(name = "symptom_search")
 @Getter
@@ -34,36 +32,36 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SymptomSearch {
 
-    /** Primary key of the search record. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "search_id", nullable = false, updatable = false)
-    private Long searchId;
+  /** Primary key of the search record. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "search_id", nullable = false, updatable = false)
+  private Long searchId;
 
-    /** External reference to the user who performed the search. */
-    @NotNull
-    @Positive
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+  /** External reference to the user who performed the search. */
+  @NotNull
+  @Positive
+  @Column(name = "user_id", nullable = false)
+  private Long userId;
 
-    /** Optional external reference to the patient profile. */
-    @Positive
-    @Column(name = "patient_profile_id")
-    private Long patientProfileId;
+  /** Optional external reference to the patient profile. */
+  @Positive
+  @Column(name = "patient_profile_id")
+  private Long patientProfileId;
 
-    /** Raw search input entered by the user. */
-    @NotBlank
-    @Size(max = 255)
-    @Column(name = "search_query", nullable = false, length = 255)
-    private String searchQuery;
+  /** Raw search input entered by the user. */
+  @NotBlank
+  @Size(max = 255)
+  @Column(name = "search_query", nullable = false, length = 255)
+  private String searchQuery;
 
-    /** Timestamp when the search was performed. */
-    @NotNull
-    @Column(name = "searched_at", nullable = false)
-    private LocalDateTime searchedAt;
+  /** Timestamp when the search was performed. */
+  @NotNull
+  @Column(name = "searched_at", nullable = false)
+  private LocalDateTime searchedAt;
 
-    /** Symptoms linked to this search action. */
-    @Default
-    @OneToMany(mappedBy = "search", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SymptomSearchItem> items = new ArrayList<>();
+  /** Symptoms linked to this search action. */
+  @Default
+  @OneToMany(mappedBy = "search", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<SymptomSearchItem> items = new ArrayList<>();
 }

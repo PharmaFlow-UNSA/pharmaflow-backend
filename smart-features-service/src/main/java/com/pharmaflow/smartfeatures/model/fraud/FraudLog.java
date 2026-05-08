@@ -20,9 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents an audit log entry produced during fraud evaluation.
- */
+/** Represents an audit log entry produced during fraud evaluation. */
 @Entity
 @Table(name = "fraud_log")
 @Getter
@@ -32,37 +30,41 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FraudLog {
 
-    /** Primary key of the fraud log entry. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "fraud_log_id", nullable = false, updatable = false)
-    private Long fraudLogId;
+  /** Primary key of the fraud log entry. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "fraud_log_id", nullable = false, updatable = false)
+  private Long fraudLogId;
 
-    /** Parent fraud check that produced the log. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "fraud_check_id", nullable = false)
-    private FraudCheck fraudCheck;
+  /** Parent fraud check that produced the log. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "fraud_check_id", nullable = false)
+  private FraudCheck fraudCheck;
 
-    /** Fraud rule referenced by the log entry. */
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "rule_id", nullable = false)
-    private FraudRule fraudRule;
+  /** Fraud rule referenced by the log entry. */
+  @NotNull
+  @ManyToOne
+  @JoinColumn(name = "rule_id", nullable = false)
+  private FraudRule fraudRule;
 
-    /** Type of fraud event that was recorded. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false)
-    private FraudEventType eventType;
+  /** Type of fraud event that was recorded. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "event_type", nullable = false)
+  private FraudEventType eventType;
 
-    /** Additional details explaining the logged event. */
-    @Size(max = 1000)
-    @Column(name = "details", length = 1000)
-    private String details;
+  /** Additional details explaining the logged event. */
+  @Size(max = 1000)
+  @Column(name = "details", length = 1000)
+  private String details;
 
-    /** Timestamp when the fraud log was created. */
-    @NotNull
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+  /** Score added by this rule when it triggered. */
+  @Column(name = "score_contribution")
+  private Double scoreContribution;
+
+  /** Timestamp when the fraud log was created. */
+  @NotNull
+  @Column(name = "created_at", nullable = false)
+  private LocalDateTime createdAt;
 }

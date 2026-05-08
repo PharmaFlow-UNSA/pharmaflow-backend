@@ -14,8 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,42 +28,45 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Notifications")
 public class NotificationController {
 
-    private final NotificationService notificationService;
+  private final NotificationService notificationService;
 
-    public NotificationController(NotificationService notificationService) {
-        this.notificationService = notificationService;
-    }
+  public NotificationController(NotificationService notificationService) {
+    this.notificationService = notificationService;
+  }
 
-    @GetMapping
-    public ResponseEntity<List<NotificationResponseDto>> getNotifications(
-            @RequestParam(required = false) @NullablePositive Long userId) {
-        return ResponseEntity.ok(notificationService.getNotifications(userId));
-    }
+  @GetMapping
+  public ResponseEntity<List<NotificationResponseDto>> getNotifications(
+      @RequestParam(required = false) @NullablePositive Long userId) {
+    return ResponseEntity.ok(notificationService.getNotifications(userId));
+  }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<NotificationResponseDto> getNotification(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(notificationService.getNotification(id));
-    }
+  @GetMapping("/{id}")
+  public ResponseEntity<NotificationResponseDto> getNotification(@PathVariable @Positive Long id) {
+    return ResponseEntity.ok(notificationService.getNotification(id));
+  }
 
-    @PostMapping
-    public ResponseEntity<NotificationResponseDto> createNotification(
-            @Valid @RequestBody NotificationRequestDto requestDto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(notificationService.createNotification(requestDto));
-    }
+  @PostMapping
+  public ResponseEntity<NotificationResponseDto> createNotification(
+      @Valid @RequestBody NotificationRequestDto requestDto) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(notificationService.createNotification(requestDto));
+  }
 
-    @PatchMapping("/{id}/delivery-status")
-    public ResponseEntity<NotificationResponseDto> updateDeliveryStatus(
-            @PathVariable @Positive Long id, @Valid @RequestBody NotificationDeliveryStatusRequestDto requestDto) {
-        return ResponseEntity.ok(notificationService.updateDeliveryStatus(id, requestDto));
-    }
+  @PatchMapping("/{id}/delivery-status")
+  public ResponseEntity<NotificationResponseDto> updateDeliveryStatus(
+      @PathVariable @Positive Long id,
+      @Valid @RequestBody NotificationDeliveryStatusRequestDto requestDto) {
+    return ResponseEntity.ok(notificationService.updateDeliveryStatus(id, requestDto));
+  }
 
-    @PatchMapping("/{id}/mark-read")
-    public ResponseEntity<NotificationResponseDto> markAsRead(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(notificationService.markAsRead(id));
-    }
+  @PatchMapping("/{id}/mark-read")
+  public ResponseEntity<NotificationResponseDto> markAsRead(@PathVariable @Positive Long id) {
+    return ResponseEntity.ok(notificationService.markAsRead(id));
+  }
 
-    @GetMapping("/{id}/triggers")
-    public ResponseEntity<List<NotificationTriggerResponseDto>> getTriggers(@PathVariable @Positive Long id) {
-        return ResponseEntity.ok(notificationService.getTriggers(id));
-    }
+  @GetMapping("/{id}/triggers")
+  public ResponseEntity<List<NotificationTriggerResponseDto>> getTriggers(
+      @PathVariable @Positive Long id) {
+    return ResponseEntity.ok(notificationService.getTriggers(id));
+  }
 }

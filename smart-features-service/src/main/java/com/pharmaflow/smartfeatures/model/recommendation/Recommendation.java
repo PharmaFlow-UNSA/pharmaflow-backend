@@ -31,17 +31,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Represents a product recommendation generated for a user or patient profile.
- */
+/** Represents a product recommendation generated for a user or patient profile. */
 @Entity
 @Table(
-        name = "recommendation",
-        uniqueConstraints = {
-            @UniqueConstraint(
-                    name = "uk_recommendation_active_dimension_key",
-                    columnNames = {"active_dimension_key"})
-        })
+    name = "recommendation",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_recommendation_active_dimension_key",
+          columnNames = {"active_dimension_key"})
+    })
 @Getter
 @Setter
 @Builder
@@ -49,75 +47,76 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Recommendation {
 
-    /** Primary key of the recommendation record. */
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "recommendation_id", nullable = false, updatable = false)
-    private Long recommendationId;
+  /** Primary key of the recommendation record. */
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "recommendation_id", nullable = false, updatable = false)
+  private Long recommendationId;
 
-    /** External reference to the user. */
-    @NotNull
-    @Positive
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+  /** External reference to the user. */
+  @NotNull
+  @Positive
+  @Column(name = "user_id", nullable = false)
+  private Long userId;
 
-    /** Optional reference to the patient profile. */
-    @Positive
-    @Column(name = "patient_profile_id")
-    private Long patientProfileId;
+  /** Optional reference to the patient profile. */
+  @Positive
+  @Column(name = "patient_profile_id")
+  private Long patientProfileId;
 
-    /** External reference to the product. */
-    @NotNull
-    @Positive
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
+  /** External reference to the product. */
+  @NotNull
+  @Positive
+  @Column(name = "product_id", nullable = false)
+  private Long productId;
 
-    /** Strategy used to generate the recommendation. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "recommendation_type", nullable = false)
-    private RecommendationType recommendationType;
+  /** Strategy used to generate the recommendation. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "recommendation_type", nullable = false)
+  private RecommendationType recommendationType;
 
-    /** Ranking or confidence value for the recommendation. */
-    @DecimalMin("0.0")
-    @DecimalMax("1.0")
-    @Column(name = "score")
-    private Double score;
+  /** Ranking or confidence value for the recommendation. */
+  @DecimalMin("0.0")
+  @DecimalMax("1.0")
+  @Column(name = "score")
+  private Double score;
 
-    /** Human-readable explanation of why the recommendation was generated. */
-    @Size(max = 500)
-    @Column(name = "reason_text", length = 500)
-    private String reasonText;
+  /** Human-readable explanation of why the recommendation was generated. */
+  @Size(max = 500)
+  @Column(name = "reason_text", length = 500)
+  private String reasonText;
 
-    /** Timestamp when the recommendation was generated. */
-    @NotNull
-    @Column(name = "generated_at", nullable = false)
-    private LocalDateTime generatedAt;
+  /** Timestamp when the recommendation was generated. */
+  @NotNull
+  @Column(name = "generated_at", nullable = false)
+  private LocalDateTime generatedAt;
 
-    /** Optional timestamp after which the recommendation is no longer valid. */
-    @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
+  /** Optional timestamp after which the recommendation is no longer valid. */
+  @Column(name = "expires_at")
+  private LocalDateTime expiresAt;
 
-    /** Current lifecycle state of the recommendation. */
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private RecommendationStatus status;
+  /** Current lifecycle state of the recommendation. */
+  @NotNull
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false)
+  private RecommendationStatus status;
 
-    /** Unique key used to prevent duplicate ACTIVE recommendations across concurrent writes. */
-    @Size(max = 200)
-    @Column(name = "active_dimension_key", length = 200)
-    private String activeDimensionKey;
+  /** Unique key used to prevent duplicate ACTIVE recommendations across concurrent writes. */
+  @Size(max = 200)
+  @Column(name = "active_dimension_key", length = 200)
+  private String activeDimensionKey;
 
-    /** Interaction events linked to this recommendation. */
-    @Default
-    @OneToMany(mappedBy = "recommendation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RecommendationEvent> events = new ArrayList<>();
+  /** Interaction events linked to this recommendation. */
+  @Default
+  @OneToMany(mappedBy = "recommendation", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<RecommendationEvent> events = new ArrayList<>();
 
-    @PrePersist
-    @PreUpdate
-    void syncActiveDimensionKey() {
-        activeDimensionKey = RecommendationKeyNormalizer.buildActiveDimensionKey(
-                userId, patientProfileId, productId, recommendationType, status);
-    }
+  @PrePersist
+  @PreUpdate
+  void syncActiveDimensionKey() {
+    activeDimensionKey =
+        RecommendationKeyNormalizer.buildActiveDimensionKey(
+            userId, patientProfileId, productId, recommendationType, status);
+  }
 }
