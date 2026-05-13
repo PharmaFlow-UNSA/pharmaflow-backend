@@ -31,6 +31,9 @@ public class User {
 
     private String password;
 
+    @Column(nullable = false)
+    private String role = "ROLE_USER"; // Default role
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "patient_profile_id", referencedColumnName = "id")
     private PatientProfile patientProfile;

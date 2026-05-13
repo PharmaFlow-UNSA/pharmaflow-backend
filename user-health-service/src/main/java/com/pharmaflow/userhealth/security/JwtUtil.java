@@ -1,0 +1,79 @@
+package com.pharmaflow.userhealth.security;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.util.Date;
+import java.util.List;
+
+@Component
+public class JwtUtil {
+
+    @Value("${jwt.secret:pharmaflow-secret-key-2024-very-long-and-secure-key-for-production}")
+    private String secret;
+
+    @Value("${jwt.expiration:86400000}")
+    private long expiration;
+
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+    /**
+     * Generate JWT token for authenticated user.
+     * Token contains username (email) and roles.
+     * Expiration is 24 hours by default.
+     */
+    public String generateToken(String email, List<String> roles) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("roles", roles)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    /**
+     * Validate token and return claims.
+     */
+    public Claims validateToken(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public String extractEmail(String token) {
+        return validateToken(token).getSubject();
+    }
+
+    /**
+     * Extract roles from JWT token.
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        Claims claims = validateToken(token);
+        Object roles = claims.get("roles");
+        if (roles instanceof List) {
+            return (List<String>) roles;
+        }
+        return List.of();
+    }
+
+    /**
+     * Get remaining time until token expiration (in milliseconds).
+     * Used for blacklisting tokens.
+     */
+    public long getExpirationTime(String token) {
+        Claims claims = validateToken(token);
+        Date expiration = claims.getExpiration();
+        Date now = new Date();
+        return Math.max(0, expiration.getTime() - now.getTime());
+    }
+}
