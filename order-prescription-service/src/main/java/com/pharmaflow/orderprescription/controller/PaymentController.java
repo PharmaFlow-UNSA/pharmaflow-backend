@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,6 +53,7 @@ public class PaymentController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create payments", description = "Creates multiple payments in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<PaymentDTO>> createPaymentsBatch(
             @RequestBody @Valid List<@Valid PaymentDTO> dtos) {
         return new ResponseEntity<>(paymentService.createPaymentsBatch(dtos), HttpStatus.CREATED);
@@ -59,12 +61,14 @@ public class PaymentController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update payment", description = "Updates an existing payment")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<PaymentDTO> updatePayment(@PathVariable Long id, @Valid @RequestBody PaymentDTO paymentDTO) {
         return ResponseEntity.ok(paymentService.updatePayment(id, paymentDTO));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update payment", description = "Applies JSON Patch operations (RFC 6902) to a payment")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<PaymentDTO> patchPayment(@PathVariable Long id,
                                                    @RequestBody String patchDocument) {
         return ResponseEntity.ok(paymentService.patchPayment(id, patchDocument));
@@ -72,6 +76,7 @@ public class PaymentController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete payment", description = "Deletes a payment by ID")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePayment(@PathVariable Long id) {
         paymentService.deletePayment(id);
         return ResponseEntity.noContent().build();

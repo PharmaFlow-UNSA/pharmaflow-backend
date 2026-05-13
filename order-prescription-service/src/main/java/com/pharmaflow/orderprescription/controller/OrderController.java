@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -65,6 +66,7 @@ public class OrderController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create orders", description = "Creates multiple orders in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<OrderDTO>> createOrdersBatch(
             @RequestBody @Valid List<@Valid OrderCreateDTO> dtos) {
         return new ResponseEntity<>(orderService.createOrdersBatch(dtos), HttpStatus.CREATED);
@@ -72,12 +74,14 @@ public class OrderController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update order", description = "Updates an existing order")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<OrderDTO> updateOrder(@PathVariable Long id, @Valid @RequestBody OrderDTO orderDTO) {
         return ResponseEntity.ok(orderService.updateOrder(id, orderDTO));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update order", description = "Applies JSON Patch operations (RFC 6902) to an order")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<OrderDTO> patchOrder(@PathVariable Long id,
                                                @RequestBody String patchDocument) {
         return ResponseEntity.ok(orderService.patchOrder(id, patchDocument));
@@ -85,6 +89,7 @@ public class OrderController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete order", description = "Deletes an order by ID")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
         orderService.deleteOrder(id);
         return ResponseEntity.noContent().build();

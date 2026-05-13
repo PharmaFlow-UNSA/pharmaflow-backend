@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -65,6 +66,7 @@ public class AutoRefillSubscriptionController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create subscriptions", description = "Creates multiple auto-refill subscriptions in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<AutoRefillSubscriptionDTO>> createSubscriptionsBatch(
             @RequestBody @Valid List<@Valid AutoRefillSubscriptionDTO> dtos) {
         return new ResponseEntity<>(autoRefillSubscriptionService.createSubscriptionsBatch(dtos), HttpStatus.CREATED);
@@ -72,12 +74,14 @@ public class AutoRefillSubscriptionController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update subscription", description = "Updates an existing auto-refill subscription")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AutoRefillSubscriptionDTO> updateSubscription(@PathVariable Long id, @Valid @RequestBody AutoRefillSubscriptionDTO autoRefillSubscriptionDTO) {
         return ResponseEntity.ok(autoRefillSubscriptionService.updateSubscription(id, autoRefillSubscriptionDTO));
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Partially update subscription", description = "Applies JSON Patch operations (RFC 6902) to a subscription")
+    @Operation(summary = "Partially update subscription (pause, change dosage, change address)", description = "Applies JSON Patch operations (RFC 6902) to a subscription")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AutoRefillSubscriptionDTO> patchSubscription(@PathVariable Long id,
                                                                        @RequestBody String patchDocument) {
         return ResponseEntity.ok(autoRefillSubscriptionService.patchSubscription(id, patchDocument));
@@ -85,6 +89,7 @@ public class AutoRefillSubscriptionController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete subscription", description = "Deletes an auto-refill subscription by ID")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteSubscription(@PathVariable Long id) {
         autoRefillSubscriptionService.deleteSubscription(id);
         return ResponseEntity.noContent().build();

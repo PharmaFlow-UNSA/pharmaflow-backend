@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -71,6 +72,7 @@ public class ReservationController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create reservations", description = "Creates multiple reservations in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<ReservationDTO>> createReservationsBatch(
             @RequestBody @Valid List<@Valid ReservationDTO> dtos) {
         return new ResponseEntity<>(reservationService.createReservationsBatch(dtos), HttpStatus.CREATED);
@@ -78,6 +80,7 @@ public class ReservationController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update reservation", description = "Updates an existing reservation")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<ReservationDTO> updateReservation(@PathVariable Long id,
                                                             @Valid @RequestBody ReservationDTO reservationDTO) {
         return ResponseEntity.ok(reservationService.updateReservation(id, reservationDTO));
@@ -85,6 +88,7 @@ public class ReservationController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update reservation", description = "Applies JSON Patch operations (RFC 6902) to a reservation")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<ReservationDTO> patchReservation(@PathVariable Long id,
                                                            @RequestBody String patchDocument) {
         return ResponseEntity.ok(reservationService.patchReservation(id, patchDocument));
@@ -92,6 +96,7 @@ public class ReservationController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete reservation", description = "Deletes a reservation by ID")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<Void> deleteReservation(@PathVariable Long id) {
         reservationService.deleteReservation(id);
         return ResponseEntity.noContent().build();

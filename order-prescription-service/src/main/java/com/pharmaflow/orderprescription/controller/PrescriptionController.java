@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -72,12 +73,14 @@ public class PrescriptionController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update prescription", description = "Updates an existing prescription")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PHARMACIST', 'ADMIN')")
     public ResponseEntity<PrescriptionDTO> updatePrescription(@PathVariable Long id, @Valid @RequestBody PrescriptionDTO prescriptionDTO) {
         return ResponseEntity.ok(prescriptionService.updatePrescription(id, prescriptionDTO));
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Partially update prescription", description = "Applies JSON Patch operations (RFC 6902) to a prescription")
+    @Operation(summary = "Partially update prescription (approve/reject)", description = "Applies JSON Patch operations (RFC 6902) to a prescription")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'PHARMACIST', 'ADMIN')")
     public ResponseEntity<PrescriptionDTO> patchPrescription(@PathVariable Long id,
                                                              @RequestBody String patchDocument) {
         return ResponseEntity.ok(prescriptionService.patchPrescription(id, patchDocument));
@@ -85,6 +88,7 @@ public class PrescriptionController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete prescription", description = "Deletes a prescription by ID")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePrescription(@PathVariable Long id) {
         prescriptionService.deletePrescription(id);
         return ResponseEntity.noContent().build();

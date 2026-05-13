@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,6 +59,7 @@ public class OrderItemController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create order items", description = "Creates multiple order items in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<OrderItemDTO>> createOrderItemsBatch(
             @RequestBody @Valid List<@Valid OrderItemDTO> dtos) {
         return new ResponseEntity<>(orderItemService.createOrderItemsBatch(dtos), HttpStatus.CREATED);
@@ -65,12 +67,14 @@ public class OrderItemController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update order item", description = "Updates an existing order item")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<OrderItemDTO> updateOrderItem(@PathVariable Long id, @Valid @RequestBody OrderItemDTO orderItemDTO) {
         return ResponseEntity.ok(orderItemService.updateOrderItem(id, orderItemDTO));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update order item", description = "Applies JSON Patch operations (RFC 6902) to an order item")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<OrderItemDTO> patchOrderItem(@PathVariable Long id,
                                                        @RequestBody String patchDocument) {
         return ResponseEntity.ok(orderItemService.patchOrderItem(id, patchDocument));
@@ -78,6 +82,7 @@ public class OrderItemController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete order item", description = "Deletes an order item by ID")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<Void> deleteOrderItem(@PathVariable Long id) {
         orderItemService.deleteOrderItem(id);
         return ResponseEntity.noContent().build();
