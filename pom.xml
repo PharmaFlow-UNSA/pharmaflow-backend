@@ -18,9 +18,9 @@
         <module>config-server</module>
         <module>api-gateway</module>
         <module>user-health-service</module>
+        <module>product-health-service</module>
         <module>pharmacy-inventory-service</module>
         <module>order-prescription-service</module>
-        <module>product-health-service</module>
         <module>smart-features-service</module>
     </modules>
 
@@ -48,4 +48,3 @@
     </build>
 
 </project>
-
