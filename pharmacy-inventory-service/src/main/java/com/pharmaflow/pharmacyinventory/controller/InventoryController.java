@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -59,12 +60,14 @@ public class InventoryController {
 
     @PostMapping
     @Operation(summary = "Create inventory item", description = "Creates a new inventory item for a pharmacy")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<InventoryDTO> createInventory(@Valid @RequestBody InventoryDTO inventoryDTO) {
         return new ResponseEntity<>(inventoryService.createInventory(inventoryDTO), HttpStatus.CREATED);
     }
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create inventory items", description = "Creates multiple inventory items in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<InventoryDTO>> createInventoriesBatch(
             @RequestBody @Valid List<@Valid InventoryDTO> dtos) {
         return new ResponseEntity<>(inventoryService.createInventoriesBatch(dtos), HttpStatus.CREATED);
@@ -72,6 +75,7 @@ public class InventoryController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update inventory item", description = "Updates an existing inventory item")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<InventoryDTO> updateInventory(@PathVariable Long id,
                                                         @Valid @RequestBody InventoryDTO inventoryDTO) {
         return ResponseEntity.ok(inventoryService.updateInventory(id, inventoryDTO));
@@ -79,6 +83,7 @@ public class InventoryController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update inventory", description = "Applies JSON Patch operations (RFC 6902) to an inventory item")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<InventoryDTO> patchInventory(@PathVariable Long id,
                                                        @RequestBody String patchDocument) {
         return ResponseEntity.ok(inventoryService.patchInventory(id, patchDocument));
@@ -86,6 +91,7 @@ public class InventoryController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete inventory item", description = "Deletes an inventory item by ID")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<Void> deleteInventory(@PathVariable Long id) {
         inventoryService.deleteInventory(id);
         return ResponseEntity.noContent().build();

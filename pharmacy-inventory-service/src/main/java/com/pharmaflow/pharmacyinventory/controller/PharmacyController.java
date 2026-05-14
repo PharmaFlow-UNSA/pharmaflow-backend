@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,12 +48,14 @@ public class PharmacyController {
 
     @PostMapping
     @Operation(summary = "Create a new pharmacy", description = "Creates a new pharmacy")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<PharmacyDTO> createPharmacy(@Valid @RequestBody PharmacyCreateDTO createDTO) {
         return new ResponseEntity<>(pharmacyService.createPharmacy(createDTO), HttpStatus.CREATED);
     }
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create pharmacies", description = "Creates multiple pharmacies in a single transaction")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<List<PharmacyDTO>> createPharmaciesBatch(
             @RequestBody @Valid List<@Valid PharmacyCreateDTO> dtos) {
         return new ResponseEntity<>(pharmacyService.createPharmaciesBatch(dtos), HttpStatus.CREATED);
@@ -60,6 +63,7 @@ public class PharmacyController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update pharmacy", description = "Updates an existing pharmacy")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<PharmacyDTO> updatePharmacy(@PathVariable Long id,
                                                       @Valid @RequestBody PharmacyCreateDTO createDTO) {
         return ResponseEntity.ok(pharmacyService.updatePharmacy(id, createDTO));
@@ -67,6 +71,7 @@ public class PharmacyController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update pharmacy", description = "Applies JSON Patch operations (RFC 6902) to a pharmacy")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<PharmacyDTO> patchPharmacy(@PathVariable Long id,
                                                      @RequestBody String patchDocument) {
         return ResponseEntity.ok(pharmacyService.patchPharmacy(id, patchDocument));
@@ -74,6 +79,7 @@ public class PharmacyController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete pharmacy", description = "Deletes a pharmacy by ID")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     public ResponseEntity<Void> deletePharmacy(@PathVariable Long id) {
         pharmacyService.deletePharmacy(id);
         return ResponseEntity.noContent().build();
