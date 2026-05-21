@@ -47,6 +47,9 @@ This service manages user profiles, Family Hub, and digital health records.
 
 # Run specific test
 ./mvnw test -Dtest=UserServiceTest
+
+# Run security integration tests
+./mvnw test -Dtest=SecurityIntegrationTest
 ```
 
 ## Deployment

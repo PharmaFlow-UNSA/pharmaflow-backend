@@ -9,6 +9,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -295,6 +297,48 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 "Endpoint Not Found",
                 String.format("No endpoint found for %s %s", ex.getHttpMethod(), ex.getRequestURL()),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    // ── Spring Security ─────────────────────────────────────
+    // @PreAuthorize failures bubble up here as AccessDeniedException.
+    // Without this handler the generic catch-all below would turn them into 500 Internal Server Error.
+
+    /**
+     * Handles Spring Security access denied exceptions (403)
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request) {
+
+        logger.warn("Access denied on {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.FORBIDDEN,
+                "Forbidden",
+                "Insufficient permissions to access this resource.",
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    /**
+     * Handles Spring Security authentication exceptions (401)
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthentication(
+            AuthenticationException ex,
+            HttpServletRequest request) {
+
+        logger.warn("Authentication failure on {}: {}", request.getRequestURI(), ex.getMessage());
+
+        return buildErrorResponse(
+                HttpStatus.UNAUTHORIZED,
+                "Unauthorized",
+                ex.getMessage() != null ? ex.getMessage() : "Authentication is required to access this resource.",
                 request.getRequestURI(),
                 null
         );

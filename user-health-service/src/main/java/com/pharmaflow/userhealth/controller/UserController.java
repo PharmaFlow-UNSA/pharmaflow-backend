@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,6 +54,7 @@ public class UserController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create users", description = "Creates multiple users in a single transaction")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     public ResponseEntity<List<UserDTO>> createUsersBatch(
             @RequestBody @Valid List<@Valid UserCreateDTO> userCreateDTOs) {
         List<UserDTO> createdUsers = userService.createUsersBatch(userCreateDTOs);
@@ -61,13 +63,15 @@ public class UserController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update user", description = "Updates an existing user")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, 
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id,
                                              @Valid @RequestBody UserCreateDTO userCreateDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userCreateDTO));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update user", description = "Applies JSON Patch operations to a user")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     public ResponseEntity<UserDTO> patchUser(@PathVariable Long id,
                                             @RequestBody String patchDocument) {
         return ResponseEntity.ok(userService.patchUser(id, patchDocument));
@@ -75,6 +79,7 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete user", description = "Deletes a user by ID")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
