@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,17 +36,20 @@ public class NotificationController {
   }
 
   @GetMapping
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<NotificationResponseDto>> getNotifications(
       @RequestParam(required = false) @NullablePositive Long userId) {
     return ResponseEntity.ok(notificationService.getNotifications(userId));
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<NotificationResponseDto> getNotification(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(notificationService.getNotification(id));
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<NotificationResponseDto> createNotification(
       @Valid @RequestBody NotificationRequestDto requestDto) {
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -53,6 +57,7 @@ public class NotificationController {
   }
 
   @PatchMapping("/{id}/delivery-status")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<NotificationResponseDto> updateDeliveryStatus(
       @PathVariable @Positive Long id,
       @Valid @RequestBody NotificationDeliveryStatusRequestDto requestDto) {
@@ -60,11 +65,13 @@ public class NotificationController {
   }
 
   @PatchMapping("/{id}/mark-read")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<NotificationResponseDto> markAsRead(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(notificationService.markAsRead(id));
   }
 
   @GetMapping("/{id}/triggers")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<NotificationTriggerResponseDto>> getTriggers(
       @PathVariable @Positive Long id) {
     return ResponseEntity.ok(notificationService.getTriggers(id));

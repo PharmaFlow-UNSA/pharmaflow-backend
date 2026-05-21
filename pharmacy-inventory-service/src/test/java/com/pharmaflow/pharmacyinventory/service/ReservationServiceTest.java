@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pharmaflow.pharmacyinventory.dto.ReservationDTO;
 import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
+import com.pharmaflow.pharmacyinventory.messaging.saga.ReservationRequestedEvent;
 import com.pharmaflow.pharmacyinventory.models.Pharmacy;
 import com.pharmaflow.pharmacyinventory.models.Reservation;
 import com.pharmaflow.pharmacyinventory.repositories.PharmacyRepository;
@@ -137,6 +138,49 @@ class ReservationServiceTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> reservationService.createReservation(testReservationDTO));
+    }
+
+    @Test
+    void createReservationForSaga_WhenNewCorrelation_ShouldCreatePendingReservation() {
+        when(reservationRepository.findBySagaCorrelationId("corr-1")).thenReturn(Optional.empty());
+        when(pharmacyRepository.findById(1L)).thenReturn(Optional.of(testPharmacy));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
+            Reservation reservation = invocation.getArgument(0);
+            reservation.setId(55L);
+            return reservation;
+        });
+
+        ReservationDTO result = reservationService.createReservationForSaga(
+                new ReservationRequestedEvent(
+                        "corr-1", 1L, 10L, null, 100L, 1L, 2, LocalDateTime.now(), null));
+
+        assertEquals(55L, result.getId());
+        assertEquals("PENDING", result.getStatus());
+        assertEquals("corr-1", result.getSagaCorrelationId());
+    }
+
+    @Test
+    void createReservationForSaga_WhenDuplicateCorrelation_ShouldReturnExistingReservation() {
+        testReservation.setSagaCorrelationId("corr-1");
+        when(reservationRepository.findBySagaCorrelationId("corr-1")).thenReturn(Optional.of(testReservation));
+
+        ReservationDTO result = reservationService.createReservationForSaga(
+                new ReservationRequestedEvent(
+                        "corr-1", 1L, 10L, null, 100L, 1L, 2, LocalDateTime.now(), null));
+
+        assertEquals(1L, result.getId());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void compensateReservationForSaga_ShouldCancelReservation() {
+        testReservation.setSagaCorrelationId("corr-1");
+        when(reservationRepository.findBySagaCorrelationId("corr-1")).thenReturn(Optional.of(testReservation));
+        when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ReservationDTO result = reservationService.compensateReservationForSaga("corr-1");
+
+        assertEquals("CANCELLED", result.getStatus());
     }
 
     @Test

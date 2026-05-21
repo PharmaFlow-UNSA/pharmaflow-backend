@@ -37,6 +37,8 @@ public class ReservationDTO {
 
     private LocalDateTime expiresAt;
 
+    private String sagaCorrelationId;
+
     @NotNull(message = "Pharmacy ID is required")
     private Long pharmacyId;
 }

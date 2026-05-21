@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +37,7 @@ public class SymptomSearchController {
   }
 
   @GetMapping
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomSearchResponseDto>> getSearches(
       @RequestParam(required = false) @NullablePositive Long userId,
       @RequestParam(required = false) @NullablePositive Long patientProfileId) {
@@ -43,11 +45,13 @@ public class SymptomSearchController {
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomSearchResponseDto> getSearch(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomSearchService.getSearch(id));
   }
 
   @PostMapping
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomSearchResponseDto> createSearch(
       @Valid @RequestBody SymptomSearchRequestDto requestDto) {
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -55,12 +59,14 @@ public class SymptomSearchController {
   }
 
   @GetMapping("/{id}/items")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomSearchItemResponseDto>> getItems(
       @PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomSearchService.getItems(id));
   }
 
   @PostMapping("/{id}/items")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomSearchItemResponseDto> addItem(
       @PathVariable @Positive Long id, @Valid @RequestBody SymptomSearchItemRequestDto requestDto) {
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -68,6 +74,7 @@ public class SymptomSearchController {
   }
 
   @DeleteMapping("/{id}/items/{itemId}")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<Void> deleteItem(
       @PathVariable @Positive Long id, @PathVariable @Positive Long itemId) {
     symptomSearchService.deleteItem(id, itemId);
@@ -75,6 +82,7 @@ public class SymptomSearchController {
   }
 
   @GetMapping("/{id}/matches")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(
       @PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomSearchService.getMatches(id));

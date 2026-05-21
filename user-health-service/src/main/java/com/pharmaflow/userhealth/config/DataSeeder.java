@@ -53,6 +53,15 @@ public class DataSeeder implements CommandLineRunner {
             log.warn(">>> Could not add role column: " + e.getMessage());
         }
 
+        try {
+            entityManager.createNativeQuery(
+                "ALTER TABLE patient_profiles ALTER COLUMN blood_type TYPE VARCHAR(20)"
+            ).executeUpdate();
+            log.info(">>> Blood type column length verified");
+        } catch (Exception e) {
+            log.warn(">>> Could not update blood type column length: " + e.getMessage());
+        }
+
         // Always fully truncate all relevant tables to guarantee a clean state
         userRepository.deleteAll();
         entityManager.createNativeQuery("TRUNCATE TABLE users RESTART IDENTITY CASCADE").executeUpdate();

@@ -31,7 +31,7 @@ public class User {
 
     private String password;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "varchar(255) default 'ROLE_USER'")
     private String role = "ROLE_USER"; // Default role
 
     @OneToOne(cascade = CascadeType.ALL)
