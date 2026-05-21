@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,6 +45,7 @@ public class TherapyController {
 
     @PostMapping
     @Operation(summary = "Create a therapy", description = "Creates a new therapy record")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<TherapyDTO> createTherapy(@Valid @RequestBody TherapyDTO therapyDTO) {
         TherapyDTO createdTherapy = therapyService.createTherapy(therapyDTO);
         return new ResponseEntity<>(createdTherapy, HttpStatus.CREATED);
@@ -51,6 +53,7 @@ public class TherapyController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create therapies", description = "Creates multiple therapy records in a single transaction")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<List<TherapyDTO>> createTherapiesBatch(
             @RequestBody @Valid List<@Valid TherapyDTO> therapyDTOs) {
         List<TherapyDTO> createdTherapies = therapyService.createTherapiesBatch(therapyDTOs);
@@ -59,6 +62,7 @@ public class TherapyController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update therapy", description = "Updates an existing therapy record")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<TherapyDTO> updateTherapy(@PathVariable Long id,
                                                     @Valid @RequestBody TherapyDTO therapyDTO) {
         return ResponseEntity.ok(therapyService.updateTherapy(id, therapyDTO));
@@ -66,6 +70,7 @@ public class TherapyController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update therapy", description = "Applies JSON Patch operations to a therapy")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<TherapyDTO> patchTherapy(@PathVariable Long id,
                                                    @RequestBody String patchDocument) {
         return ResponseEntity.ok(therapyService.patchTherapy(id, patchDocument));
@@ -73,6 +78,7 @@ public class TherapyController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete therapy", description = "Deletes a therapy record by ID")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<Void> deleteTherapy(@PathVariable Long id) {
         therapyService.deleteTherapy(id);
         return ResponseEntity.noContent().build();

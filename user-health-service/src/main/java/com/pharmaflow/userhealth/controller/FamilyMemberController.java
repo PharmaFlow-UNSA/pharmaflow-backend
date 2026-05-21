@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,6 +53,7 @@ public class FamilyMemberController {
 
     @PostMapping
     @Operation(summary = "Create a family member", description = "Creates a new family member with patient profile")
+    @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'ADMIN')")
     public ResponseEntity<FamilyMemberDTO> createFamilyMember(@Valid @RequestBody FamilyMemberCreateDTO createDTO) {
         FamilyMemberDTO createdMember = familyMemberService.createFamilyMember(createDTO);
         return new ResponseEntity<>(createdMember, HttpStatus.CREATED);
@@ -59,6 +61,7 @@ public class FamilyMemberController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create family members", description = "Creates multiple family members in a single transaction")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<List<FamilyMemberDTO>> createFamilyMembersBatch(
             @RequestBody @Valid List<@Valid FamilyMemberCreateDTO> createDTOs) {
         List<FamilyMemberDTO> createdMembers = familyMemberService.createFamilyMembersBatch(createDTOs);
@@ -67,6 +70,7 @@ public class FamilyMemberController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update family member", description = "Updates an existing family member")
+    @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'ADMIN')")
     public ResponseEntity<FamilyMemberDTO> updateFamilyMember(@PathVariable Long id,
                                                               @Valid @RequestBody FamilyMemberCreateDTO updateDTO) {
         return ResponseEntity.ok(familyMemberService.updateFamilyMember(id, updateDTO));
@@ -74,6 +78,7 @@ public class FamilyMemberController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update family member", description = "Applies JSON Patch operations to a family member")
+    @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'ADMIN')")
     public ResponseEntity<FamilyMemberDTO> patchFamilyMember(@PathVariable Long id,
                                                              @RequestBody String patchDocument) {
         return ResponseEntity.ok(familyMemberService.patchFamilyMember(id, patchDocument));
@@ -81,6 +86,7 @@ public class FamilyMemberController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete family member", description = "Deletes a family member by ID")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Void> deleteFamilyMember(@PathVariable Long id) {
         familyMemberService.deleteFamilyMember(id);
         return ResponseEntity.noContent().build();

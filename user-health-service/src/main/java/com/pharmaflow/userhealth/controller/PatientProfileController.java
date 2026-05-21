@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,6 +48,7 @@ public class PatientProfileController {
 
     @PostMapping
     @Operation(summary = "Create a patient profile", description = "Creates a new patient profile")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<PatientProfileDTO> createPatientProfile(@Valid @RequestBody PatientProfileDTO profileDTO) {
         PatientProfileDTO createdProfile = patientProfileService.createPatientProfile(profileDTO);
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);
@@ -54,6 +56,7 @@ public class PatientProfileController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create patient profiles", description = "Creates multiple patient profiles in a single transaction")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<List<PatientProfileDTO>> createPatientProfilesBatch(
             @RequestBody @Valid List<@Valid PatientProfileDTO> profileDTOs) {
         List<PatientProfileDTO> createdProfiles = patientProfileService.createPatientProfilesBatch(profileDTOs);
@@ -62,6 +65,7 @@ public class PatientProfileController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update patient profile", description = "Updates an existing patient profile")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<PatientProfileDTO> updatePatientProfile(@PathVariable Long id,
                                                                   @Valid @RequestBody PatientProfileDTO profileDTO) {
         return ResponseEntity.ok(patientProfileService.updatePatientProfile(id, profileDTO));
@@ -69,6 +73,7 @@ public class PatientProfileController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update patient profile", description = "Applies JSON Patch operations to a patient profile")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<PatientProfileDTO> patchPatientProfile(@PathVariable Long id,
                                                                  @RequestBody String patchDocument) {
         return ResponseEntity.ok(patientProfileService.patchPatientProfile(id, patchDocument));
@@ -76,6 +81,7 @@ public class PatientProfileController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete patient profile", description = "Deletes a patient profile by ID")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletePatientProfile(@PathVariable Long id) {
         patientProfileService.deletePatientProfile(id);
         return ResponseEntity.noContent().build();

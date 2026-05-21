@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,6 +47,7 @@ public class AllergyController {
 
     @PostMapping
     @Operation(summary = "Create an allergy", description = "Creates a new allergy record")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<AllergyDTO> createAllergy(@Valid @RequestBody AllergyDTO allergyDTO) {
         AllergyDTO createdAllergy = allergyService.createAllergy(allergyDTO);
         return new ResponseEntity<>(createdAllergy, HttpStatus.CREATED);
@@ -53,6 +55,7 @@ public class AllergyController {
 
     @PostMapping("/batch")
     @Operation(summary = "Batch create allergies", description = "Creates multiple allergy records in a single transaction")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<List<AllergyDTO>> createAllergiesBatch(
             @RequestBody @Valid List<@Valid AllergyDTO> allergyDTOs) {
         List<AllergyDTO> createdAllergies = allergyService.createAllergiesBatch(allergyDTOs);
@@ -61,6 +64,7 @@ public class AllergyController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update allergy", description = "Updates an existing allergy record")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<AllergyDTO> updateAllergy(@PathVariable Long id,
                                                     @Valid @RequestBody AllergyDTO allergyDTO) {
         return ResponseEntity.ok(allergyService.updateAllergy(id, allergyDTO));
@@ -68,6 +72,7 @@ public class AllergyController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Partially update allergy", description = "Applies JSON Patch operations to an allergy")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<AllergyDTO> patchAllergy(@PathVariable Long id,
                                                    @RequestBody String patchDocument) {
         return ResponseEntity.ok(allergyService.patchAllergy(id, patchDocument));
@@ -75,6 +80,7 @@ public class AllergyController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete allergy", description = "Deletes an allergy record by ID")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<Void> deleteAllergy(@PathVariable Long id) {
         allergyService.deleteAllergy(id);
         return ResponseEntity.noContent().build();

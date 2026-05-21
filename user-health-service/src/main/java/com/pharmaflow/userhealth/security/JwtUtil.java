@@ -16,7 +16,7 @@ public class JwtUtil {
     @Value("${jwt.secret:pharmaflow-secret-key-2024-very-long-and-secure-key-for-production}")
     private String secret;
 
-    @Value("${jwt.expiration:86400000}")
+    @Value("${jwt.expiration:3600000}")
     private long expiration;
 
     private SecretKey getSigningKey() {
@@ -26,7 +26,7 @@ public class JwtUtil {
     /**
      * Generate JWT token for authenticated user.
      * Token contains username (email) and roles.
-     * Expiration is 24 hours by default.
+     * Expiration is 1 hour by default (configurable).
      */
     public String generateToken(String email, List<String> roles) {
         return Jwts.builder()
@@ -75,5 +75,13 @@ public class JwtUtil {
         Date expiration = claims.getExpiration();
         Date now = new Date();
         return Math.max(0, expiration.getTime() - now.getTime());
+    }
+
+    /**
+     * Get configured token expiration duration (in milliseconds).
+     * Used in auth responses to inform client when token expires.
+     */
+    public long getExpirationDuration() {
+        return expiration;
     }
 }

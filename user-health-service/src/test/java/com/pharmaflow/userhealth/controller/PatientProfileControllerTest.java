@@ -11,11 +11,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.Arrays;
 import java.util.ArrayList;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @WebMvcTest(PatientProfileController.class)
@@ -34,6 +36,7 @@ class PatientProfileControllerTest {
         testProfileDTO.setTherapies(new ArrayList<>());
     }
     @Test
+    @WithMockUser(roles = "USER")
     void getAllProfiles() throws Exception {
         Page<PatientProfileDTO> page = new PageImpl<>(Arrays.asList(testProfileDTO));
         when(patientProfileService.findAll(any(), any(), any(), any())).thenReturn(page);
@@ -41,15 +44,21 @@ class PatientProfileControllerTest {
         verify(patientProfileService, times(1)).findAll(any(), any(), any(), any());
     }
     @Test
+    @WithMockUser(roles = "USER")
     void getProfileById() throws Exception {
         when(patientProfileService.getPatientProfileById(1L)).thenReturn(testProfileDTO);
         mockMvc.perform(get("/api/patient-profiles/1")).andExpect(status().isOk());
         verify(patientProfileService, times(1)).getPatientProfileById(1L);
     }
     @Test
+    @WithMockUser(roles = "DOCTOR")
     void createProfile() throws Exception {
         when(patientProfileService.createPatientProfile(any())).thenReturn(testProfileDTO);
-        mockMvc.perform(post("/api/patient-profiles").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(testProfileDTO))).andExpect(status().isCreated());
+        mockMvc.perform(post("/api/patient-profiles")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(testProfileDTO)))
+                .andExpect(status().isCreated());
         verify(patientProfileService, times(1)).createPatientProfile(any());
     }
 }

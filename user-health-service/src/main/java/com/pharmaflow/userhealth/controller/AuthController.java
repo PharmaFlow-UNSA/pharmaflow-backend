@@ -129,7 +129,7 @@ public class AuthController {
                 user.getFirstName(),
                 user.getLastName(),
                 roles,
-                86400000L
+                jwtUtil.getExpirationDuration()
         ));
     }
 
@@ -166,7 +166,7 @@ public class AuthController {
                 user.getFirstName(),
                 user.getLastName(),
                 roles,
-                86400000L
+                jwtUtil.getExpirationDuration()
         ));
     }
 
@@ -191,7 +191,7 @@ public class AuthController {
                             "accessToken", newAccessToken,
                             "refreshToken", requestRefreshToken,
                             "tokenType", "Bearer",
-                            "expiresIn", 86400000L
+                            "expiresIn", jwtUtil.getExpirationDuration()
                     ));
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.FORBIDDEN)
