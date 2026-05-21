@@ -23,7 +23,7 @@ public class PatientProfile {
     private Double height;
     
     @Enumerated(EnumType.STRING)
-    @Column(length = 10)
+    @Column(length = 20)
     private BloodType bloodType;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)

@@ -6,6 +6,7 @@ import com.pharmaflow.smartfeatures.service.chatbot.ChatbotService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +26,7 @@ public class ChatbotController {
   }
 
   @PostMapping("/ask")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<ChatbotAskResponseDto> ask(
       @Valid @RequestBody ChatbotAskRequestDto requestDto) {
     return ResponseEntity.ok(chatbotService.ask(requestDto));

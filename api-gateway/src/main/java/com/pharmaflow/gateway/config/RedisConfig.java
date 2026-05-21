@@ -42,7 +42,7 @@ public class RedisConfig {
             config.setPassword(redisPassword);
         }
 
-        log.info("✅ Redis connection factory configured: {}:{}", redisHost, redisPort);
+        log.info("Redis connection factory configured: {}:{}", redisHost, redisPort);
         return new JedisConnectionFactory(config);
     }
 
@@ -64,4 +64,3 @@ public class RedisConfig {
         return template;
     }
 }
-
