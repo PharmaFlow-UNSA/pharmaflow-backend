@@ -3,6 +3,7 @@ package com.pharmaflow.producthealth.controllers;
 import com.pharmaflow.producthealth.dto.SubstanceDTO;
 import com.pharmaflow.producthealth.services.SubstanceService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class SubstanceController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Update substance")
     public ResponseEntity<SubstanceDTO> updateSubstance(@PathVariable Long id,
                                                         @Valid @RequestBody SubstanceDTO dto) {
@@ -46,6 +48,7 @@ public class SubstanceController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete substance")
     public ResponseEntity<Void> deleteSubstance(@PathVariable Long id) {
         substanceService.deleteSubstance(id);

@@ -3,6 +3,7 @@ package com.pharmaflow.producthealth.controllers;
 import com.pharmaflow.producthealth.dto.DrugInteractionDTO;
 import com.pharmaflow.producthealth.services.DrugInteractionService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class DrugInteractionController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Update drug interaction")
     public ResponseEntity<DrugInteractionDTO> updateInteraction(@PathVariable Long id,
                                                                 @Valid @RequestBody DrugInteractionDTO dto) {
@@ -59,6 +61,7 @@ public class DrugInteractionController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete drug interaction")
     public ResponseEntity<Void> deleteInteraction(@PathVariable Long id) {
         drugInteractionService.deleteInteraction(id);
