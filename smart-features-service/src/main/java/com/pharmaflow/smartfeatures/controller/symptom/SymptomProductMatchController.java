@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,12 +33,14 @@ public class SymptomProductMatchController {
   }
 
   @GetMapping
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(
       @PathVariable @Positive Long symptomId) {
     return ResponseEntity.ok(symptomProductMatchService.getMatchesBySymptom(symptomId));
   }
 
   @PostMapping
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomProductMatchResponseDto> createMatch(
       @PathVariable @Positive Long symptomId,
       @Valid @RequestBody SymptomProductMatchRequestDto requestDto) {
@@ -46,6 +49,7 @@ public class SymptomProductMatchController {
   }
 
   @PutMapping("/{matchId}")
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomProductMatchResponseDto> updateMatch(
       @PathVariable @Positive Long symptomId,
       @PathVariable @Positive Long matchId,
@@ -55,6 +59,7 @@ public class SymptomProductMatchController {
   }
 
   @DeleteMapping("/{matchId}")
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<Void> deleteMatch(
       @PathVariable @Positive Long symptomId, @PathVariable @Positive Long matchId) {
     symptomProductMatchService.deleteMatch(symptomId, matchId);

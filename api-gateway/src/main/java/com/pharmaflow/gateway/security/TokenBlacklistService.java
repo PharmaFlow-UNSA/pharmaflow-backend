@@ -30,10 +30,10 @@ public class TokenBlacklistService {
     public TokenBlacklistService(@Autowired(required = false) RedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
         if (redisTemplate == null) {
-            log.warn("⚠️  Redis not configured - using in-memory blacklist (NOT FOR PRODUCTION!)");
+            log.warn("Redis not configured - using in-memory blacklist (NOT FOR PRODUCTION!)");
             redisAvailable = false;
         } else {
-            log.info("✅ Redis configured for token blacklisting");
+            log.info("Redis configured for token blacklisting");
         }
     }
 
@@ -91,6 +91,3 @@ public class TokenBlacklistService {
         inMemoryBlacklist.entrySet().removeIf(entry -> entry.getValue() < now);
     }
 }
-
-
-

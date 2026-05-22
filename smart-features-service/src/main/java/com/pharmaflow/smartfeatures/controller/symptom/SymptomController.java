@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,16 +36,19 @@ public class SymptomController {
   }
 
   @GetMapping
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomResponseDto>> getAllSymptoms() {
     return ResponseEntity.ok(symptomService.getAllSymptoms());
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomResponseDto> getSymptomById(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomService.getSymptomById(id));
   }
 
   @GetMapping("/search")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomResponseDto>> searchSymptoms(
       @RequestParam
           @NotBlank(message = "Query is required")
@@ -54,6 +58,7 @@ public class SymptomController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<SymptomResponseDto> createSymptom(
       @Valid @RequestBody SymptomRequestDto requestDto) {
     SymptomResponseDto createdSymptom = symptomService.createSymptom(requestDto);
@@ -61,12 +66,14 @@ public class SymptomController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<SymptomResponseDto> updateSymptom(
       @PathVariable @Positive Long id, @Valid @RequestBody SymptomRequestDto requestDto) {
     return ResponseEntity.ok(symptomService.updateSymptom(id, requestDto));
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteSymptom(@PathVariable @Positive Long id) {
     symptomService.deleteSymptom(id);
     return ResponseEntity.noContent().build();

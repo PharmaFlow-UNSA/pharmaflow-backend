@@ -7,6 +7,7 @@ import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.pharmacyinventory.dto.ReservationDTO;
 import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
+import com.pharmaflow.pharmacyinventory.messaging.saga.ReservationRequestedEvent;
 import com.pharmaflow.pharmacyinventory.models.Pharmacy;
 import com.pharmaflow.pharmacyinventory.models.Reservation;
 import com.pharmaflow.pharmacyinventory.repositories.PharmacyRepository;
@@ -24,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -112,11 +114,53 @@ public class ReservationService {
         reservation.setStatus(reservationDTO.getStatus());
         reservation.setReservedAt(reservationDTO.getReservedAt());
         reservation.setExpiresAt(reservationDTO.getExpiresAt());
+        reservation.setSagaCorrelationId(reservationDTO.getSagaCorrelationId());
         reservation.setPharmacy(pharmacy);
 
         Reservation saved = reservationRepository.save(reservation);
         log.info("Reservation created with id: {}", saved.getId());
         return convertToDTO(saved);
+    }
+
+    @Transactional
+    public ReservationDTO createReservationForSaga(ReservationRequestedEvent event) {
+        return reservationRepository.findBySagaCorrelationId(event.correlationId())
+                .map(this::convertToDTO)
+                .orElseGet(() -> {
+                    Pharmacy pharmacy = pharmacyRepository.findById(event.pharmacyId())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Pharmacy not found with id: " + event.pharmacyId()));
+
+                    Reservation reservation = new Reservation();
+                    reservation.setUserId(event.userId());
+                    reservation.setProductId(event.productId());
+                    reservation.setQuantity(event.quantity());
+                    reservation.setStatus("PENDING");
+                    reservation.setReservedAt(LocalDateTime.now());
+                    reservation.setExpiresAt(event.expiresAt());
+                    reservation.setSagaCorrelationId(event.correlationId());
+                    reservation.setPharmacy(pharmacy);
+
+                    Reservation saved = reservationRepository.save(reservation);
+                    log.info("Saga reservation created with id: {} and correlationId: {}",
+                            saved.getId(), event.correlationId());
+                    return convertToDTO(saved);
+                });
+    }
+
+    @Transactional
+    public ReservationDTO compensateReservationForSaga(String correlationId) {
+        Reservation reservation = reservationRepository.findBySagaCorrelationId(correlationId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reservation not found for saga correlationId: " + correlationId));
+
+        if (!"CANCELLED".equals(reservation.getStatus())) {
+            reservation.setStatus("CANCELLED");
+            reservation = reservationRepository.save(reservation);
+            log.info("Saga reservation compensated with id: {} and correlationId: {}",
+                    reservation.getId(), correlationId);
+        }
+        return convertToDTO(reservation);
     }
 
     @Transactional
@@ -136,6 +180,7 @@ public class ReservationService {
             reservation.setStatus(dto.getStatus());
             reservation.setReservedAt(dto.getReservedAt());
             reservation.setExpiresAt(dto.getExpiresAt());
+            reservation.setSagaCorrelationId(dto.getSagaCorrelationId());
             reservation.setPharmacy(pharmacy);
 
             reservations.add(reservation);
@@ -159,6 +204,7 @@ public class ReservationService {
         reservation.setStatus(reservationDTO.getStatus());
         reservation.setReservedAt(reservationDTO.getReservedAt());
         reservation.setExpiresAt(reservationDTO.getExpiresAt());
+        reservation.setSagaCorrelationId(reservationDTO.getSagaCorrelationId());
 
         Reservation updated = reservationRepository.save(reservation);
         log.info("Reservation updated with id: {}", updated.getId());
@@ -189,6 +235,7 @@ public class ReservationService {
             reservation.setStatus(patchedDTO.getStatus());
             reservation.setReservedAt(patchedDTO.getReservedAt());
             reservation.setExpiresAt(patchedDTO.getExpiresAt());
+            reservation.setSagaCorrelationId(patchedDTO.getSagaCorrelationId());
 
             if (patchedDTO.getPharmacyId() != null
                     && !patchedDTO.getPharmacyId().equals(reservation.getPharmacy().getId())) {
@@ -225,6 +272,7 @@ public class ReservationService {
         dto.setStatus(reservation.getStatus());
         dto.setReservedAt(reservation.getReservedAt());
         dto.setExpiresAt(reservation.getExpiresAt());
+        dto.setSagaCorrelationId(reservation.getSagaCorrelationId());
         dto.setPharmacyId(reservation.getPharmacy().getId());
         return dto;
     }

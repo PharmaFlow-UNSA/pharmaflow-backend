@@ -12,23 +12,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.pharmaflow.smartfeatures.dto.recommendation.RecommendationEventResponseDto;
+import com.pharmaflow.smartfeatures.dto.recommendation.RecommendationReservationSagaResponseDto;
 import com.pharmaflow.smartfeatures.dto.recommendation.RecommendationResponseDto;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationEventType;
+import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationReservationSagaStatus;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationStatus;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationType;
 import com.pharmaflow.smartfeatures.exception.GlobalExceptionHandler;
 import com.pharmaflow.smartfeatures.exception.ResourceNotFoundException;
+import com.pharmaflow.smartfeatures.service.recommendation.RecommendationReservationSagaService;
 import com.pharmaflow.smartfeatures.service.recommendation.RecommendationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(RecommendationController.class)
@@ -38,7 +41,9 @@ class RecommendationControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockitoBean private RecommendationService recommendationService;
+  @MockBean private RecommendationService recommendationService;
+
+  @MockBean private RecommendationReservationSagaService reservationSagaService;
 
   private RecommendationResponseDto responseDto;
   private RecommendationEventResponseDto eventResponseDto;
@@ -249,6 +254,58 @@ class RecommendationControllerTest {
         .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
     verify(recommendationService, never()).logInteraction(any(), any());
+  }
+
+  @Test
+  void reserveRecommendationShouldReturn202AndSagaStatus() throws Exception {
+    RecommendationReservationSagaResponseDto sagaResponse =
+        RecommendationReservationSagaResponseDto.builder()
+            .id(5L)
+            .correlationId("corr-1")
+            .recommendationId(1L)
+            .userId(10L)
+            .productId(12L)
+            .pharmacyId(7L)
+            .quantity(2)
+            .status(RecommendationReservationSagaStatus.PENDING)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build();
+    when(reservationSagaService.reserveRecommendation(eq(1L), any())).thenReturn(sagaResponse);
+
+    mockMvc
+        .perform(
+            post("/api/recommendations/1/reserve")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "pharmacyId": 7,
+                      "quantity": 2
+                    }
+                    """))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.correlationId").value("corr-1"))
+        .andExpect(jsonPath("$.status").value("PENDING"));
+  }
+
+  @Test
+  void reserveRecommendationShouldRejectInvalidQuantity() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/recommendations/1/reserve")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "pharmacyId": 7,
+                      "quantity": 0
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
+
+    verify(reservationSagaService, never()).reserveRecommendation(any(), any());
   }
 
   @Test

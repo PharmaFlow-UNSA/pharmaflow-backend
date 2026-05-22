@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 class RecommendationServiceUserHealthTest extends SmartFeaturesIntegrationTestSupport {
 
@@ -27,9 +27,9 @@ class RecommendationServiceUserHealthTest extends SmartFeaturesIntegrationTestSu
 
   @Autowired private RecommendationRepository recommendationRepository;
 
-  @MockitoBean private ProductCatalogClient productCatalogClient;
+  @MockBean private ProductCatalogClient productCatalogClient;
 
-  @MockitoBean private UserHealthClient userHealthClient;
+  @MockBean private UserHealthClient userHealthClient;
 
   @Test
   void generateRecommendationsShouldUseRealServiceAndDatabaseWhileExcludingAllergyConflicts() {

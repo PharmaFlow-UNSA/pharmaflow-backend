@@ -23,4 +23,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     List<Reservation> findByUserId(Long userId);
 
     List<Reservation> findByStatus(String status);
+
+    Optional<Reservation> findBySagaCorrelationId(String sagaCorrelationId);
 }

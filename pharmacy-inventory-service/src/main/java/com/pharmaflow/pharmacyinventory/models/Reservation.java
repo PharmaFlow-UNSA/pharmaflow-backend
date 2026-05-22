@@ -9,7 +9,9 @@ import lombok.ToString;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reservations")
+@Table(name = "reservations", indexes = {
+        @Index(name = "idx_reservation_saga_correlation_id", columnList = "saga_correlation_id", unique = true)
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -36,6 +38,9 @@ public class Reservation {
     private LocalDateTime reservedAt;
 
     private LocalDateTime expiresAt;
+
+    @Column(name = "saga_correlation_id", unique = true, length = 36)
+    private String sagaCorrelationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pharmacy_id")

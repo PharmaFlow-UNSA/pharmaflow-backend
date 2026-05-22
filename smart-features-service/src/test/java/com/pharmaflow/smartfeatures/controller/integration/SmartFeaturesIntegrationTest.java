@@ -33,11 +33,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 class SmartFeaturesIntegrationTest extends SmartFeaturesIntegrationTestSupport {
 
-  @MockitoBean private UserHealthClient userHealthClient;
+  @MockBean private UserHealthClient userHealthClient;
 
   @Test
   void symptomSearchFlowShouldWork() throws Exception {

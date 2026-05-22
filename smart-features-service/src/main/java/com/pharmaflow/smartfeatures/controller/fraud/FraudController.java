@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Positive;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,50 +36,59 @@ public class FraudController {
   }
 
   @GetMapping("/api/fraud-rules")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<FraudRuleResponseDto>> getRules() {
     return ResponseEntity.ok(fraudService.getRules());
   }
 
   @GetMapping("/api/fraud-rules/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<FraudRuleResponseDto> getRule(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(fraudService.getRule(id));
   }
 
   @PostMapping("/api/fraud-rules")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<FraudRuleResponseDto> createRule(
       @Valid @RequestBody FraudRuleRequestDto requestDto) {
     return ResponseEntity.status(HttpStatus.CREATED).body(fraudService.createRule(requestDto));
   }
 
   @PutMapping("/api/fraud-rules/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<FraudRuleResponseDto> updateRule(
       @PathVariable @Positive Long id, @Valid @RequestBody FraudRuleRequestDto requestDto) {
     return ResponseEntity.ok(fraudService.updateRule(id, requestDto));
   }
 
   @DeleteMapping("/api/fraud-rules/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteRule(@PathVariable @Positive Long id) {
     fraudService.deleteRule(id);
     return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/api/fraud-rules/{id}/logs")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<FraudLogResponseDto>> getRuleLogs(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(fraudService.getLogsByRule(id));
   }
 
   @PostMapping("/api/fraud-checks")
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<FraudCheckResponseDto> createCheck(
       @Valid @RequestBody FraudCheckRequestDto requestDto) {
     return ResponseEntity.status(HttpStatus.CREATED).body(fraudService.createCheck(requestDto));
   }
 
   @GetMapping("/api/fraud-checks/{id}")
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<FraudCheckResponseDto> getCheck(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(fraudService.getCheck(id));
   }
 
   @GetMapping("/api/fraud-checks")
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<FraudCheckResponseDto>> getChecks(
       @RequestParam(required = false) @NullablePositive Long userId,
       @RequestParam(required = false) @NullablePositive Long orderId) {
@@ -86,6 +96,7 @@ public class FraudController {
   }
 
   @GetMapping("/api/fraud-checks/{id}/logs")
+  @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<FraudLogResponseDto>> getCheckLogs(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(fraudService.getLogsByCheck(id));
   }
