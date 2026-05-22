@@ -3,6 +3,7 @@ package com.pharmaflow.producthealth.controllers;
 import com.pharmaflow.producthealth.dto.*;
 import com.pharmaflow.producthealth.services.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -62,12 +63,14 @@ public class ProductController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Create a new product")
     public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductCreateDTO dto) {
         return new ResponseEntity<>(productService.createProduct(dto), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Update an existing product (full replacement)")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id,
                                                     @Valid @RequestBody ProductCreateDTO dto) {
@@ -75,6 +78,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Deactivate product (soft delete)")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
         productService.deactivateProduct(id);
@@ -82,6 +86,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Permanently delete product")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
@@ -91,6 +96,7 @@ public class ProductController {
     // ── PATCH - JSON Patch RFC 6902 ───────────────────────────────────────
 
     @PatchMapping(value = "/{id}", consumes = "application/json-patch+json")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Partial update - JSON Patch (RFC 6902)",
             description = "Example: [{\"op\":\"replace\",\"path\":\"/price\",\"value\":9.99}]")
     public ResponseEntity<ProductDTO> patchProduct(@PathVariable Long id,
@@ -148,6 +154,7 @@ public class ProductController {
     // ── Batch Import ──────────────────────────────────────────────────────
 
     @PostMapping("/batch")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Batch import of multiple products in a single transaction",
             description = "Rollback on any error. Max 50 products.")
     public ResponseEntity<List<ProductDTO>> createProductsBatch(@Valid @RequestBody ProductBatchDTO batchDTO) {
@@ -157,6 +164,7 @@ public class ProductController {
     // ── Transaction with multiple repositories ────────────────────────────
 
     @PatchMapping("/reassign-category")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Reassign multiple products to another category",
             description = "Transactional operation with rollback on error.")
     public ResponseEntity<Map<String, Object>> reassignProductsToCategory(

@@ -3,6 +3,7 @@ package com.pharmaflow.producthealth.controllers;
 import com.pharmaflow.producthealth.dto.ContraindicationDTO;
 import com.pharmaflow.producthealth.services.ContraindicationService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class ContraindicationController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Update contraindication")
     public ResponseEntity<ContraindicationDTO> updateContraindication(@PathVariable Long id,
                                                                       @Valid @RequestBody ContraindicationDTO dto) {
@@ -52,6 +54,7 @@ public class ContraindicationController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete contraindication")
     public ResponseEntity<Void> deleteContraindication(@PathVariable Long id) {
         contraindicationService.deleteContraindication(id);
