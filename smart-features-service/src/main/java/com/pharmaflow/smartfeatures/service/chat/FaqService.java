@@ -1,5 +1,6 @@
 package com.pharmaflow.smartfeatures.service.chat;
 
+import com.pharmaflow.smartfeatures.dto.PageResponseDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryRequestDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryResponseDto;
 import com.pharmaflow.smartfeatures.exception.BadRequestException;
@@ -13,6 +14,10 @@ import com.pharmaflow.smartfeatures.service.chatbot.FaqEmbeddingRepository;
 import com.pharmaflow.smartfeatures.util.TextSanitizer;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +46,28 @@ public class FaqService {
     return faqEntryRepository.findAllByOrderByQuestionAsc().stream()
         .map(faqMapper::toResponseDto)
         .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public PageResponseDto<FaqEntryResponseDto> getFaqEntriesPage(int page, int size) {
+    if (page < 0) {
+      throw new BadRequestException("page must be zero or greater.");
+    }
+    if (size < 1 || size > 100) {
+      throw new BadRequestException("size must be between 1 and 100.");
+    }
+
+    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "question"));
+    Page<FaqEntryResponseDto> faqPage =
+        faqEntryRepository.findAll(pageable).map(faqMapper::toResponseDto);
+    return new PageResponseDto<>(
+        faqPage.getContent(),
+        faqPage.getTotalElements(),
+        faqPage.getTotalPages(),
+        faqPage.getNumber(),
+        faqPage.getSize(),
+        faqPage.isFirst(),
+        faqPage.isLast());
   }
 
   @Transactional(readOnly = true)

@@ -43,7 +43,7 @@ public class JwtUtil {
                 .claim("roles", roles)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration));
-        if (userId != null)    { builder.claim("userId",    userId);    }
+        if (userId != null)    { builder.claim("userId", userId);       }
         if (firstName != null) { builder.claim("firstName", firstName); }
         if (lastName  != null) { builder.claim("lastName",  lastName);  }
         return builder.signWith(getSigningKey()).compact();
@@ -62,6 +62,15 @@ public class JwtUtil {
 
     public String extractEmail(String token) {
         return validateToken(token).getSubject();
+    }
+
+    public Long extractUserId(String token) {
+        Claims claims = validateToken(token);
+        Object userId = claims.get("userId");
+        if (userId instanceof Number number) {
+            return number.longValue();
+        }
+        return null;
     }
 
     /**

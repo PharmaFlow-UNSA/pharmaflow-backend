@@ -3,8 +3,8 @@ package com.pharmaflow.userhealth.saga.config;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -124,4 +124,3 @@ class RabbitMQSagaConfigTest {
         assertThat(RabbitMQSagaConfig.USER_DELETED_ROUTING_KEY).isEqualTo("user.deleted");
     }
 }
-

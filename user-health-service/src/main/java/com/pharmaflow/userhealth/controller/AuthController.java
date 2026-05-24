@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -78,6 +79,7 @@ public class AuthController {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AuthResponse {
+        private Long userId;
         private String accessToken;
         private String refreshToken;
         private String tokenType;
@@ -136,6 +138,7 @@ public class AuthController {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return ResponseEntity.ok(new AuthResponse(
+                user.getId(),
                 accessToken,
                 refreshToken.getToken(),
                 "Bearer",
@@ -180,6 +183,7 @@ public class AuthController {
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(
+                user.getId(),
                 accessToken,
                 refreshToken.getToken(),
                 "Bearer",
@@ -213,6 +217,7 @@ public class AuthController {
                             "accessToken", newAccessToken,
                             "refreshToken", requestRefreshToken,
                             "tokenType", "Bearer",
+                            "userId", user.getId(),
                             "expiresIn", jwtUtil.getExpirationDuration()
                     ));
                 })
@@ -266,13 +271,17 @@ public class AuthController {
             }
 
             String email = jwtUtil.extractEmail(token);
+            Long userId = jwtUtil.extractUserId(token);
             List<String> roles = jwtUtil.extractRoles(token);
 
-            return ResponseEntity.ok(Map.of(
-                    "valid", true,
-                    "email", email,
-                    "roles", roles
-            ));
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("valid", true);
+            if (userId != null) {
+                response.put("userId", userId);
+            }
+            response.put("email", email);
+            response.put("roles", roles);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("valid", false, "message", "Token invalid or expired"));

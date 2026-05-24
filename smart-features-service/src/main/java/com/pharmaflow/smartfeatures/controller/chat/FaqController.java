@@ -1,5 +1,6 @@
 package com.pharmaflow.smartfeatures.controller.chat;
 
+import com.pharmaflow.smartfeatures.dto.PageResponseDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryRequestDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryResponseDto;
 import com.pharmaflow.smartfeatures.service.chat.FaqService;
@@ -39,6 +40,13 @@ public class FaqController {
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<FaqEntryResponseDto>> getFaqEntries() {
     return ResponseEntity.ok(faqService.getFaqEntries());
+  }
+
+  @GetMapping("/admin/page")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<PageResponseDto<FaqEntryResponseDto>> getFaqEntriesPage(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(faqService.getFaqEntriesPage(page, size));
   }
 
   @GetMapping("/{id}")
