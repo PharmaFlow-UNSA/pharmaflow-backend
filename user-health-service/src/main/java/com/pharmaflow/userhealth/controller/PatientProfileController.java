@@ -48,7 +48,7 @@ public class PatientProfileController {
 
     @PostMapping
     @Operation(summary = "Create a patient profile", description = "Creates a new patient profile")
-    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'USER', 'ADMIN')")
     public ResponseEntity<PatientProfileDTO> createPatientProfile(@Valid @RequestBody PatientProfileDTO profileDTO) {
         PatientProfileDTO createdProfile = patientProfileService.createPatientProfile(profileDTO);
         return new ResponseEntity<>(createdProfile, HttpStatus.CREATED);

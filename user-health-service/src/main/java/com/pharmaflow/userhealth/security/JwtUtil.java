@@ -29,13 +29,24 @@ public class JwtUtil {
      * Expiration is 1 hour by default (configurable).
      */
     public String generateToken(String email, List<String> roles) {
-        return Jwts.builder()
+        return generateToken(email, roles, null, null, null);
+    }
+
+    public String generateToken(String email, List<String> roles, Long userId) {
+        return generateToken(email, roles, userId, null, null);
+    }
+
+    public String generateToken(String email, List<String> roles, Long userId,
+                                String firstName, String lastName) {
+        var builder = Jwts.builder()
                 .subject(email)
                 .claim("roles", roles)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
-                .compact();
+                .expiration(new Date(System.currentTimeMillis() + expiration));
+        if (userId != null)    { builder.claim("userId",    userId);    }
+        if (firstName != null) { builder.claim("firstName", firstName); }
+        if (lastName  != null) { builder.claim("lastName",  lastName);  }
+        return builder.signWith(getSigningKey()).compact();
     }
 
     /**

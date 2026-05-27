@@ -1,6 +1,7 @@
 package com.pharmaflow.userhealth.controller;
 
 import com.pharmaflow.userhealth.enums.Role;
+import com.pharmaflow.userhealth.models.PatientProfile;
 import com.pharmaflow.userhealth.models.RefreshToken;
 import com.pharmaflow.userhealth.models.User;
 import com.pharmaflow.userhealth.repositories.UserRepository;
@@ -95,6 +96,18 @@ public class AuthController {
         private String refreshToken;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ChangePasswordRequest {
+        @NotBlank(message = "Current password is required")
+        private String currentPassword;
+
+        @NotBlank(message = "New password is required")
+        @Size(min = 6, message = "New password must be at least 6 characters")
+        private String newPassword;
+    }
+
     // ── Endpoints ─────────────────────────────────────────────────────────
 
     @PostMapping("/login")
@@ -118,7 +131,8 @@ public class AuthController {
         List<String> roles = user.getRole() != null ?
             List.of(user.getRole()) : List.of(Role.ROLE_USER.name());
 
-        String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
+        String accessToken = jwtUtil.generateToken(user.getEmail(), roles, user.getId(),
+                user.getFirstName(), user.getLastName());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return ResponseEntity.ok(new AuthResponse(
@@ -152,10 +166,17 @@ public class AuthController {
             request.getRole() : Role.ROLE_USER.name();
         user.setRole(role);
 
+        // Always create an empty patient profile so health endpoints work immediately
+        PatientProfile emptyProfile = new PatientProfile();
+        emptyProfile.setAllergies(new java.util.ArrayList<>());
+        emptyProfile.setTherapies(new java.util.ArrayList<>());
+        user.setPatientProfile(emptyProfile);
+
         userRepository.save(user);
 
         List<String> roles = List.of(role);
-        String accessToken = jwtUtil.generateToken(user.getEmail(), roles);
+        String accessToken = jwtUtil.generateToken(user.getEmail(), roles, user.getId(),
+                user.getFirstName(), user.getLastName());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new AuthResponse(
@@ -185,7 +206,8 @@ public class AuthController {
                     List<String> roles = user.getRole() != null ?
                         List.of(user.getRole()) : List.of(Role.ROLE_USER.name());
 
-                    String newAccessToken = jwtUtil.generateToken(user.getEmail(), roles);
+                    String newAccessToken = jwtUtil.generateToken(user.getEmail(), roles, user.getId(),
+                            user.getFirstName(), user.getLastName());
 
                     return ResponseEntity.ok(Map.of(
                             "accessToken", newAccessToken,
@@ -255,6 +277,39 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("valid", false, "message", "Token invalid or expired"));
         }
+    }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password", description = "Changes password for the authenticated user")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader(value = "X-Username", required = false) String emailFromGateway,
+            org.springframework.security.core.Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        String email = emailFromGateway != null ? emailFromGateway
+                : (authentication != null ? authentication.getName() : null);
+
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized", "message", "Cannot identify user"));
+        }
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Not Found", "message", "User not found"));
+        }
+
+        User user = userOpt.get();
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Bad Request", "message", "Current password is incorrect"));
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 
     private boolean isValidRole(String role) {
