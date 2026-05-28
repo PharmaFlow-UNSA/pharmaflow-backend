@@ -84,6 +84,38 @@ public class RabbitMqSagaConfig {
                 .with(properties.getReservationCompensationRequestedRoutingKey());
     }
 
+    // --- Order Fulfillment saga (Zadatak 8.3) ---
+
+    @Bean
+    public Queue orderPlacedQueue(SagaRabbitProperties properties) {
+        return new Queue(properties.getOrderPlacedQueue(), true);
+    }
+
+    @Bean
+    public Queue orderCancelledQueue(SagaRabbitProperties properties) {
+        return new Queue(properties.getOrderCancelledQueue(), true);
+    }
+
+    @Bean
+    public Binding orderPlacedBinding(
+            SagaRabbitProperties properties,
+            DirectExchange sagaExchange,
+            Queue orderPlacedQueue) {
+        return BindingBuilder.bind(orderPlacedQueue)
+                .to(sagaExchange)
+                .with(properties.getOrderPlacedRoutingKey());
+    }
+
+    @Bean
+    public Binding orderCancelledBinding(
+            SagaRabbitProperties properties,
+            DirectExchange sagaExchange,
+            Queue orderCancelledQueue) {
+        return BindingBuilder.bind(orderCancelledQueue)
+                .to(sagaExchange)
+                .with(properties.getOrderCancelledRoutingKey());
+    }
+
     public static class SagaRabbitProperties {
 
         private boolean enabled = true;
@@ -97,6 +129,15 @@ public class RabbitMqSagaConfig {
         private String reservationCompensationRequestedRoutingKey =
                 "reservation.compensation.requested";
         private String reservationCompensatedRoutingKey = "reservation.compensated";
+
+        // --- Order Fulfillment saga (Zadatak 8.3) ---
+        private String orderPlacedQueue = "order.placed.queue";
+        private String orderCancelledQueue = "order.cancelled.queue";
+        private String orderPlacedRoutingKey = "order.placed";
+        private String orderCancelledRoutingKey = "order.cancelled";
+        private String orderStockReservedRoutingKey = "order.stock.reserved";
+        private String orderStockRejectedRoutingKey = "order.stock.rejected";
+        private String orderStockRestockedRoutingKey = "order.stock.restocked";
 
         public boolean isEnabled() {
             return enabled;
@@ -171,6 +212,64 @@ public class RabbitMqSagaConfig {
 
         public void setReservationCompensatedRoutingKey(String reservationCompensatedRoutingKey) {
             this.reservationCompensatedRoutingKey = reservationCompensatedRoutingKey;
+        }
+
+        // --- Order Fulfillment saga (Zadatak 8.3) accessors ---
+
+        public String getOrderPlacedQueue() {
+            return orderPlacedQueue;
+        }
+
+        public void setOrderPlacedQueue(String orderPlacedQueue) {
+            this.orderPlacedQueue = orderPlacedQueue;
+        }
+
+        public String getOrderCancelledQueue() {
+            return orderCancelledQueue;
+        }
+
+        public void setOrderCancelledQueue(String orderCancelledQueue) {
+            this.orderCancelledQueue = orderCancelledQueue;
+        }
+
+        public String getOrderPlacedRoutingKey() {
+            return orderPlacedRoutingKey;
+        }
+
+        public void setOrderPlacedRoutingKey(String orderPlacedRoutingKey) {
+            this.orderPlacedRoutingKey = orderPlacedRoutingKey;
+        }
+
+        public String getOrderCancelledRoutingKey() {
+            return orderCancelledRoutingKey;
+        }
+
+        public void setOrderCancelledRoutingKey(String orderCancelledRoutingKey) {
+            this.orderCancelledRoutingKey = orderCancelledRoutingKey;
+        }
+
+        public String getOrderStockReservedRoutingKey() {
+            return orderStockReservedRoutingKey;
+        }
+
+        public void setOrderStockReservedRoutingKey(String orderStockReservedRoutingKey) {
+            this.orderStockReservedRoutingKey = orderStockReservedRoutingKey;
+        }
+
+        public String getOrderStockRejectedRoutingKey() {
+            return orderStockRejectedRoutingKey;
+        }
+
+        public void setOrderStockRejectedRoutingKey(String orderStockRejectedRoutingKey) {
+            this.orderStockRejectedRoutingKey = orderStockRejectedRoutingKey;
+        }
+
+        public String getOrderStockRestockedRoutingKey() {
+            return orderStockRestockedRoutingKey;
+        }
+
+        public void setOrderStockRestockedRoutingKey(String orderStockRestockedRoutingKey) {
+            this.orderStockRestockedRoutingKey = orderStockRestockedRoutingKey;
         }
     }
 }

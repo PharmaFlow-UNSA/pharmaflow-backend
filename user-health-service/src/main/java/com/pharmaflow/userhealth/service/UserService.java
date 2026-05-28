@@ -70,6 +70,26 @@ public class UserService {
         return convertToDTO(user);
     }
 
+    @Transactional(readOnly = true)
+    public UserDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return convertToDTO(user);
+    }
+
+    @Transactional
+    public UserDTO updateProfileByEmail(String email, UpdateProfileDTO dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+
+        User saved = userRepository.save(user);
+        log.info("Profile updated for user {}", saved.getId());
+        return convertToDTO(saved);
+    }
+
     @Transactional
     public UserDTO createUser(UserCreateDTO userCreateDTO) {
         if (userRepository.existsByEmail(userCreateDTO.getEmail())) {

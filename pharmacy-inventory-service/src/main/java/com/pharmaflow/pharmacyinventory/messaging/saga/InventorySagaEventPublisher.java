@@ -27,6 +27,20 @@ public class InventorySagaEventPublisher {
         publish(properties.getReservationCompensatedRoutingKey(), event);
     }
 
+    // --- Order Fulfillment saga (Zadatak 8.3) ---
+
+    public void publishOrderStockReserved(OrderStockReservedEvent event) {
+        publish(properties.getOrderStockReservedRoutingKey(), event);
+    }
+
+    public void publishOrderStockRejected(OrderStockRejectedEvent event) {
+        publish(properties.getOrderStockRejectedRoutingKey(), event);
+    }
+
+    public void publishOrderStockRestocked(OrderStockRestockedEvent event) {
+        publish(properties.getOrderStockRestockedRoutingKey(), event);
+    }
+
     private void publish(String routingKey, Object event) {
         if (!properties.isEnabled()) {
             return;

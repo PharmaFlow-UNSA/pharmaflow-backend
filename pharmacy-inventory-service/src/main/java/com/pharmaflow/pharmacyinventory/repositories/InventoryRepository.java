@@ -21,4 +21,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long>,
     List<Inventory> findByPharmacyId(Long pharmacyId);
 
     List<Inventory> findByProductId(Long productId);
+
+    Optional<Inventory> findByPharmacyIdAndProductId(Long pharmacyId, Long productId);
 }
