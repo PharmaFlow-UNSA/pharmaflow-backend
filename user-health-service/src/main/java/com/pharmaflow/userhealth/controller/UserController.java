@@ -1,5 +1,6 @@
 package com.pharmaflow.userhealth.controller;
 
+import com.pharmaflow.userhealth.dto.UpdateProfileDTO;
 import com.pharmaflow.userhealth.dto.UserCreateDTO;
 import com.pharmaflow.userhealth.dto.UserDTO;
 import com.pharmaflow.userhealth.service.UserService;
@@ -80,6 +81,21 @@ public class UserController {
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.ASC) Pageable pageable,
             @RequestParam(required = false) String emailDomain) {
         return ResponseEntity.ok(userService.findAll(emailDomain, pageable));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current authenticated user",
+               description = "Resolves the user from the JWT subject (email)")
+    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
+        return ResponseEntity.ok(userService.getUserByEmail(authentication.getName()));
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Update current user's profile",
+               description = "Updates first/last name for the JWT-authenticated user. Email and password are managed via dedicated endpoints.")
+    public ResponseEntity<UserDTO> updateCurrentUser(Authentication authentication,
+                                                     @Valid @RequestBody UpdateProfileDTO dto) {
+        return ResponseEntity.ok(userService.updateProfileByEmail(authentication.getName(), dto));
     }
 
     @GetMapping("/{id}")

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.DirectExchange;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,10 +18,10 @@ class RabbitMQSagaConfigTest {
     private final RabbitMQSagaConfig config = new RabbitMQSagaConfig();
 
     @Test
-    @DisplayName("Saga exchange should be topic exchange with correct name")
-    void sagaExchange_shouldBeTopicExchangeWithCorrectName() {
+    @DisplayName("Saga exchange should be direct exchange with correct name")
+    void sagaExchange_shouldBeDirectExchangeWithCorrectName() {
         // When
-        TopicExchange exchange = config.sagaExchange();
+        DirectExchange exchange = config.sagaExchange();
 
         // Then
         assertThat(exchange.getName()).isEqualTo("pharmaflow.saga.exchange");
@@ -56,7 +56,7 @@ class RabbitMQSagaConfigTest {
     void inventoryCreatedBinding_shouldUseCorrectRoutingKey() {
         // Given
         Queue queue = config.userHealthSagaQueue();
-        TopicExchange exchange = config.sagaExchange();
+        DirectExchange exchange = config.sagaExchange();
 
         // When
         Binding binding = config.inventoryCreatedBinding(queue, exchange);
@@ -71,7 +71,7 @@ class RabbitMQSagaConfigTest {
     void inventoryFailedBinding_shouldUseCorrectRoutingKey() {
         // Given
         Queue queue = config.userHealthSagaQueue();
-        TopicExchange exchange = config.sagaExchange();
+        DirectExchange exchange = config.sagaExchange();
 
         // When
         Binding binding = config.inventoryFailedBinding(queue, exchange);
@@ -86,7 +86,7 @@ class RabbitMQSagaConfigTest {
     void userCreatedBinding_shouldUseCorrectRoutingKey() {
         // Given
         Queue queue = config.pharmacyInventorySagaQueue();
-        TopicExchange exchange = config.sagaExchange();
+        DirectExchange exchange = config.sagaExchange();
 
         // When
         Binding binding = config.userCreatedBinding(queue, exchange);
@@ -101,7 +101,7 @@ class RabbitMQSagaConfigTest {
     void userDeletedBinding_shouldUseCorrectRoutingKey() {
         // Given
         Queue queue = config.pharmacyInventorySagaQueue();
-        TopicExchange exchange = config.sagaExchange();
+        DirectExchange exchange = config.sagaExchange();
 
         // When
         Binding binding = config.userDeletedBinding(queue, exchange);
