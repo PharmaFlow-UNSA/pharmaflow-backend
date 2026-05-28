@@ -78,15 +78,13 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTO updateProfileByEmail(String email, UpdateProfileDTO dto) {
+    public UserDTO updateUserProfile(String email, String firstName, String lastName) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         User saved = userRepository.save(user);
-        log.info("Profile updated for user {}", saved.getId());
+        log.info("Profile updated for user: {}", email);
         return convertToDTO(saved);
     }
 

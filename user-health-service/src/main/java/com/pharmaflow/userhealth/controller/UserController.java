@@ -7,6 +7,10 @@ import com.pharmaflow.userhealth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -28,6 +32,44 @@ public class UserController {
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateProfileRequest {
+        @NotBlank(message = "First name is required")
+        private String firstName;
+
+        @NotBlank(message = "Last name is required")
+        private String lastName;
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current user", description = "Returns the authenticated user's full profile")
+    public ResponseEntity<UserDTO> getCurrentUser(
+            @RequestHeader(value = "X-Username", required = false) String emailFromGateway,
+            Authentication authentication) {
+        String email = emailFromGateway != null ? emailFromGateway
+                : (authentication != null ? authentication.getName() : null);
+        if (email == null || email.equals("anonymous")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(userService.getUserByEmail(email));
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Update current user", description = "Updates the authenticated user's name")
+    public ResponseEntity<UserDTO> updateCurrentUser(
+            @RequestHeader(value = "X-Username", required = false) String emailFromGateway,
+            Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        String email = emailFromGateway != null ? emailFromGateway
+                : (authentication != null ? authentication.getName() : null);
+        if (email == null || email.equals("anonymous")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(userService.updateUserProfile(email, request.getFirstName(), request.getLastName()));
     }
 
     @GetMapping
