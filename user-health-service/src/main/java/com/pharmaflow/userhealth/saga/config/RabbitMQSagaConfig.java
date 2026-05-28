@@ -8,21 +8,6 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * RabbitMQ configuration for Saga Choreography pattern.
- *
- * Architecture:
- * - Exchange: pharmaflow.saga.exchange (Topic Exchange)
- * - Queues:
- *   1. user-health.saga.queue - Listens for inventory responses
- *   2. pharmacy-inventory.saga.queue - Receives user creation events
- *
- * Routing Keys:
- * - user.created -> Routes to pharmacy-inventory
- * - inventory.created -> Routes to user-health
- * - inventory.failed -> Routes to user-health
- * - user.deleted -> Routes to pharmacy-inventory (for cleanup)
- */
 @Configuration
 public class RabbitMQSagaConfig {
 
@@ -39,13 +24,9 @@ public class RabbitMQSagaConfig {
     public static final String INVENTORY_FAILED_ROUTING_KEY = "inventory.failed";
     public static final String USER_DELETED_ROUTING_KEY = "user.deleted";
 
-    /**
-     * Topic Exchange for saga events.
-     * Topic exchange allows routing based on patterns (e.g., user.*, inventory.*).
-     */
     @Bean
-    public TopicExchange sagaExchange() {
-        return new TopicExchange(SAGA_EXCHANGE, true, false);
+    public DirectExchange sagaExchange() {
+        return new DirectExchange(SAGA_EXCHANGE, true, false);
     }
 
     /**
@@ -74,14 +55,14 @@ public class RabbitMQSagaConfig {
      * Bind user-health queue to receive inventory success/failure events.
      */
     @Bean
-    public Binding inventoryCreatedBinding(Queue userHealthSagaQueue, TopicExchange sagaExchange) {
+    public Binding inventoryCreatedBinding(Queue userHealthSagaQueue, DirectExchange sagaExchange) {
         return BindingBuilder.bind(userHealthSagaQueue)
                 .to(sagaExchange)
                 .with(INVENTORY_CREATED_ROUTING_KEY);
     }
 
     @Bean
-    public Binding inventoryFailedBinding(Queue userHealthSagaQueue, TopicExchange sagaExchange) {
+    public Binding inventoryFailedBinding(Queue userHealthSagaQueue, DirectExchange sagaExchange) {
         return BindingBuilder.bind(userHealthSagaQueue)
                 .to(sagaExchange)
                 .with(INVENTORY_FAILED_ROUTING_KEY);
@@ -91,7 +72,7 @@ public class RabbitMQSagaConfig {
      * Bind pharmacy-inventory queue to receive user creation events.
      */
     @Bean
-    public Binding userCreatedBinding(Queue pharmacyInventorySagaQueue, TopicExchange sagaExchange) {
+    public Binding userCreatedBinding(Queue pharmacyInventorySagaQueue, DirectExchange sagaExchange) {
         return BindingBuilder.bind(pharmacyInventorySagaQueue)
                 .to(sagaExchange)
                 .with(USER_CREATED_ROUTING_KEY);
@@ -101,7 +82,7 @@ public class RabbitMQSagaConfig {
      * Bind pharmacy-inventory queue to receive user deletion events (for cleanup).
      */
     @Bean
-    public Binding userDeletedBinding(Queue pharmacyInventorySagaQueue, TopicExchange sagaExchange) {
+    public Binding userDeletedBinding(Queue pharmacyInventorySagaQueue, DirectExchange sagaExchange) {
         return BindingBuilder.bind(pharmacyInventorySagaQueue)
                 .to(sagaExchange)
                 .with(USER_DELETED_ROUTING_KEY);
