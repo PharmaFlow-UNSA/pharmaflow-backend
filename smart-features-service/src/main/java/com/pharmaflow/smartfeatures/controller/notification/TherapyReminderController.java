@@ -41,7 +41,7 @@ public class TherapyReminderController {
     return ResponseEntity.ok(therapyReminderService.getReminders(patientProfileId));
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<TherapyReminderResponseDto> getReminder(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(therapyReminderService.getReminder(id));
@@ -55,14 +55,14 @@ public class TherapyReminderController {
         .body(therapyReminderService.createReminder(requestDto));
   }
 
-  @PutMapping("/{id}")
+  @PutMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<TherapyReminderResponseDto> updateReminder(
       @PathVariable @Positive Long id, @Valid @RequestBody TherapyReminderRequestDto requestDto) {
     return ResponseEntity.ok(therapyReminderService.updateReminder(id, requestDto));
   }
 
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteReminder(@PathVariable @Positive Long id) {
     therapyReminderService.deleteReminder(id);

@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Validated
-@RequestMapping("/api/symptoms/{symptomId}/matches")
+@RequestMapping("/api/symptoms/{symptomId:-?\\d+}/matches")
 @Tag(name = "Symptoms")
 public class SymptomProductMatchController {
 
@@ -48,7 +48,7 @@ public class SymptomProductMatchController {
         .body(symptomProductMatchService.createMatch(symptomId, requestDto));
   }
 
-  @PutMapping("/{matchId}")
+  @PutMapping("/{matchId:-?\\d+}")
   @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomProductMatchResponseDto> updateMatch(
       @PathVariable @Positive Long symptomId,
@@ -58,7 +58,7 @@ public class SymptomProductMatchController {
         symptomProductMatchService.updateMatch(symptomId, matchId, requestDto));
   }
 
-  @DeleteMapping("/{matchId}")
+  @DeleteMapping("/{matchId:-?\\d+}")
   @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
   public ResponseEntity<Void> deleteMatch(
       @PathVariable @Positive Long symptomId, @PathVariable @Positive Long matchId) {

@@ -7,10 +7,6 @@ import com.pharmaflow.userhealth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -34,17 +30,6 @@ public class UserController {
         this.userService = userService;
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UpdateProfileRequest {
-        @NotBlank(message = "First name is required")
-        private String firstName;
-
-        @NotBlank(message = "Last name is required")
-        private String lastName;
-    }
-
     @GetMapping("/me")
     @Operation(summary = "Get current user", description = "Returns the authenticated user's full profile")
     public ResponseEntity<UserDTO> getCurrentUser(
@@ -63,13 +48,13 @@ public class UserController {
     public ResponseEntity<UserDTO> updateCurrentUser(
             @RequestHeader(value = "X-Username", required = false) String emailFromGateway,
             Authentication authentication,
-            @Valid @RequestBody UpdateProfileRequest request) {
+            @Valid @RequestBody UpdateProfileDTO request) {
         String email = emailFromGateway != null ? emailFromGateway
                 : (authentication != null ? authentication.getName() : null);
         if (email == null || email.equals("anonymous")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(userService.updateUserProfile(email, request.getFirstName(), request.getLastName()));
+        return ResponseEntity.ok(userService.updateCurrentUser(email, request.getFirstName(), request.getLastName()));
     }
 
     @GetMapping
@@ -83,22 +68,7 @@ public class UserController {
         return ResponseEntity.ok(userService.findAll(emailDomain, pageable));
     }
 
-    @GetMapping("/me")
-    @Operation(summary = "Get current authenticated user",
-               description = "Resolves the user from the JWT subject (email)")
-    public ResponseEntity<UserDTO> getCurrentUser(Authentication authentication) {
-        return ResponseEntity.ok(userService.getUserByEmail(authentication.getName()));
-    }
-
-    @PutMapping("/me")
-    @Operation(summary = "Update current user's profile",
-               description = "Updates first/last name for the JWT-authenticated user. Email and password are managed via dedicated endpoints.")
-    public ResponseEntity<UserDTO> updateCurrentUser(Authentication authentication,
-                                                     @Valid @RequestBody UpdateProfileDTO dto) {
-        return ResponseEntity.ok(userService.updateProfileByEmail(authentication.getName(), dto));
-    }
-
-    @GetMapping("/{id}")
+    @GetMapping("/{id:-?\\d+}")
     @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
@@ -120,7 +90,7 @@ public class UserController {
         return new ResponseEntity<>(createdUsers, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:-?\\d+}")
     @Operation(summary = "Update user", description = "Updates an existing user")
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id,
@@ -128,7 +98,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(id, userCreateDTO));
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{id:-?\\d+}")
     @Operation(summary = "Partially update user", description = "Applies JSON Patch operations to a user")
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR')")
     public ResponseEntity<UserDTO> patchUser(@PathVariable Long id,
@@ -136,7 +106,7 @@ public class UserController {
         return ResponseEntity.ok(userService.patchUser(id, patchDocument));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:-?\\d+}")
     @Operation(summary = "Delete user", description = "Deletes a user by ID")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
@@ -144,4 +114,3 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 }
-

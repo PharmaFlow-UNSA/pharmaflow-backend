@@ -42,7 +42,7 @@ public class NotificationController {
     return ResponseEntity.ok(notificationService.getNotifications(userId));
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<NotificationResponseDto> getNotification(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(notificationService.getNotification(id));
@@ -56,7 +56,7 @@ public class NotificationController {
         .body(notificationService.createNotification(requestDto));
   }
 
-  @PatchMapping("/{id}/delivery-status")
+  @PatchMapping("/{id:-?\\d+}/delivery-status")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<NotificationResponseDto> updateDeliveryStatus(
       @PathVariable @Positive Long id,
@@ -64,13 +64,13 @@ public class NotificationController {
     return ResponseEntity.ok(notificationService.updateDeliveryStatus(id, requestDto));
   }
 
-  @PatchMapping("/{id}/mark-read")
+  @PatchMapping("/{id:-?\\d+}/mark-read")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<NotificationResponseDto> markAsRead(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(notificationService.markAsRead(id));
   }
 
-  @GetMapping("/{id}/triggers")
+  @GetMapping("/{id:-?\\d+}/triggers")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<NotificationTriggerResponseDto>> getTriggers(
       @PathVariable @Positive Long id) {

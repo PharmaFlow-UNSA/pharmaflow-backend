@@ -73,7 +73,7 @@ public class GatewayConfig {
 
                 // Smart Features Service
                 .route("smart-features-service", r -> r
-                        .path("/api/symptoms/**", "/api/recommendations/**",
+                        .path("/api/symptoms/**", "/api/symptom-searches/**", "/api/recommendations/**",
                               "/api/notifications/**", "/api/fraud/**",
                               "/api/fraud-rules/**", "/api/fraud-checks/**",
                               "/api/chatbot/**", "/api/faqs/**", "/api/admin/faqs/**",

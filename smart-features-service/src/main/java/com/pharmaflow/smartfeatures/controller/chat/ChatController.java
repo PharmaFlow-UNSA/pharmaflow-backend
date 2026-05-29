@@ -39,26 +39,26 @@ public class ChatController {
     return ResponseEntity.status(HttpStatus.CREATED).body(chatService.createSession(requestDto));
   }
 
-  @GetMapping("/api/chat-sessions/{id}")
+  @GetMapping("/api/chat-sessions/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<ChatSessionResponseDto> getSession(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(chatService.getSession(id));
   }
 
-  @GetMapping("/api/chat-sessions/user/{userId}")
+  @GetMapping("/api/chat-sessions/user/{userId:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<ChatSessionResponseDto>> getSessionsByUser(
       @PathVariable @Positive Long userId) {
     return ResponseEntity.ok(chatService.getSessionsByUser(userId));
   }
 
-  @PatchMapping("/api/chat-sessions/{id}/close")
+  @PatchMapping("/api/chat-sessions/{id:-?\\d+}/close")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<ChatSessionResponseDto> closeSession(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(chatService.closeSession(id));
   }
 
-  @PostMapping("/api/chat-sessions/{id}/messages")
+  @PostMapping("/api/chat-sessions/{id:-?\\d+}/messages")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<ChatMessageResponseDto> createMessage(
       @PathVariable @Positive Long id, @Valid @RequestBody ChatMessageRequestDto requestDto) {
@@ -66,13 +66,13 @@ public class ChatController {
         .body(chatService.createMessage(id, requestDto));
   }
 
-  @GetMapping("/api/chat-sessions/{id}/messages")
+  @GetMapping("/api/chat-sessions/{id:-?\\d+}/messages")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<ChatMessageResponseDto>> getMessages(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(chatService.getMessages(id));
   }
 
-  @GetMapping("/api/chat-messages/{messageId}/intent-match")
+  @GetMapping("/api/chat-messages/{messageId:-?\\d+}/intent-match")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<ChatIntentMatchResponseDto> getIntentMatch(
       @PathVariable @Positive Long messageId) {

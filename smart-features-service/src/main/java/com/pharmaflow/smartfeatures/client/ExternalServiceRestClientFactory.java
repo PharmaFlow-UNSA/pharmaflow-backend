@@ -9,11 +9,14 @@ import org.springframework.web.client.RestClient;
 public class ExternalServiceRestClientFactory {
 
   private final RestClient.Builder loadBalancedRestClientBuilder;
+  private final AuthorizationHeaderForwardingInterceptor authorizationHeaderForwardingInterceptor;
 
   public ExternalServiceRestClientFactory(
       @Qualifier("loadBalancedRestClientBuilder")
-          RestClient.Builder loadBalancedRestClientBuilder) {
+          RestClient.Builder loadBalancedRestClientBuilder,
+      AuthorizationHeaderForwardingInterceptor authorizationHeaderForwardingInterceptor) {
     this.loadBalancedRestClientBuilder = loadBalancedRestClientBuilder;
+    this.authorizationHeaderForwardingInterceptor = authorizationHeaderForwardingInterceptor;
   }
 
   public RestClient create(String serviceId) {
@@ -21,6 +24,10 @@ public class ExternalServiceRestClientFactory {
       throw new IllegalArgumentException("External service id must be configured.");
     }
 
-    return loadBalancedRestClientBuilder.clone().baseUrl("http://" + serviceId.trim()).build();
+    return loadBalancedRestClientBuilder
+        .clone()
+        .requestInterceptor(authorizationHeaderForwardingInterceptor)
+        .baseUrl("http://" + serviceId.trim())
+        .build();
   }
 }

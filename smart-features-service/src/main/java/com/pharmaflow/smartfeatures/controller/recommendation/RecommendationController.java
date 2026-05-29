@@ -51,7 +51,7 @@ public class RecommendationController {
     return ResponseEntity.ok(recommendationService.getRecommendations(userId, patientProfileId));
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<RecommendationResponseDto> getRecommendation(
       @PathVariable @Positive Long id) {
@@ -74,14 +74,14 @@ public class RecommendationController {
         .body(recommendationService.generateRecommendations(requestDto));
   }
 
-  @PutMapping("/{id}")
+  @PutMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<RecommendationResponseDto> updateRecommendation(
       @PathVariable @Positive Long id, @Valid @RequestBody RecommendationRequestDto requestDto) {
     return ResponseEntity.ok(recommendationService.updateRecommendation(id, requestDto));
   }
 
-  @PostMapping("/{id}/interactions")
+  @PostMapping("/{id:-?\\d+}/interactions")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<RecommendationEventResponseDto> logInteraction(
       @PathVariable @Positive Long id,
@@ -90,7 +90,7 @@ public class RecommendationController {
         .body(recommendationService.logInteraction(id, requestDto));
   }
 
-  @PostMapping("/{id}/reserve")
+  @PostMapping("/{id:-?\\d+}/reserve")
   @PreAuthorize("hasAnyRole('USER', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<RecommendationReservationSagaResponseDto> reserveRecommendation(
       @PathVariable @Positive Long id,
@@ -99,7 +99,7 @@ public class RecommendationController {
         .body(reservationSagaService.reserveRecommendation(id, requestDto));
   }
 
-  @GetMapping("/{id}/interactions")
+  @GetMapping("/{id:-?\\d+}/interactions")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<RecommendationEventResponseDto>> getInteractions(
       @PathVariable @Positive Long id) {
