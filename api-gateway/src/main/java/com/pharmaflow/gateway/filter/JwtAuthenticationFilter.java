@@ -12,6 +12,7 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -102,7 +103,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             log.debug("Authenticated user: {} with roles: {} accessing: {}", username, roles, path);
 
             // Role-based path access control
-            if (!hasAccessToPath(path, roles)) {
+            if (!hasAccessToPath(path, request.getMethod(), roles)) {
                 log.warn("Access denied for user {} with roles {} to path {}", username, roles, path);
                 return forbiddenResponse(exchange, "Insufficient permissions");
             }
@@ -135,16 +136,17 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     /**
      * Role-based access control for different paths.
      */
-    private boolean hasAccessToPath(String path, List<String> roles) {
+    boolean hasAccessToPath(String path, HttpMethod method, List<String> roles) {
         // Admin has access to everything
         if (roles.contains("ROLE_ADMIN")) {
             return true;
         }
 
-        // Prescription endpoints - only doctors and pharmacists
-        if (path.startsWith("/api/prescriptions") &&
-            !roles.contains("ROLE_DOCTOR") && !roles.contains("ROLE_PHARMACIST")) {
-            return false;
+        if (path.startsWith("/api/prescriptions")) {
+            if (method == HttpMethod.GET || method == HttpMethod.POST) {
+                return true;
+            }
+            return roles.contains("ROLE_DOCTOR") || roles.contains("ROLE_PHARMACIST");
         }
 
         // Inventory write operations - only pharmacists

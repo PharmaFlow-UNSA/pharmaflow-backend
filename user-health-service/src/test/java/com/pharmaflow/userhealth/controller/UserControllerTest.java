@@ -55,6 +55,14 @@ class UserControllerTest {
         verify(userService, times(1)).getUserById(1L);
     }
     @Test
+    @WithMockUser(username = "test@test.com", roles = "USER")
+    void getCurrentUserUsesMeRoute() throws Exception {
+        when(userService.getUserByEmail("test@test.com")).thenReturn(testUserDTO);
+        mockMvc.perform(get("/api/users/me")).andExpect(status().isOk());
+        verify(userService, times(1)).getUserByEmail("test@test.com");
+        verify(userService, never()).getUserById(anyLong());
+    }
+    @Test
     @WithMockUser(roles = "USER")
     void createUser() throws Exception {
         when(userService.createUser(any())).thenReturn(testUserDTO);

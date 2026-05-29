@@ -44,7 +44,7 @@ public class SymptomSearchController {
     return ResponseEntity.ok(symptomSearchService.getSearches(userId, patientProfileId));
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomSearchResponseDto> getSearch(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomSearchService.getSearch(id));
@@ -58,14 +58,14 @@ public class SymptomSearchController {
         .body(symptomSearchService.createSearch(requestDto));
   }
 
-  @GetMapping("/{id}/items")
+  @GetMapping("/{id:-?\\d+}/items")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomSearchItemResponseDto>> getItems(
       @PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomSearchService.getItems(id));
   }
 
-  @PostMapping("/{id}/items")
+  @PostMapping("/{id:-?\\d+}/items")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomSearchItemResponseDto> addItem(
       @PathVariable @Positive Long id, @Valid @RequestBody SymptomSearchItemRequestDto requestDto) {
@@ -73,7 +73,7 @@ public class SymptomSearchController {
         .body(symptomSearchService.addItem(id, requestDto));
   }
 
-  @DeleteMapping("/{id}/items/{itemId}")
+  @DeleteMapping("/{id:-?\\d+}/items/{itemId:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<Void> deleteItem(
       @PathVariable @Positive Long id, @PathVariable @Positive Long itemId) {
@@ -81,7 +81,7 @@ public class SymptomSearchController {
     return ResponseEntity.noContent().build();
   }
 
-  @GetMapping("/{id}/matches")
+  @GetMapping("/{id:-?\\d+}/matches")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<SymptomProductMatchResponseDto>> getMatches(
       @PathVariable @Positive Long id) {

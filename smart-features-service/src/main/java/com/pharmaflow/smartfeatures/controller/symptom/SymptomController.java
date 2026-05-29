@@ -41,7 +41,7 @@ public class SymptomController {
     return ResponseEntity.ok(symptomService.getAllSymptoms());
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<SymptomResponseDto> getSymptomById(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(symptomService.getSymptomById(id));
@@ -65,14 +65,14 @@ public class SymptomController {
     return ResponseEntity.status(HttpStatus.CREATED).body(createdSymptom);
   }
 
-  @PutMapping("/{id}")
+  @PutMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<SymptomResponseDto> updateSymptom(
       @PathVariable @Positive Long id, @Valid @RequestBody SymptomRequestDto requestDto) {
     return ResponseEntity.ok(symptomService.updateSymptom(id, requestDto));
   }
 
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteSymptom(@PathVariable @Positive Long id) {
     symptomService.deleteSymptom(id);

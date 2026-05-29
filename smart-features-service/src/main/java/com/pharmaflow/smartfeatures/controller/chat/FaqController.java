@@ -1,5 +1,6 @@
 package com.pharmaflow.smartfeatures.controller.chat;
 
+import com.pharmaflow.smartfeatures.dto.PageResponseDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryRequestDto;
 import com.pharmaflow.smartfeatures.dto.chat.FaqEntryResponseDto;
 import com.pharmaflow.smartfeatures.service.chat.FaqService;
@@ -41,7 +42,14 @@ public class FaqController {
     return ResponseEntity.ok(faqService.getFaqEntries());
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/admin/page")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<PageResponseDto<FaqEntryResponseDto>> getFaqEntriesPage(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(faqService.getFaqEntriesPage(page, size));
+  }
+
+  @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<FaqEntryResponseDto> getFaqEntry(@PathVariable @Positive Long id) {
     return ResponseEntity.ok(faqService.getFaqEntry(id));
@@ -64,14 +72,14 @@ public class FaqController {
     return ResponseEntity.status(HttpStatus.CREATED).body(faqService.createFaqEntry(requestDto));
   }
 
-  @PutMapping("/{id}")
+  @PutMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<FaqEntryResponseDto> updateFaqEntry(
       @PathVariable @Positive Long id, @Valid @RequestBody FaqEntryRequestDto requestDto) {
     return ResponseEntity.ok(faqService.updateFaqEntry(id, requestDto));
   }
 
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/{id:-?\\d+}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<Void> deleteFaqEntry(@PathVariable @Positive Long id) {
     faqService.deleteFaqEntry(id);

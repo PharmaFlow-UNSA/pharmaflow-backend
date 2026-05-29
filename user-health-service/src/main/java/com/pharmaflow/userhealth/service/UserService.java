@@ -79,13 +79,7 @@ public class UserService {
 
     @Transactional
     public UserDTO updateUserProfile(String email, String firstName, String lastName) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        User saved = userRepository.save(user);
-        log.info("Profile updated for user: {}", email);
-        return convertToDTO(saved);
+        return updateCurrentUser(email, firstName, lastName);
     }
 
     @Transactional
@@ -175,6 +169,19 @@ public class UserService {
     }
 
     @Transactional
+    public UserDTO updateCurrentUser(String email, String firstName, String lastName) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+
+        User updatedUser = userRepository.save(user);
+        log.info("Current user profile updated with id: {}", updatedUser.getId());
+        return convertToDTO(updatedUser);
+    }
+
+    @Transactional
     public UserDTO patchUser(Long id, String patchDocument) {
         try {
             User user = userRepository.findById(id)
@@ -256,4 +263,3 @@ public class UserService {
         return dto;
     }
 }
-

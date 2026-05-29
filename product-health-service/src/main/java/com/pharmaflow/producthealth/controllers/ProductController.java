@@ -38,7 +38,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllActiveProducts());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:-?\\d+}")
     @Operation(summary = "Get product by ID")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
@@ -69,7 +69,7 @@ public class ProductController {
         return new ResponseEntity<>(productService.createProduct(dto), HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:-?\\d+}")
     @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Update an existing product (full replacement)")
     public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id,
@@ -77,7 +77,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
-    @PatchMapping("/{id}/deactivate")
+    @PatchMapping("/{id:-?\\d+}/deactivate")
     @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Deactivate product (soft delete)")
     public ResponseEntity<Void> deactivate(@PathVariable Long id) {
@@ -85,7 +85,7 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:-?\\d+}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Permanently delete product")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
@@ -95,7 +95,7 @@ public class ProductController {
 
     // ── PATCH - JSON Patch RFC 6902 ───────────────────────────────────────
 
-    @PatchMapping(value = "/{id}", consumes = "application/json-patch+json")
+    @PatchMapping(value = "/{id:-?\\d+}", consumes = "application/json-patch+json")
     @PreAuthorize("hasAnyRole('PHARMACIST', 'ADMIN')")
     @Operation(summary = "Partial update - JSON Patch (RFC 6902)",
             description = "Example: [{\"op\":\"replace\",\"path\":\"/price\",\"value\":9.99}]")

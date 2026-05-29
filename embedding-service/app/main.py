@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
@@ -5,9 +7,10 @@ from sentence_transformers import SentenceTransformer
 # This embedding-service uses a local embedding model found on https://sbert.net
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+LOCAL_FILES_ONLY = os.getenv("EMBEDDING_MODEL_LOCAL_FILES_ONLY", "false").lower() == "true"
 
 app = FastAPI(title="PharmaFlow Embedding Service")
-model = SentenceTransformer(MODEL_NAME)
+model = SentenceTransformer(MODEL_NAME, local_files_only=LOCAL_FILES_ONLY)
 
 
 class EmbedRequest(BaseModel):
@@ -16,6 +19,11 @@ class EmbedRequest(BaseModel):
 
 class EmbedResponse(BaseModel):
     embeddings: list[list[float]]
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "UP"}
 
 
 @app.post("/embed", response_model=EmbedResponse)
