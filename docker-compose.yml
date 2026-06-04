@@ -184,7 +184,7 @@ services:
     image: pharmaflow/product-health-service
     container_name: pharmaflow-product-health
     environment:
-      <<: *common-env
+      <<: [*common-env, *rabbit-env]
       SERVICE_PORT: "8083"
       PORT: "8083"
       DB_URL: jdbc:postgresql://postgres:5432/pharmaflow_product
@@ -198,6 +198,7 @@ services:
     networks: [pharmaflow-net]
     depends_on:
       postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
       eureka-server: { condition: service_healthy }
 
   pharmacy-inventory-service:

@@ -128,6 +128,9 @@ public class AutoRefillSubscriptionService {
         subscription.setShippingAddress(dto.getShippingAddress());
 
         if (dto.getDosagePerDay() != null && dto.getTabletsPerPackage() != null) {
+            if (dto.getDosagePerDay() <= 0) {
+                throw new IllegalArgumentException("Dosage per day must be at least 1");
+            }
             subscription.setDosagePerDay(dto.getDosagePerDay());
             subscription.setTabletsPerPackage(dto.getTabletsPerPackage());
 
@@ -172,6 +175,9 @@ public class AutoRefillSubscriptionService {
             subscription.setShippingAddress(patchedDTO.getShippingAddress());
 
             if (patchedDTO.getDosagePerDay() != null && patchedDTO.getTabletsPerPackage() != null) {
+                if (patchedDTO.getDosagePerDay() <= 0) {
+                    throw new IllegalArgumentException("Dosage per day must be at least 1");
+                }
                 subscription.setDosagePerDay(patchedDTO.getDosagePerDay());
                 subscription.setTabletsPerPackage(patchedDTO.getTabletsPerPackage());
                 int intervalDays = patchedDTO.getTabletsPerPackage() / patchedDTO.getDosagePerDay();
@@ -212,6 +218,9 @@ public class AutoRefillSubscriptionService {
         subscription.setDosagePerDay(dto.getDosagePerDay());
         subscription.setTabletsPerPackage(dto.getTabletsPerPackage());
 
+        if (dto.getDosagePerDay() == null || dto.getDosagePerDay() <= 0) {
+            throw new IllegalArgumentException("Dosage per day must be at least 1");
+        }
         int intervalDays = dto.getTabletsPerPackage() / dto.getDosagePerDay();
         subscription.setIntervalDays(intervalDays);
         subscription.setNextOrderDate(LocalDate.now().plusDays(intervalDays));
