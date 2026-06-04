@@ -36,6 +36,21 @@ public class JwtService {
     return parseAndValidate(token).getSubject();
   }
 
+  public Long extractUserId(Claims claims) {
+    Object userId = claims.get("userId");
+    if (userId instanceof Number number) {
+      return number.longValue();
+    }
+    if (userId instanceof String stringValue && !stringValue.isBlank()) {
+      try {
+        return Long.parseLong(stringValue);
+      } catch (NumberFormatException ignored) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   @SuppressWarnings("unchecked")
   public List<String> extractRoles(Claims claims) {
     Object roles = claims.get("roles");

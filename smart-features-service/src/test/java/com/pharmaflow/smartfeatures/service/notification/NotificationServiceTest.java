@@ -55,7 +55,12 @@ class NotificationServiceTest {
   @Test
   void createNotificationShouldDefaultToPendingAndCreateTherapyTrigger() {
     TherapyReminder reminder =
-        TherapyReminder.builder().reminderId(7L).patientProfileId(20L).productId(30L).build();
+        TherapyReminder.builder()
+            .reminderId(7L)
+            .ownerUserId(10L)
+            .patientProfileId(20L)
+            .productId(30L)
+            .build();
     NotificationRequestDto requestDto =
         new NotificationRequestDto(
             7L,

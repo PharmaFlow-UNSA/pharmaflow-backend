@@ -8,8 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pharmaflow.smartfeatures.config.ModelMapperConfig;
+import com.pharmaflow.smartfeatures.client.product.ProductCatalogClient;
+import com.pharmaflow.smartfeatures.client.user.UserHealthClient;
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderRequestDto;
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderResponseDto;
+import com.pharmaflow.smartfeatures.dto.product.ProductSnapshot;
 import com.pharmaflow.smartfeatures.enums.notification.TherapyReminderStatus;
 import com.pharmaflow.smartfeatures.exception.BadRequestException;
 import com.pharmaflow.smartfeatures.mapper.notification.TherapyReminderMapper;
@@ -35,6 +38,8 @@ class TherapyReminderServiceTest {
       Clock.fixed(Instant.parse("2030-01-10T09:00:00Z"), ZoneOffset.UTC);
 
   @Mock private TherapyReminderRepository therapyReminderRepository;
+  @Mock private UserHealthClient userHealthClient;
+  @Mock private ProductCatalogClient productCatalogClient;
 
   private TherapyReminderService therapyReminderService;
 
@@ -44,6 +49,8 @@ class TherapyReminderServiceTest {
         new TherapyReminderService(
             therapyReminderRepository,
             new TherapyReminderMapper(new ModelMapperConfig().modelMapper()),
+            userHealthClient,
+            productCatalogClient,
             FIXED_CLOCK);
   }
 
@@ -52,6 +59,10 @@ class TherapyReminderServiceTest {
     TherapyReminderRequestDto requestDto =
         new TherapyReminderRequestDto(
             10L, 20L, " Take once daily ", 2, LocalDate.of(2030, 1, 12), LocalDate.of(2030, 1, 17));
+    ProductSnapshot product = new ProductSnapshot();
+    product.setId(20L);
+    product.setIsActive(true);
+    when(productCatalogClient.getProduct(20L)).thenReturn(Optional.of(product));
     when(therapyReminderRepository.save(any(TherapyReminder.class)))
         .thenAnswer(
             invocation -> {
@@ -98,8 +109,12 @@ class TherapyReminderServiceTest {
     TherapyReminderRequestDto requestDto =
         new TherapyReminderRequestDto(
             10L, 20L, " Updated ", 1, LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 9));
+    ProductSnapshot product = new ProductSnapshot();
+    product.setId(20L);
+    product.setIsActive(true);
 
     when(therapyReminderRepository.findById(9L)).thenReturn(Optional.of(reminder));
+    when(productCatalogClient.getProduct(20L)).thenReturn(Optional.of(product));
     when(therapyReminderRepository.save(reminder)).thenReturn(reminder);
 
     TherapyReminderResponseDto response = therapyReminderService.updateReminder(9L, requestDto);

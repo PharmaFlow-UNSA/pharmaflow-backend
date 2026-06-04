@@ -231,6 +231,7 @@ class RepositoryStatisticsTest {
     TherapyReminder reminder =
         therapyReminderRepository.save(
             TherapyReminder.builder()
+                .ownerUserId(100L)
                 .patientProfileId(200L)
                 .productId(300L)
                 .dosageInstruction("Take once daily")

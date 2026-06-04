@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,6 +41,12 @@ public class TherapyReminder {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "reminder_id", nullable = false, updatable = false)
   private Long reminderId;
+
+  /** User account that owns and receives this reminder. */
+  @NotNull
+  @PositiveOrZero
+  @Column(name = "owner_user_id", nullable = false)
+  private Long ownerUserId;
 
   /** External reference to the patient profile. */
   @NotNull
