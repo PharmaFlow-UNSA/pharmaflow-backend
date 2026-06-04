@@ -1,6 +1,7 @@
 package com.pharmaflow.smartfeatures.controller.notification;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,7 +52,7 @@ class TherapyReminderControllerTest {
 
   @Test
   void createReminderShouldReturn201() throws Exception {
-    when(therapyReminderService.createReminder(any())).thenReturn(responseDto);
+    when(therapyReminderService.createReminder(any(), any(), anyBoolean())).thenReturn(responseDto);
 
     mockMvc
         .perform(
@@ -93,6 +94,6 @@ class TherapyReminderControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"));
 
-    verify(therapyReminderService, never()).createReminder(any());
+    verify(therapyReminderService, never()).createReminder(any(), any(), anyBoolean());
   }
 }

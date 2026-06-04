@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -28,12 +29,18 @@ import com.pharmaflow.smartfeatures.enums.notification.NotificationChannel;
 import com.pharmaflow.smartfeatures.enums.notification.NotificationStatus;
 import com.pharmaflow.smartfeatures.enums.notification.NotificationType;
 import com.pharmaflow.smartfeatures.enums.recommendation.RecommendationEventType;
+import com.pharmaflow.smartfeatures.security.AuthenticatedUser;
 import com.pharmaflow.smartfeatures.testsupport.SmartFeaturesIntegrationTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.context.support.WithMockUser;
 
 class SmartFeaturesIntegrationTest extends SmartFeaturesIntegrationTestSupport {
 
@@ -191,12 +198,15 @@ class SmartFeaturesIntegrationTest extends SmartFeaturesIntegrationTestSupport {
   }
 
   @Test
+  @WithMockUser(username = "1", roles = "ADMIN")
   void reminderAndNotificationFlowShouldWork() throws Exception {
+    SecurityContextHolder.getContext().setAuthentication(adminAuthentication());
+
     String reminderBody =
         """
                 {
                   "patientProfileId": 50,
-                  "productId": 60,
+                  "productId": 101,
                   "dosageInstruction": "Take one pill",
                   "frequencyPerDay": 2,
                   "startDate": "%s",
@@ -207,7 +217,11 @@ class SmartFeaturesIntegrationTest extends SmartFeaturesIntegrationTestSupport {
 
     String reminderResponse =
         mockMvc
-            .perform(post("/api/reminders").contentType("application/json").content(reminderBody))
+            .perform(
+                post("/api/reminders")
+                    .with(authentication(adminAuthentication()))
+                    .contentType("application/json")
+                    .content(reminderBody))
             .andExpect(status().isCreated())
             .andReturn()
             .getResponse()
@@ -374,6 +388,13 @@ class SmartFeaturesIntegrationTest extends SmartFeaturesIntegrationTestSupport {
     user.setId(id);
     user.setPatientProfile(profile);
     return user;
+  }
+
+  private UsernamePasswordAuthenticationToken adminAuthentication() {
+    return new UsernamePasswordAuthenticationToken(
+        new AuthenticatedUser("admin@pharmaflow.ba", 1L),
+        null,
+        List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
   }
 
   private PatientHealthProfileSnapshot patientProfile(Long id) {

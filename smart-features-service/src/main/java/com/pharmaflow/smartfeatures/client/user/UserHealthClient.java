@@ -1,10 +1,13 @@
 package com.pharmaflow.smartfeatures.client.user;
 
 import com.pharmaflow.smartfeatures.client.ExternalServiceRestClientFactory;
+import com.pharmaflow.smartfeatures.dto.userhealth.FamilyMemberSnapshot;
 import com.pharmaflow.smartfeatures.dto.userhealth.PatientHealthProfileSnapshot;
 import com.pharmaflow.smartfeatures.dto.userhealth.UserHealthSnapshot;
 import com.pharmaflow.smartfeatures.exception.ExternalServiceException;
 import java.util.Optional;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -52,6 +55,25 @@ public class UserHealthClient {
     } catch (RestClientResponseException ex) {
       if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
         return Optional.empty();
+      }
+      throw unavailable(ex);
+    } catch (RestClientException ex) {
+      throw unavailable(ex);
+    }
+  }
+
+  public List<FamilyMemberSnapshot> getFamilyMembersByUserId(Long userId) {
+    try {
+      FamilyMemberSnapshot[] members =
+          restClient
+              .get()
+              .uri("/api/family-members/user/{userId}", userId)
+              .retrieve()
+              .body(FamilyMemberSnapshot[].class);
+      return members == null ? List.of() : Arrays.asList(members);
+    } catch (RestClientResponseException ex) {
+      if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
+        return List.of();
       }
       throw unavailable(ex);
     } catch (RestClientException ex) {

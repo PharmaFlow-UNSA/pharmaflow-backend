@@ -188,8 +188,9 @@ public class DataSeeder implements CommandLineRunner {
     for (int i = 1; i <= SEED_COUNT; i++) {
       TherapyReminder reminder =
           TherapyReminder.builder()
+              .ownerUserId(600L + i)
               .patientProfileId(700L + i)
-              .productId(800L + i)
+              .productId((long) i)
               .dosageInstruction("Take " + i + " tablet(s) daily")
               .frequencyPerDay(i)
               .startDate(LocalDate.now().minusDays(i))

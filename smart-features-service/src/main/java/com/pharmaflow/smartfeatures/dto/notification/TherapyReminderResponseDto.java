@@ -15,6 +15,7 @@ import lombok.Setter;
 public class TherapyReminderResponseDto {
 
   private Long id;
+  private Long ownerUserId;
   private Long patientProfileId;
   private Long productId;
   private String dosageInstruction;

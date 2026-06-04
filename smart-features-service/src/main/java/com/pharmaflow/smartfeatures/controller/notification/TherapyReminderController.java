@@ -2,6 +2,8 @@ package com.pharmaflow.smartfeatures.controller.notification;
 
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderRequestDto;
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderResponseDto;
+import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderStatusRequestDto;
+import com.pharmaflow.smartfeatures.security.AuthenticatedUsers;
 import com.pharmaflow.smartfeatures.service.notification.TherapyReminderService;
 import com.pharmaflow.smartfeatures.validation.NullablePositive;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,11 +13,14 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,35 +42,84 @@ public class TherapyReminderController {
   @GetMapping
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<List<TherapyReminderResponseDto>> getReminders(
-      @RequestParam(required = false) @NullablePositive Long patientProfileId) {
-    return ResponseEntity.ok(therapyReminderService.getReminders(patientProfileId));
+      @RequestParam(required = false) @NullablePositive Long patientProfileId,
+      Authentication authentication) {
+    Authentication currentAuthentication = currentAuthentication(authentication);
+    return ResponseEntity.ok(
+        therapyReminderService.getReminders(
+            patientProfileId,
+            AuthenticatedUsers.from(currentAuthentication),
+            AuthenticatedUsers.isAdmin(currentAuthentication)));
   }
 
   @GetMapping("/{id:-?\\d+}")
   @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
-  public ResponseEntity<TherapyReminderResponseDto> getReminder(@PathVariable @Positive Long id) {
-    return ResponseEntity.ok(therapyReminderService.getReminder(id));
+  public ResponseEntity<TherapyReminderResponseDto> getReminder(
+      @PathVariable @Positive Long id, Authentication authentication) {
+    Authentication currentAuthentication = currentAuthentication(authentication);
+    return ResponseEntity.ok(
+        therapyReminderService.getReminder(
+            id,
+            AuthenticatedUsers.from(currentAuthentication),
+            AuthenticatedUsers.isAdmin(currentAuthentication)));
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<TherapyReminderResponseDto> createReminder(
-      @Valid @RequestBody TherapyReminderRequestDto requestDto) {
+      @Valid @RequestBody TherapyReminderRequestDto requestDto, Authentication authentication) {
+    Authentication currentAuthentication = currentAuthentication(authentication);
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(therapyReminderService.createReminder(requestDto));
+        .body(
+            therapyReminderService.createReminder(
+                requestDto,
+                AuthenticatedUsers.from(currentAuthentication),
+                AuthenticatedUsers.isAdmin(currentAuthentication)));
   }
 
   @PutMapping("/{id:-?\\d+}")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
   public ResponseEntity<TherapyReminderResponseDto> updateReminder(
-      @PathVariable @Positive Long id, @Valid @RequestBody TherapyReminderRequestDto requestDto) {
-    return ResponseEntity.ok(therapyReminderService.updateReminder(id, requestDto));
+      @PathVariable @Positive Long id,
+      @Valid @RequestBody TherapyReminderRequestDto requestDto,
+      Authentication authentication) {
+    Authentication currentAuthentication = currentAuthentication(authentication);
+    return ResponseEntity.ok(
+        therapyReminderService.updateReminder(
+            id,
+            requestDto,
+            AuthenticatedUsers.from(currentAuthentication),
+            AuthenticatedUsers.isAdmin(currentAuthentication)));
+  }
+
+  @PatchMapping("/{id:-?\\d+}/status")
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
+  public ResponseEntity<TherapyReminderResponseDto> updateReminderStatus(
+      @PathVariable @Positive Long id,
+      @Valid @RequestBody TherapyReminderStatusRequestDto requestDto,
+      Authentication authentication) {
+    Authentication currentAuthentication = currentAuthentication(authentication);
+    return ResponseEntity.ok(
+        therapyReminderService.updateStatus(
+            id,
+            requestDto,
+            AuthenticatedUsers.from(currentAuthentication),
+            AuthenticatedUsers.isAdmin(currentAuthentication)));
   }
 
   @DeleteMapping("/{id:-?\\d+}")
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<Void> deleteReminder(@PathVariable @Positive Long id) {
-    therapyReminderService.deleteReminder(id);
+  @PreAuthorize("hasAnyRole('USER', 'DOCTOR', 'PHARMACIST', 'ADMIN')")
+  public ResponseEntity<Void> deleteReminder(
+      @PathVariable @Positive Long id, Authentication authentication) {
+    Authentication currentAuthentication = currentAuthentication(authentication);
+    therapyReminderService.deleteReminder(
+        id,
+        AuthenticatedUsers.from(currentAuthentication),
+        AuthenticatedUsers.isAdmin(currentAuthentication));
     return ResponseEntity.noContent().build();
+  }
+
+  private Authentication currentAuthentication(Authentication authentication) {
+    return authentication != null ? authentication : SecurityContextHolder.getContext().getAuthentication();
   }
 }
