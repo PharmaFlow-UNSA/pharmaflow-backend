@@ -1,0 +1,312 @@
+# PharmaFlow — full backend stack (Zadatak 3)
+#
+# Brings up infrastructure (Postgres, RabbitMQ, Redis, embedding-service),
+# discovery/config (Eureka, Config Server), all five business microservices and
+# the API gateway, in the correct order via healthcheck-gated dependencies.
+#
+# The frontend has its own compose file (../pharmaflow-frontend/docker-compose.yml).
+#
+#   docker compose up -d --build
+#   docker compose ps
+#   docker compose logs -f api-gateway
+#   docker compose down            (add -v to also wipe DB/RabbitMQ volumes)
+
+name: pharmaflow
+
+# ---- Reusable fragments -----------------------------------------------------
+x-common-env: &common-env
+  EUREKA_SERVER: http://eureka-server:8761/eureka/
+  EUREKA_SERVER_URL: http://eureka-server:8761/eureka/   # smart-features uses this name
+  DB_USERNAME: ${POSTGRES_USER:-postgres}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  JWT_SECRET: ${JWT_SECRET:-pharmaflow-secret-key-2024-very-long-and-secure-key-for-production}
+
+x-rabbit-env: &rabbit-env
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+  PHARMAFLOW_RABBITMQ_ENABLED: "true"
+  PHARMAFLOW_SAGA_EXCHANGE: pharmaflow.saga.exchange
+
+# Healthcheck for Spring Boot services exposing actuator
+x-actuator-healthcheck: &actuator-healthcheck
+  test: ["CMD", "curl", "-f", "http://localhost:$${SERVICE_PORT}/actuator/health"]
+  interval: 15s
+  timeout: 5s
+  retries: 10
+  start_period: 90s
+
+services:
+  # ======================= Infrastructure =======================
+  postgres:
+    image: pgvector/pgvector:pg15          # pg15 + the `vector` extension smart-features needs
+    container_name: pharmaflow-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    mem_limit: 512m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: pharmaflow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    mem_limit: 512m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+
+  redis:
+    image: redis:7-alpine
+    container_name: pharmaflow-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    mem_limit: 192m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+
+  embedding-service:
+    build:
+      context: ./embedding-service
+    image: pharmaflow/embedding-service
+    container_name: pharmaflow-embedding
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/openapi.json').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s     # model loads at startup
+    mem_limit: 1536m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+
+  # ======================= Discovery & Config =======================
+  eureka-server:
+    build:
+      context: ./eureka-server
+    image: pharmaflow/eureka-server
+    container_name: pharmaflow-eureka
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    mem_limit: 384m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+
+  config-server:
+    build:
+      context: ./config-server
+    image: pharmaflow/config-server
+    container_name: pharmaflow-config
+    ports:
+      - "8888:8888"
+    healthcheck:
+      # config-server has no actuator; a config lookup returns 200 even when empty
+      test: ["CMD", "curl", "-f", "http://localhost:8888/application/default"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    mem_limit: 384m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+
+  # ======================= Business microservices =======================
+  user-health-service:
+    build:
+      context: ./user-health-service
+    image: pharmaflow/user-health-service
+    container_name: pharmaflow-user-health
+    environment:
+      <<: [*common-env, *rabbit-env]
+      SERVICE_PORT: "8081"
+      PORT: "8081"
+      DB_URL: jdbc:postgresql://postgres:5432/pharmaflow_user_db
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    ports:
+      - "8081:8081"
+    healthcheck:
+      <<: *actuator-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+    mem_limit: 640m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      eureka-server: { condition: service_healthy }
+
+  product-health-service:
+    build:
+      context: ./product-health-service
+    image: pharmaflow/product-health-service
+    container_name: pharmaflow-product-health
+    environment:
+      <<: *common-env
+      SERVICE_PORT: "8083"
+      PORT: "8083"
+      DB_URL: jdbc:postgresql://postgres:5432/pharmaflow_product
+    ports:
+      - "8083:8083"
+    healthcheck:
+      <<: *actuator-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+    mem_limit: 640m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+    depends_on:
+      postgres: { condition: service_healthy }
+      eureka-server: { condition: service_healthy }
+
+  pharmacy-inventory-service:
+    build:
+      context: ./pharmacy-inventory-service
+    image: pharmaflow/pharmacy-inventory-service
+    container_name: pharmaflow-pharmacy-inventory
+    environment:
+      <<: [*common-env, *rabbit-env]
+      SERVICE_PORT: "8084"
+      PORT: "8084"
+      DB_URL: jdbc:postgresql://postgres:5432/pharmaflow_pharmacy_db
+    ports:
+      - "8084:8084"
+    healthcheck:
+      <<: *actuator-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+    mem_limit: 640m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      eureka-server: { condition: service_healthy }
+
+  order-prescription-service:
+    build:
+      context: ./order-prescription-service
+    image: pharmaflow/order-prescription-service
+    container_name: pharmaflow-order-prescription
+    environment:
+      <<: [*common-env, *rabbit-env]
+      SERVICE_PORT: "8087"
+      PORT: "8087"
+      DB_URL: jdbc:postgresql://postgres:5432/pharmaflow_order_db
+    ports:
+      - "8087:8087"
+    healthcheck:
+      <<: *actuator-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+    mem_limit: 640m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      eureka-server: { condition: service_healthy }
+
+  smart-features-service:
+    build:
+      context: ./smart-features-service
+    image: pharmaflow/smart-features-service
+    container_name: pharmaflow-smart-features
+    environment:
+      <<: [*common-env, *rabbit-env]
+      SERVICE_PORT: "8082"
+      SERVER_PORT: "8082"
+      DB_URL: jdbc:postgresql://postgres:5432/pharmaflow_smart_features_db
+      SMARTFEATURES_EMBEDDING_SERVICE_URL: http://embedding-service:8000
+      SMARTFEATURES_EMBEDDING_ENABLED: "true"
+    ports:
+      - "8082:8082"
+    healthcheck:
+      <<: *actuator-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+    mem_limit: 768m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      eureka-server: { condition: service_healthy }
+      embedding-service: { condition: service_healthy }
+
+  # ======================= Edge =======================
+  api-gateway:
+    build:
+      context: ./api-gateway
+    image: pharmaflow/api-gateway
+    container_name: pharmaflow-gateway
+    environment:
+      <<: *common-env
+      SERVICE_PORT: "8080"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-pharmaflow-internal-secret-2024-very-secure}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:4200}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      <<: *actuator-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+    mem_limit: 640m
+    restart: unless-stopped
+    networks: [pharmaflow-net]
+    depends_on:
+      eureka-server: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      user-health-service: { condition: service_healthy }
+      product-health-service: { condition: service_healthy }
+      pharmacy-inventory-service: { condition: service_healthy }
+      order-prescription-service: { condition: service_healthy }
+      smart-features-service: { condition: service_healthy }
+
+networks:
+  pharmaflow-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
