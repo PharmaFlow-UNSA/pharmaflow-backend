@@ -16,9 +16,11 @@ import com.pharmaflow.smartfeatures.model.notification.TherapyReminder;
 import com.pharmaflow.smartfeatures.repositories.notification.NotificationRepository;
 import com.pharmaflow.smartfeatures.repositories.notification.NotificationTriggerRepository;
 import com.pharmaflow.smartfeatures.repositories.notification.TherapyReminderRepository;
+import com.pharmaflow.smartfeatures.security.AuthenticatedUser;
 import com.pharmaflow.smartfeatures.util.TextSanitizer;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,16 +44,21 @@ public class NotificationService {
   }
 
   @Transactional(readOnly = true)
-  public List<NotificationResponseDto> getNotifications(Long userId) {
-    return (userId != null
-            ? notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
+  public List<NotificationResponseDto> getNotifications(
+      Long userId, AuthenticatedUser authenticatedUser, boolean admin) {
+    Long effectiveUserId = resolveReadableUserId(userId, authenticatedUser, admin);
+    return (effectiveUserId != null
+            ? notificationRepository.findByUserIdOrderByCreatedAtDesc(effectiveUserId)
             : notificationRepository.findAllByOrderByCreatedAtDesc())
         .stream().map(notificationMapper::toResponseDto).toList();
   }
 
   @Transactional(readOnly = true)
-  public NotificationResponseDto getNotification(Long id) {
-    return notificationMapper.toResponseDto(findNotificationById(id));
+  public NotificationResponseDto getNotification(
+      Long id, AuthenticatedUser authenticatedUser, boolean admin) {
+    Notification notification = findNotificationById(id);
+    assertCanAccessNotification(notification, authenticatedUser, admin);
+    return notificationMapper.toResponseDto(notification);
   }
 
   @Transactional
@@ -93,8 +100,10 @@ public class NotificationService {
   }
 
   @Transactional
-  public NotificationResponseDto markAsRead(Long id) {
+  public NotificationResponseDto markAsRead(
+      Long id, AuthenticatedUser authenticatedUser, boolean admin) {
     Notification notification = findNotificationById(id);
+    assertCanAccessNotification(notification, authenticatedUser, admin);
     if (notification.getStatus() != NotificationStatus.DELIVERED
         && notification.getStatus() != NotificationStatus.READ) {
       throw new BadRequestException("Only delivered notifications can be marked as read.");
@@ -108,8 +117,10 @@ public class NotificationService {
   }
 
   @Transactional(readOnly = true)
-  public List<NotificationTriggerResponseDto> getTriggers(Long notificationId) {
-    findNotificationById(notificationId);
+  public List<NotificationTriggerResponseDto> getTriggers(
+      Long notificationId, AuthenticatedUser authenticatedUser, boolean admin) {
+    Notification notification = findNotificationById(notificationId);
+    assertCanAccessNotification(notification, authenticatedUser, admin);
     return notificationTriggerRepository
         .findByNotificationNotificationIdOrderByTriggeredAtDesc(notificationId)
         .stream()
@@ -121,6 +132,32 @@ public class NotificationService {
     return notificationRepository
         .findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + id));
+  }
+
+  private Long resolveReadableUserId(
+      Long requestedUserId, AuthenticatedUser authenticatedUser, boolean admin) {
+    if (admin) {
+      return requestedUserId;
+    }
+    Long authenticatedUserId = authenticatedUser != null ? authenticatedUser.userId() : null;
+    if (authenticatedUserId == null || authenticatedUserId <= 0) {
+      throw new AccessDeniedException("You do not have permission to access these notifications.");
+    }
+    if (requestedUserId != null && !requestedUserId.equals(authenticatedUserId)) {
+      throw new AccessDeniedException("You do not have permission to access these notifications.");
+    }
+    return authenticatedUserId;
+  }
+
+  private void assertCanAccessNotification(
+      Notification notification, AuthenticatedUser authenticatedUser, boolean admin) {
+    if (admin) {
+      return;
+    }
+    Long authenticatedUserId = authenticatedUser != null ? authenticatedUser.userId() : null;
+    if (authenticatedUserId == null || !authenticatedUserId.equals(notification.getUserId())) {
+      throw new AccessDeniedException("You do not have permission to access this notification.");
+    }
   }
 
   private TherapyReminder findReminderOrNull(Long reminderId) {

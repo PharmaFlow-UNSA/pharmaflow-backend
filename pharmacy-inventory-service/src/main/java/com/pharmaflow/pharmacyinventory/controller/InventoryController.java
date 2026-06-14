@@ -1,6 +1,7 @@
 package com.pharmaflow.pharmacyinventory.controller;
 
 import com.pharmaflow.pharmacyinventory.dto.InventoryDTO;
+import com.pharmaflow.pharmacyinventory.dto.ProductInventorySummaryDTO;
 import com.pharmaflow.pharmacyinventory.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,6 +57,14 @@ public class InventoryController {
     @Operation(summary = "Get inventory by product ID", description = "Retrieves inventory across all pharmacies for a specific product")
     public ResponseEntity<List<InventoryDTO>> getInventoryByProductId(@PathVariable Long productId) {
         return ResponseEntity.ok(inventoryService.getInventoryByProductId(productId));
+    }
+
+    @GetMapping("/product-summary")
+    @Operation(summary = "Get inventory summaries by product IDs",
+            description = "Returns aggregate stock status for product cards. Example: ?productIds=1,2,3")
+    public ResponseEntity<List<ProductInventorySummaryDTO>> getProductInventorySummaries(
+            @RequestParam List<Long> productIds) {
+        return ResponseEntity.ok(inventoryService.getProductInventorySummaries(productIds));
     }
 
     @PostMapping

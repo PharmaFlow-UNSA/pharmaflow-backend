@@ -95,26 +95,18 @@ public class TherapyReminderService {
 
   @Transactional
   public TherapyReminderResponseDto createReminder(TherapyReminderRequestDto requestDto) {
-    validateReminderWindow(requestDto);
-    validateProduct(requestDto.getProductId());
-    TherapyReminder reminder = therapyReminderMapper.toEntity(requestDto);
-    reminder.setOwnerUserId(0L);
-    reminder.setDosageInstruction(
-        TextSanitizer.sanitizeOptionalText(requestDto.getDosageInstruction()));
-    reminder.setStatus(TherapyReminderStatus.ACTIVE);
-    reminder.setNextReminderAt(calculateNextReminderAt(reminder));
-    return therapyReminderMapper.toResponseDto(therapyReminderRepository.save(reminder));
+    throw new AccessDeniedException("Authenticated user id is required.");
   }
 
   @Transactional
   public TherapyReminderResponseDto createReminder(
       TherapyReminderRequestDto requestDto, AuthenticatedUser user, boolean admin) {
     validateReminderWindow(requestDto);
-    validateProduct(requestDto.getProductId());
     Long ownerUserId = admin ? requireAdminOwnerFallback(user) : requireUserId(user);
     if (!admin) {
       validateManagedPatientProfile(ownerUserId, requestDto.getPatientProfileId());
     }
+    validateProduct(requestDto.getProductId());
 
     TherapyReminder reminder = therapyReminderMapper.toEntity(requestDto);
     reminder.setOwnerUserId(ownerUserId);
@@ -307,13 +299,13 @@ public class TherapyReminderService {
   }
 
   private Long requireUserId(AuthenticatedUser user) {
-    if (user == null || user.userId() == null) {
+    if (user == null || user.userId() == null || user.userId() <= 0) {
       throw new AccessDeniedException("Authenticated user id is required.");
     }
     return user.userId();
   }
 
   private Long requireAdminOwnerFallback(AuthenticatedUser user) {
-    return user != null && user.userId() != null ? user.userId() : 0L;
+    return requireUserId(user);
   }
 }

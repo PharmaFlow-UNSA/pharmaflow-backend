@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.pharmaflow.pharmacyinventory.dto.InventoryDTO;
+import com.pharmaflow.pharmacyinventory.dto.ProductInventorySummaryDTO;
 import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
 import com.pharmaflow.pharmacyinventory.models.Inventory;
@@ -25,7 +26,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -90,6 +95,36 @@ public class InventoryService {
         return inventoryRepository.findByProductId(productId).stream()
                 .map(this::convertToDTO)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductInventorySummaryDTO> getProductInventorySummaries(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, ProductInventorySummaryDTO> summaries = new LinkedHashMap<>();
+        for (Long productId : productIds) {
+            if (productId != null) {
+                summaries.putIfAbsent(productId, new ProductInventorySummaryDTO(productId, 0, 0L, false, null, false));
+            }
+        }
+
+        if (summaries.isEmpty()) {
+            return List.of();
+        }
+
+        List<Inventory> inventories = inventoryRepository.findByProductIdIn(summaries.keySet());
+        Map<Long, List<Inventory>> byProductId = new LinkedHashMap<>();
+        for (Inventory inventory : inventories) {
+            byProductId.computeIfAbsent(inventory.getProductId(), ignored -> new ArrayList<>()).add(inventory);
+        }
+
+        for (Map.Entry<Long, List<Inventory>> entry : byProductId.entrySet()) {
+            summaries.put(entry.getKey(), toSummary(entry.getKey(), entry.getValue()));
+        }
+
+        return new ArrayList<>(summaries.values());
     }
 
     @Transactional
@@ -212,5 +247,39 @@ public class InventoryService {
         dto.setLastRestocked(inventory.getLastRestocked());
         dto.setPharmacyId(inventory.getPharmacy().getId());
         return dto;
+    }
+
+    private ProductInventorySummaryDTO toSummary(Long productId, Collection<Inventory> inventories) {
+        int totalQuantity = inventories.stream()
+                .map(Inventory::getQuantity)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        long pharmacyCount = inventories.stream()
+                .filter(inventory -> inventory.getQuantity() != null && inventory.getQuantity() > 0)
+                .map(inventory -> inventory.getPharmacy().getId())
+                .distinct()
+                .count();
+
+        Integer lowestQuantity = inventories.stream()
+                .map(Inventory::getQuantity)
+                .filter(quantity -> quantity != null && quantity > 0)
+                .min(Integer::compareTo)
+                .orElse(null);
+
+        boolean lowStock = inventories.stream()
+                .anyMatch(inventory -> inventory.getQuantity() != null
+                        && inventory.getReorderLevel() != null
+                        && inventory.getQuantity() > 0
+                        && inventory.getQuantity() <= inventory.getReorderLevel());
+
+        return new ProductInventorySummaryDTO(
+                productId,
+                totalQuantity,
+                pharmacyCount,
+                totalQuantity > 0,
+                lowestQuantity,
+                lowStock);
     }
 }

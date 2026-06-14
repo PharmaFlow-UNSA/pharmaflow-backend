@@ -50,4 +50,19 @@ class JwtAuthenticationFilterTest {
 
         assertThat(hasAccess).isTrue();
     }
+
+    @Test
+    void isPublicCatalogRead_allowsSafeCatalogPaths() {
+        assertThat(filter.isPublicCatalogRead("/api/products/page")).isTrue();
+        assertThat(filter.isPublicCatalogRead("/api/categories")).isTrue();
+        assertThat(filter.isPublicCatalogRead("/api/pharmacies/1")).isTrue();
+        assertThat(filter.isPublicCatalogRead("/api/inventory/product/1")).isTrue();
+        assertThat(filter.isPublicCatalogRead("/api/inventory/product-summary")).isTrue();
+    }
+
+    @Test
+    void isPublicCatalogRead_doesNotAllowGeneralInventoryReads() {
+        assertThat(filter.isPublicCatalogRead("/api/inventory")).isFalse();
+        assertThat(filter.isPublicCatalogRead("/api/inventory/1")).isFalse();
+    }
 }

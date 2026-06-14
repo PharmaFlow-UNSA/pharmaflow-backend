@@ -42,6 +42,9 @@ public class PharmacyDTO {
     @Size(max = 50, message = "Opening hours must not exceed 50 characters")
     private String openingHours;
 
+    @Size(max = 500, message = "Image URL must not exceed 500 characters")
+    private String imageUrl;
+
     private List<Long> inventoryItemIds = new ArrayList<>();
 
     private List<Long> reservationIds = new ArrayList<>();

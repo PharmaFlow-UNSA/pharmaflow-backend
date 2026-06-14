@@ -154,7 +154,18 @@ class ProductServiceTest {
         Page<Product> mockPage = new PageImpl<>(List.of(testProduct));
         when(productRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class))).thenReturn(mockPage);
         Page<ProductDTO> result = productService.getProductsPageable(
-                null, null, null, null, null, null, Pageable.ofSize(10));
+                null, null, null, null, null, null, null, Pageable.ofSize(10));
+
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void getProductsPageable_withCategoryFilter_shouldReturnPage() {
+        Page<Product> mockPage = new PageImpl<>(List.of(testProduct));
+        when(productRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class))).thenReturn(mockPage);
+        Page<ProductDTO> result = productService.getProductsPageable(
+                null, null, 1L, null, null, null, null, Pageable.ofSize(10));
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
@@ -164,7 +175,16 @@ class ProductServiceTest {
     void getProductsPageable_withInvalidProductType_shouldThrow() {
         assertThrows(IllegalArgumentException.class,
                 () -> productService.getProductsPageable(
-                        null, null, "INVALID_TYPE", null, null, null, Pageable.ofSize(10)));
+                        null, null, null, "INVALID_TYPE", null, null, null, Pageable.ofSize(10)));
+    }
+
+    @Test
+    void getProductsPageable_whenMinGreaterThanMax_shouldThrow() {
+        assertThrows(IllegalArgumentException.class,
+                () -> productService.getProductsPageable(
+                        null, null, null, null, null,
+                        new BigDecimal("10.00"), new BigDecimal("2.00"), Pageable.ofSize(10)));
+        verify(productRepository, never()).findAll(any(org.springframework.data.jpa.domain.Specification.class), any(Pageable.class));
     }
 
     // ── Custom query tests ────────────────────────────────────────────────

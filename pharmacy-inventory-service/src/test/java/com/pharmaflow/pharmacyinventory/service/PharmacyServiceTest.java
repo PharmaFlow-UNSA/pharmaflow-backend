@@ -60,6 +60,7 @@ class PharmacyServiceTest {
         testPharmacy.setPhoneNumber("+387-33-123456");
         testPharmacy.setEmail("centar@pharmaflow.ba");
         testPharmacy.setOpeningHours("08:00-20:00");
+        testPharmacy.setImageUrl("/demo/pharmacies/pharmaflow-centar.jpg");
         testPharmacy.setInventoryItems(new ArrayList<>());
         testPharmacy.setReservations(new ArrayList<>());
         testPharmacy.setDeliveries(new ArrayList<>());
@@ -71,6 +72,7 @@ class PharmacyServiceTest {
         testCreateDTO.setPhoneNumber("+387-33-123456");
         testCreateDTO.setEmail("centar@pharmaflow.ba");
         testCreateDTO.setOpeningHours("08:00-20:00");
+        testCreateDTO.setImageUrl("/demo/pharmacies/pharmaflow-centar.jpg");
     }
 
     @Test
@@ -117,6 +119,7 @@ class PharmacyServiceTest {
 
         assertNotNull(result);
         assertEquals("Apoteka Centar", result.getName());
+        assertEquals("/demo/pharmacies/pharmaflow-centar.jpg", result.getImageUrl());
         verify(pharmacyRepository).existsByName("Apoteka Centar");
         verify(pharmacyRepository).save(any(Pharmacy.class));
     }

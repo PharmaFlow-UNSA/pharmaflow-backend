@@ -113,12 +113,13 @@ public class ProductController {
             @PageableDefault(size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String manufacturer,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String productType,
             @RequestParam(required = false) Boolean requiresPrescription,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice) {
         return ResponseEntity.ok(productService.getProductsPageable(
-                name, manufacturer, productType, requiresPrescription, minPrice, maxPrice, pageable));
+                name, manufacturer, categoryId, productType, requiresPrescription, minPrice, maxPrice, pageable));
     }
 
     // ── Custom Queries ────────────────────────────────────────────────────

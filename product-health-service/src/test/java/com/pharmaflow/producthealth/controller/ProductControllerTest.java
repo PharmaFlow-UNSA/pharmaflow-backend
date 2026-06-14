@@ -192,7 +192,7 @@ class ProductControllerTest {
     @Test
     void getProductsPageable_shouldReturn200WithPageData() throws Exception {
         Page<ProductDTO> page = new PageImpl<>(List.of(testProductDTO));
-        when(productService.getProductsPageable(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(productService.getProductsPageable(any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/products/page")
@@ -206,11 +206,12 @@ class ProductControllerTest {
     @Test
     void getProductsPageable_withFilters_shouldReturn200() throws Exception {
         Page<ProductDTO> page = new PageImpl<>(List.of(testProductDTO));
-        when(productService.getProductsPageable(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+        when(productService.getProductsPageable(any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/products/page")
                         .param("requiresPrescription", "false")
+                        .param("categoryId", "1")
                         .param("productType", "MEDICATION"))
                 .andExpect(status().isOk());
     }

@@ -54,7 +54,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String path = request.getURI().getPath();
 
         // Allow public endpoints without authentication
-        if (isPublicPath(path)) {
+        if (isPublicPath(path, request.getMethod())) {
             log.debug("Public path accessed: {}", path);
             return addInternalToken(exchange, chain, "anonymous", List.of());
         }
@@ -175,8 +175,27 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         return tokenBlacklistService.isTokenBlacklisted(token);
     }
 
-    private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    private boolean isPublicPath(String path, HttpMethod method) {
+        if (PUBLIC_PATHS.stream().anyMatch(path::startsWith)) {
+            return true;
+        }
+
+        if (method != HttpMethod.GET) {
+            return false;
+        }
+
+        return isPublicCatalogRead(path);
+    }
+
+    boolean isPublicCatalogRead(String path) {
+        return path.startsWith("/api/products/")
+                || path.equals("/api/products")
+                || path.startsWith("/api/categories/")
+                || path.equals("/api/categories")
+                || path.startsWith("/api/pharmacies/")
+                || path.equals("/api/pharmacies")
+                || path.startsWith("/api/inventory/product/")
+                || path.equals("/api/inventory/product-summary");
     }
 
     private Mono<Void> unauthorizedResponse(ServerWebExchange exchange, String message) {
