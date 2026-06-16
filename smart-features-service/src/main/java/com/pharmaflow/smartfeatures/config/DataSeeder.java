@@ -91,15 +91,29 @@ public class DataSeeder implements CommandLineRunner {
 
   private List<Symptom> seedSymptoms() {
     List<Symptom> symptoms = new ArrayList<>();
-    SymptomSeverityLevel[] severityLevels = SymptomSeverityLevel.values();
+    String[] names = {"Headache", "Fever", "Heartburn", "Seasonal allergies", "Dry cough"};
+    String[] descriptions = {
+      "Mild to moderate head pain, tension or pressure.",
+      "Elevated body temperature with chills or body aches.",
+      "Burning sensation in the chest or acid reflux after meals.",
+      "Sneezing, itchy eyes, runny nose or hives caused by allergens.",
+      "Irritating non-productive cough without mucus."
+    };
+    SymptomSeverityLevel[] severityLevels = {
+      SymptomSeverityLevel.MEDIUM,
+      SymptomSeverityLevel.MEDIUM,
+      SymptomSeverityLevel.LOW,
+      SymptomSeverityLevel.LOW,
+      SymptomSeverityLevel.LOW
+    };
 
     for (int i = 1; i <= SEED_COUNT; i++) {
       Symptom symptom =
           Symptom.builder()
-              .name("Symptom " + i)
-              .description("Seeded symptom " + i)
+              .name(names[i - 1])
+              .description(descriptions[i - 1])
               .severityLevel(severityLevels[(i - 1) % severityLevels.length])
-              .isActive(i % 2 != 0)
+              .isActive(true)
               .build();
       persist(symptom);
       symptoms.add(symptom);
@@ -110,13 +124,14 @@ public class DataSeeder implements CommandLineRunner {
 
   private List<SymptomSearch> seedSymptomSearches() {
     List<SymptomSearch> searches = new ArrayList<>();
+    String[] queries = {"headache relief", "fever medicine", "acid reflux", "hay fever", "dry cough syrup"};
 
     for (int i = 1; i <= SEED_COUNT; i++) {
       SymptomSearch search =
           SymptomSearch.builder()
               .userId(100L + i)
               .patientProfileId(200L + i)
-              .searchQuery("search query " + i)
+              .searchQuery(queries[i - 1])
               .searchedAt(LocalDateTime.now().minusDays(SEED_COUNT - i))
               .build();
       persist(search);
@@ -133,13 +148,21 @@ public class DataSeeder implements CommandLineRunner {
   }
 
   private void seedSymptomProductMatches(List<Symptom> symptoms) {
+    long[] productIds = {1L, 3L, 6L, 8L, 10L};
+    String[] reasons = {
+      "Ibuprofen is commonly used for short-term headache and pain relief.",
+      "Paracetamol is commonly used to reduce fever and relieve body aches.",
+      "Omeprazole can help reduce stomach acid symptoms such as heartburn.",
+      "Cetirizine helps relieve sneezing, itchy eyes and other allergy symptoms.",
+      "Dextromethorphan syrup can help calm a dry, irritating cough."
+    };
     for (int i = 0; i < SEED_COUNT; i++) {
       persist(
           SymptomProductMatch.builder()
               .symptom(symptoms.get(i))
-              .productId(300L + i)
-              .relevanceScore(0.55 + (i * 0.08))
-              .matchReason("Seeded match reason " + (i + 1))
+              .productId(productIds[i])
+              .relevanceScore(0.92 - (i * 0.04))
+              .matchReason(reasons[i])
               .build());
     }
   }
@@ -154,10 +177,10 @@ public class DataSeeder implements CommandLineRunner {
           Recommendation.builder()
               .userId(400L + i)
               .patientProfileId(500L + i)
-              .productId(600L + i)
+              .productId((long) i)
               .recommendationType(types[(i - 1) % types.length])
               .score(0.60 + (i * 0.05))
-              .reasonText("Seeded recommendation reason " + i)
+              .reasonText("Seeded recommendation aligned with demo product " + i)
               .generatedAt(LocalDateTime.now().minusHours(i))
               .expiresAt(LocalDateTime.now().plusDays(i))
               .status(statuses[(i - 1) % statuses.length])
@@ -441,24 +464,24 @@ public class DataSeeder implements CommandLineRunner {
             "delivery,courier,real time tracking,status"),
         new FaqSeed(
             "Which payment methods are accepted?",
-            "PharmaFlow supports the payment methods shown at checkout. Availability can vary by pharmacy and delivery option.",
+            "PharmaFlow currently supports payment on pickup.",
             FaqCategory.PAYMENTS,
-            "payment,card,cash,checkout,receipt"),
+            "payment,pickup,cash,checkout,receipt"),
         new FaqSeed(
             "When will I be charged for my order?",
-            "Payment timing depends on the selected payment method and pharmacy confirmation flow shown at checkout.",
+            "Payment is collected when you pick up the order at the pharmacy.",
             FaqCategory.PAYMENTS,
-            "payment,charged,checkout,confirmation"),
+            "payment,charged,pickup,checkout,confirmation"),
         new FaqSeed(
             "Why did my payment fail?",
-            "Payment can fail because of card issues, bank rejection, insufficient funds, or temporary payment provider errors.",
+            "Payment problems are handled at pickup by the pharmacy. Contact the pharmacy or support if an order payment status looks incorrect.",
             FaqCategory.PAYMENTS,
-            "payment failed,card,bank,insufficient funds,error"),
+            "payment failed,pickup,pharmacy,error"),
         new FaqSeed(
             "Can I pay when the order is delivered?",
-            "Pay-on-delivery is available only when that option appears during checkout for the selected pharmacy.",
+            "Online and delivery payment are not currently supported. Payment is collected at pickup.",
             FaqCategory.PAYMENTS,
-            "cash on delivery,pay on delivery,checkout,pharmacy"),
+            "payment on pickup,checkout,pharmacy"),
         new FaqSeed(
             "Where can I find my receipt?",
             "Receipts are available from your order details when the payment and order flow support receipt generation.",
@@ -470,10 +493,10 @@ public class DataSeeder implements CommandLineRunner {
             FaqCategory.PAYMENTS,
             "insurance,payment,checkout,support"),
         new FaqSeed(
-            "Can I split payment across two cards?",
-            "Split payments are only supported if the option appears during checkout.",
+            "Can I split payment?",
+            "Split payments are not currently supported. Payment is collected at pickup.",
             FaqCategory.PAYMENTS,
-            "split payment,two cards,checkout"),
+            "split payment,pickup,checkout"),
         new FaqSeed(
             "How do refunds work?",
             "Refund handling depends on order status, pharmacy review, and payment method. Contact support for refund-specific help.",

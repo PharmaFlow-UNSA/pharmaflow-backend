@@ -23,6 +23,8 @@ import com.pharmaflow.smartfeatures.model.notification.TherapyReminder;
 import com.pharmaflow.smartfeatures.repositories.notification.NotificationRepository;
 import com.pharmaflow.smartfeatures.repositories.notification.NotificationTriggerRepository;
 import com.pharmaflow.smartfeatures.repositories.notification.TherapyReminderRepository;
+import com.pharmaflow.smartfeatures.security.AuthenticatedUser;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
@@ -141,6 +144,60 @@ class NotificationServiceTest {
                     3L, new NotificationDeliveryStatusRequestDto(NotificationStatus.DELIVERED)))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("Invalid notification status transition from PENDING to DELIVERED.");
+
+    verify(notificationRepository, never()).save(any(Notification.class));
+  }
+
+  @Test
+  void getNotificationsShouldDenyNonAdminAccessToAnotherUser() {
+    assertThatThrownBy(
+            () ->
+                notificationService.getNotifications(
+                    11L, new AuthenticatedUser("10", 10L), false))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("You do not have permission to access these notifications.");
+
+    verify(notificationRepository, never()).findByUserIdOrderByCreatedAtDesc(any());
+  }
+
+  @Test
+  void getNotificationsShouldLimitNonAdminToAuthenticatedUser() {
+    Notification notification =
+        Notification.builder()
+            .notificationId(1L)
+            .userId(10L)
+            .type(NotificationType.SYSTEM)
+            .channel(NotificationChannel.IN_APP)
+            .status(NotificationStatus.DELIVERED)
+            .title("Notice")
+            .message("Message")
+            .createdAt(java.time.LocalDateTime.now())
+            .build();
+    when(notificationRepository.findByUserIdOrderByCreatedAtDesc(10L))
+        .thenReturn(List.of(notification));
+
+    List<NotificationResponseDto> notifications =
+        notificationService.getNotifications(null, new AuthenticatedUser("10", 10L), false);
+
+    assertThat(notifications).hasSize(1);
+    verify(notificationRepository).findByUserIdOrderByCreatedAtDesc(10L);
+    verify(notificationRepository, never()).findAllByOrderByCreatedAtDesc();
+  }
+
+  @Test
+  void markAsReadShouldDenyNonOwner() {
+    Notification notification =
+        Notification.builder()
+            .notificationId(1L)
+            .userId(10L)
+            .status(NotificationStatus.DELIVERED)
+            .build();
+    when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+    assertThatThrownBy(
+            () -> notificationService.markAsRead(1L, new AuthenticatedUser("11", 11L), false))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("You do not have permission to access this notification.");
 
     verify(notificationRepository, never()).save(any(Notification.class));
   }

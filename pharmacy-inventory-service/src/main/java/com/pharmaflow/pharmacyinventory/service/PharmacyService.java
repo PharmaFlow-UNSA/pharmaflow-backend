@@ -81,12 +81,7 @@ public class PharmacyService {
         }
 
         Pharmacy pharmacy = new Pharmacy();
-        pharmacy.setName(createDTO.getName());
-        pharmacy.setAddress(createDTO.getAddress());
-        pharmacy.setCity(createDTO.getCity());
-        pharmacy.setPhoneNumber(createDTO.getPhoneNumber());
-        pharmacy.setEmail(createDTO.getEmail());
-        pharmacy.setOpeningHours(createDTO.getOpeningHours());
+        mapCreateDtoToEntity(createDTO, pharmacy);
 
         Pharmacy saved = pharmacyRepository.save(pharmacy);
         log.info("Pharmacy created with id: {}", saved.getId());
@@ -104,12 +99,7 @@ public class PharmacyService {
             }
 
             Pharmacy pharmacy = new Pharmacy();
-            pharmacy.setName(dto.getName());
-            pharmacy.setAddress(dto.getAddress());
-            pharmacy.setCity(dto.getCity());
-            pharmacy.setPhoneNumber(dto.getPhoneNumber());
-            pharmacy.setEmail(dto.getEmail());
-            pharmacy.setOpeningHours(dto.getOpeningHours());
+            mapCreateDtoToEntity(dto, pharmacy);
 
             pharmacies.add(pharmacy);
         }
@@ -130,12 +120,7 @@ public class PharmacyService {
             throw new DuplicateResourceException("Pharmacy with name '" + createDTO.getName() + "' already exists");
         }
 
-        pharmacy.setName(createDTO.getName());
-        pharmacy.setAddress(createDTO.getAddress());
-        pharmacy.setCity(createDTO.getCity());
-        pharmacy.setPhoneNumber(createDTO.getPhoneNumber());
-        pharmacy.setEmail(createDTO.getEmail());
-        pharmacy.setOpeningHours(createDTO.getOpeningHours());
+        mapCreateDtoToEntity(createDTO, pharmacy);
 
         Pharmacy updated = pharmacyRepository.save(pharmacy);
         log.info("Pharmacy updated with id: {}", updated.getId());
@@ -175,6 +160,7 @@ public class PharmacyService {
             pharmacy.setPhoneNumber(patchedDTO.getPhoneNumber());
             pharmacy.setEmail(patchedDTO.getEmail());
             pharmacy.setOpeningHours(patchedDTO.getOpeningHours());
+            pharmacy.setImageUrl(patchedDTO.getImageUrl());
 
             Pharmacy saved = pharmacyRepository.save(pharmacy);
             log.info("Pharmacy patched with id: {}", saved.getId());
@@ -203,6 +189,7 @@ public class PharmacyService {
         dto.setPhoneNumber(pharmacy.getPhoneNumber());
         dto.setEmail(pharmacy.getEmail());
         dto.setOpeningHours(pharmacy.getOpeningHours());
+        dto.setImageUrl(pharmacy.getImageUrl());
 
         if (pharmacy.getInventoryItems() != null) {
             dto.setInventoryItemIds(pharmacy.getInventoryItems().stream()
@@ -223,5 +210,15 @@ public class PharmacyService {
         }
 
         return dto;
+    }
+
+    private void mapCreateDtoToEntity(PharmacyCreateDTO dto, Pharmacy pharmacy) {
+        pharmacy.setName(dto.getName());
+        pharmacy.setAddress(dto.getAddress());
+        pharmacy.setCity(dto.getCity());
+        pharmacy.setPhoneNumber(dto.getPhoneNumber());
+        pharmacy.setEmail(dto.getEmail());
+        pharmacy.setOpeningHours(dto.getOpeningHours());
+        pharmacy.setImageUrl(dto.getImageUrl());
     }
 }

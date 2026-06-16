@@ -36,6 +36,15 @@ public class ProductSpecs {
         };
     }
 
+    public static Specification<Product> categoryEquals(Long categoryId) {
+        return (root, query, cb) -> {
+            if (categoryId == null) {
+                return cb.conjunction();
+            }
+            return cb.equal(root.get("category").get("id"), categoryId);
+        };
+    }
+
     public static Specification<Product> requiresPrescription(Boolean requiresPrescription) {
         return (root, query, cb) -> {
             if (requiresPrescription == null) {

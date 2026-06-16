@@ -43,6 +43,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Load-balancing demo endpoints (kept open so colleagues' load-balance tests still work)
                         .requestMatchers("/api/load-balance-test/**", "/api/load-balancer-demo/**").permitAll()
+                        // Public catalog reads
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/pharmacies/**",
+                                "/api/inventory/product/**",
+                                "/api/inventory/product-summary").permitAll()
                         // Everything else needs a valid JWT
                         .anyRequest().authenticated()
                 )

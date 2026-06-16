@@ -13,11 +13,14 @@ import com.pharmaflow.smartfeatures.client.user.UserHealthClient;
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderRequestDto;
 import com.pharmaflow.smartfeatures.dto.notification.TherapyReminderResponseDto;
 import com.pharmaflow.smartfeatures.dto.product.ProductSnapshot;
+import com.pharmaflow.smartfeatures.dto.userhealth.PatientHealthProfileSnapshot;
+import com.pharmaflow.smartfeatures.dto.userhealth.UserHealthSnapshot;
 import com.pharmaflow.smartfeatures.enums.notification.TherapyReminderStatus;
 import com.pharmaflow.smartfeatures.exception.BadRequestException;
 import com.pharmaflow.smartfeatures.mapper.notification.TherapyReminderMapper;
 import com.pharmaflow.smartfeatures.model.notification.TherapyReminder;
 import com.pharmaflow.smartfeatures.repositories.notification.TherapyReminderRepository;
+import com.pharmaflow.smartfeatures.security.AuthenticatedUser;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -30,6 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 @ExtendWith(MockitoExtension.class)
 class TherapyReminderServiceTest {
@@ -62,6 +66,7 @@ class TherapyReminderServiceTest {
     ProductSnapshot product = new ProductSnapshot();
     product.setId(20L);
     product.setIsActive(true);
+    when(userHealthClient.getUser(10L)).thenReturn(Optional.of(userWithPatientProfile(10L)));
     when(productCatalogClient.getProduct(20L)).thenReturn(Optional.of(product));
     when(therapyReminderRepository.save(any(TherapyReminder.class)))
         .thenAnswer(
@@ -71,10 +76,12 @@ class TherapyReminderServiceTest {
               return reminder;
             });
 
-    TherapyReminderResponseDto response = therapyReminderService.createReminder(requestDto);
+    TherapyReminderResponseDto response =
+        therapyReminderService.createReminder(requestDto, new AuthenticatedUser("10", 10L), false);
 
     ArgumentCaptor<TherapyReminder> captor = ArgumentCaptor.forClass(TherapyReminder.class);
     verify(therapyReminderRepository).save(captor.capture());
+    assertThat(captor.getValue().getOwnerUserId()).isEqualTo(10L);
     assertThat(captor.getValue().getDosageInstruction()).isEqualTo("Take once daily");
     assertThat(captor.getValue().getStatus()).isEqualTo(TherapyReminderStatus.ACTIVE);
     assertThat(captor.getValue().getNextReminderAt())
@@ -83,12 +90,44 @@ class TherapyReminderServiceTest {
   }
 
   @Test
+  void createReminderWithoutAuthenticatedUserShouldFailBeforeSaving() {
+    TherapyReminderRequestDto requestDto =
+        new TherapyReminderRequestDto(
+            10L, 20L, "Take once daily", 1, LocalDate.of(2030, 1, 12), null);
+
+    assertThatThrownBy(() -> therapyReminderService.createReminder(requestDto))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("Authenticated user id is required.");
+
+    verify(therapyReminderRepository, never()).save(any(TherapyReminder.class));
+  }
+
+  @Test
+  void createReminderWithAdminMissingUserIdShouldFailBeforeSaving() {
+    TherapyReminderRequestDto requestDto =
+        new TherapyReminderRequestDto(
+            10L, 20L, "Take once daily", 1, LocalDate.of(2030, 1, 12), null);
+
+    assertThatThrownBy(
+            () ->
+                therapyReminderService.createReminder(
+                    requestDto, new AuthenticatedUser("admin", null), true))
+        .isInstanceOf(AccessDeniedException.class)
+        .hasMessage("Authenticated user id is required.");
+
+    verify(therapyReminderRepository, never()).save(any(TherapyReminder.class));
+  }
+
+  @Test
   void createReminderShouldRejectAlreadyEndedReminderWindow() {
     TherapyReminderRequestDto requestDto =
         new TherapyReminderRequestDto(
             10L, 20L, "Expired", 1, LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 5));
 
-    assertThatThrownBy(() -> therapyReminderService.createReminder(requestDto))
+    assertThatThrownBy(
+            () ->
+                therapyReminderService.createReminder(
+                    requestDto, new AuthenticatedUser("10", 10L), false))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("endDate must not be in the past.");
 
@@ -140,5 +179,14 @@ class TherapyReminderServiceTest {
         .hasMessage("Completed or canceled reminders cannot be updated.");
 
     verify(therapyReminderRepository, never()).save(any(TherapyReminder.class));
+  }
+
+  private UserHealthSnapshot userWithPatientProfile(Long patientProfileId) {
+    PatientHealthProfileSnapshot patientProfile = new PatientHealthProfileSnapshot();
+    patientProfile.setId(patientProfileId);
+    UserHealthSnapshot user = new UserHealthSnapshot();
+    user.setId(10L);
+    user.setPatientProfile(patientProfile);
+    return user;
   }
 }

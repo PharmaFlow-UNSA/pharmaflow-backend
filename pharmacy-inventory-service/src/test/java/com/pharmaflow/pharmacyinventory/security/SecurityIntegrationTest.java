@@ -30,9 +30,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Walks the JWT + RBAC filter chain end-to-end:
- *   1. No token       → 401
- *   2. Bad token      → 401
- *   3. Expired token  → 401
+ *   1. Public reads   → 200
+ *   2. Bad token on public read → 200
+ *   3. Expired token on public read → 200
  *   4. Wrong role     → 403
  *   5. Right role     → 200/201
  *   6. Admin override → 201
@@ -62,6 +62,8 @@ class SecurityIntegrationTest {
     @BeforeEach
     void setUp() {
         signingKey = Keys.hmacShaKeyFor(secret.getBytes());
+        when(pharmacyService.findAll(any(), any(), any()))
+                .thenReturn(org.springframework.data.domain.Page.empty());
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -107,25 +109,23 @@ class SecurityIntegrationTest {
     // ── Unauthenticated cases ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /api/pharmacies without token → 401 with JSON body")
-    void getPharmacies_withoutToken_returns401() throws Exception {
+    @DisplayName("GET /api/pharmacies without token → 200 because catalog reads are public")
+    void getPharmacies_withoutToken_returns200() throws Exception {
         mockMvc.perform(get("/api/pharmacies"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.error").value("Unauthorized"));
+                .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("GET /api/pharmacies with malformed token → 401")
-    void getPharmacies_withMalformedToken_returns401() throws Exception {
+    @DisplayName("GET /api/pharmacies with malformed token → 200 because catalog reads are public")
+    void getPharmacies_withMalformedToken_returns200() throws Exception {
         mockMvc.perform(get("/api/pharmacies")
                         .header("Authorization", "Bearer not-a-real-jwt"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("GET /api/pharmacies with wrong-signature token → 401")
-    void getPharmacies_withWrongSignature_returns401() throws Exception {
+    @DisplayName("GET /api/pharmacies with wrong-signature token → 200 because catalog reads are public")
+    void getPharmacies_withWrongSignature_returns200() throws Exception {
         SecretKey otherKey = Keys.hmacShaKeyFor(
                 "completely-different-key-completely-different-key".getBytes());
         String foreignToken = Jwts.builder()
@@ -138,16 +138,16 @@ class SecurityIntegrationTest {
 
         mockMvc.perform(get("/api/pharmacies")
                         .header("Authorization", "Bearer " + foreignToken))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("GET /api/pharmacies with expired token → 401")
-    void getPharmacies_withExpiredToken_returns401() throws Exception {
+    @DisplayName("GET /api/pharmacies with expired token → 200 because catalog reads are public")
+    void getPharmacies_withExpiredToken_returns200() throws Exception {
         String expired = generateToken("test-user@pharmaflow.ba", List.of("ROLE_USER"), -1_000L);
         mockMvc.perform(get("/api/pharmacies")
                         .header("Authorization", "Bearer " + expired))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk());
     }
 
     // ── Authorization cases ─────────────────────────────────────────────────
@@ -155,9 +155,6 @@ class SecurityIntegrationTest {
     @Test
     @DisplayName("GET /api/pharmacies with ROLE_USER → 200 (read is allowed for any authenticated user)")
     void getPharmacies_asUser_returns200() throws Exception {
-        when(pharmacyService.findAll(any(), any(), any()))
-                .thenReturn(org.springframework.data.domain.Page.empty());
-
         mockMvc.perform(get("/api/pharmacies")
                         .header("Authorization", "Bearer " + validToken("ROLE_USER")))
                 .andExpect(status().isOk());

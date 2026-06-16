@@ -2,6 +2,7 @@ package com.pharmaflow.pharmacyinventory.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pharmaflow.pharmacyinventory.dto.InventoryDTO;
+import com.pharmaflow.pharmacyinventory.dto.ProductInventorySummaryDTO;
 import com.pharmaflow.pharmacyinventory.exception.PatchOperationException;
 import com.pharmaflow.pharmacyinventory.exception.ResourceNotFoundException;
 import com.pharmaflow.pharmacyinventory.models.Inventory;
@@ -115,6 +116,35 @@ class InventoryServiceTest {
         List<InventoryDTO> result = inventoryService.getInventoryByProductId(100L);
 
         assertEquals(1, result.size());
+    }
+
+    @Test
+    void getProductInventorySummaries_ShouldAggregateStockForRequestedProducts() {
+        Pharmacy secondPharmacy = new Pharmacy();
+        secondPharmacy.setId(2L);
+        secondPharmacy.setName("Druga Apoteka");
+
+        Inventory lowStockInventory = new Inventory();
+        lowStockInventory.setId(2L);
+        lowStockInventory.setProductId(100L);
+        lowStockInventory.setQuantity(4);
+        lowStockInventory.setReorderLevel(5);
+        lowStockInventory.setPharmacy(secondPharmacy);
+
+        when(inventoryRepository.findByProductIdIn(any()))
+                .thenReturn(List.of(testInventory, lowStockInventory));
+
+        List<ProductInventorySummaryDTO> result =
+                inventoryService.getProductInventorySummaries(List.of(100L, 200L));
+
+        assertEquals(2, result.size());
+        assertEquals(54, result.get(0).getTotalQuantity());
+        assertEquals(2L, result.get(0).getPharmacyCount());
+        assertTrue(result.get(0).getInStock());
+        assertEquals(4, result.get(0).getLowestQuantity());
+        assertTrue(result.get(0).getLowStock());
+        assertEquals(0, result.get(1).getTotalQuantity());
+        assertFalse(result.get(1).getInStock());
     }
 
     @Test

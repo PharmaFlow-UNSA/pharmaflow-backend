@@ -34,6 +34,9 @@ public class Pharmacy {
 
     private String openingHours;
 
+    @Column(length = 500)
+    private String imageUrl;
+
     @OneToMany(mappedBy = "pharmacy", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Inventory> inventoryItems = new ArrayList<>();
 

@@ -21,7 +21,7 @@ import java.time.Instant;
  *
  * Authorization rules:
  * - GET /api/products, /api/categories, /api/substances, /api/substitutes
- *     → any authenticated user (ROLE_USER and above)
+ *     → public catalog reads
  * - GET /api/interactions, /api/contraindications
  *     → ROLE_DOCTOR, ROLE_PHARMACIST, ROLE_ADMIN (medical roles)
  * - POST, PUT, PATCH on all endpoints
@@ -63,12 +63,12 @@ public class SecurityConfig {
                                 "/api/load-balancer-demo/**").permitAll()
 
                         // GET - products, categories, substances, substitutes
-                        // any authenticated user can read
+                        // public catalog reads
                         .requestMatchers(HttpMethod.GET,
                                 "/api/products/**",
                                 "/api/categories/**",
                                 "/api/substances/**",
-                                "/api/substitutes/**").authenticated()
+                                "/api/substitutes/**").permitAll()
 
                         // GET - drug interactions and contraindications
                         // only medical staff

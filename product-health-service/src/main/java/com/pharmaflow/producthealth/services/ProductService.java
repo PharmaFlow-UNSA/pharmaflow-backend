@@ -166,16 +166,21 @@ public class ProductService {
     // ── Paginacija i sortiranje sa Specification ──────────────────────────
 
     @Transactional(readOnly = true)
-    public Page<ProductDTO> getProductsPageable(String name, String manufacturer,
+    public Page<ProductDTO> getProductsPageable(String name, String manufacturer, Long categoryId,
                                                  String productType, Boolean requiresPrescription,
                                                  BigDecimal minPrice, BigDecimal maxPrice,
                                                  Pageable pageable) {
         long start = System.currentTimeMillis();
 
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new IllegalArgumentException("Minimum price cannot be greater than maximum price.");
+        }
+
         Specification<Product> spec = Specification
                 .where(ProductSpecs.isActive())
                 .and(ProductSpecs.nameContains(name))
                 .and(ProductSpecs.manufacturerEquals(manufacturer))
+                .and(ProductSpecs.categoryEquals(categoryId))
                 .and(ProductSpecs.requiresPrescription(requiresPrescription))
                 .and(ProductSpecs.priceBetween(minPrice, maxPrice));
 

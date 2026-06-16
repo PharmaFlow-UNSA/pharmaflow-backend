@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long>,
     List<Inventory> findByPharmacyId(Long pharmacyId);
 
     List<Inventory> findByProductId(Long productId);
+
+    @EntityGraph(attributePaths = {"pharmacy"})
+    List<Inventory> findByProductIdIn(Collection<Long> productIds);
 
     Optional<Inventory> findByPharmacyIdAndProductId(Long pharmacyId, Long productId);
 }

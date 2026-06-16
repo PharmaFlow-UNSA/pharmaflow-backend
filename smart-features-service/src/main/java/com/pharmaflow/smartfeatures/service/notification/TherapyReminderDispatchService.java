@@ -21,12 +21,17 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TherapyReminderDispatchService {
+
+  private static final Logger logger =
+      LoggerFactory.getLogger(TherapyReminderDispatchService.class);
 
   private final TherapyReminderRepository therapyReminderRepository;
   private final NotificationRepository notificationRepository;
@@ -64,6 +69,17 @@ public class TherapyReminderDispatchService {
   }
 
   private void dispatchReminder(TherapyReminder reminder, LocalDateTime now) {
+    if (reminder.getOwnerUserId() == null || reminder.getOwnerUserId() <= 0) {
+      logger.warn(
+          "Canceling therapy reminder {} because owner user id is missing or invalid: {}",
+          reminder.getReminderId(),
+          reminder.getOwnerUserId());
+      reminder.setStatus(TherapyReminderStatus.CANCELED);
+      reminder.setNextReminderAt(null);
+      therapyReminderRepository.save(reminder);
+      return;
+    }
+
     Notification notification =
         notificationRepository.save(
             Notification.builder()
